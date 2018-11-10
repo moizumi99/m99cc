@@ -19,18 +19,6 @@ git push -u origin master
 
 # step 3
 
-```Token`` should be 
-
-```c
-// Token values
-enum {
-  TK_NUM = 256, // integer token
-  TK_EOF
-};
-```
-
-```Node``` probably needs ```int op```
-
 ```c
 typedef struct Node {
   int ty;           // 演算子かND_NUM

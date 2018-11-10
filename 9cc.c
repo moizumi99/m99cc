@@ -5,8 +5,14 @@
 
 // Token values
 enum {
-  TK_NUM = 256, // integer token
-  TK_EOF
+  TK_NUM = 256, // Integer token
+  TK_IDENT,     // Identifier
+  TK_EOF        // End of input
+};
+
+enum {
+  ND_NUM = 256, // Integer node
+  ND_IDENT,     // Identifier node
 };
 
 // Token types
@@ -47,7 +53,7 @@ Node *expr();
 
 Node *new_node_num(int val) {
   Node *node = malloc(sizeof(Node));
-  node->ty = TK_NUM;
+  node->ty = ND_NUM;
   node->val = val;
   return node;
 }
@@ -103,7 +109,7 @@ Node *expr() {
 }
 
 void gen(Node *node) {
-  if (node->ty == TK_NUM) {
+  if (node->ty == ND_NUM) {
     printf("  push %d\n", node->val);
     return;
   }
@@ -144,6 +150,14 @@ void tokenize(char *p) {
 
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')') {
       tokens[i].ty = *p;
+      tokens[i].input = p;
+      i++;
+      p++;
+      continue;
+    }
+
+    if ('a' <= *p && *p <= 'z') {
+      tokens[i].ty = TK_IDENT;
       tokens[i].input = p;
       i++;
       p++;
