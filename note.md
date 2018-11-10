@@ -8,8 +8,11 @@ chmod a+x test.sh
 
 ### Before pushing for the first time, set upstream
 
+Instead of just ```git push```, do the following.
+
 ```sh
-git push --set-upstream origin master
+git remote add origin https://github.com/moizumi99/9cc.git
+git push -u origin master
 ```
 
 
