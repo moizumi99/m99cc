@@ -1,5 +1,10 @@
-9cc: 9cc.c
-	gcc -g -o 9cc 9cc.c
+CFLAGS=-Wall -std=c11 -g
+SRCS=$(wildcard *.c)
+OBJS=$(SRCS:.c=.o)
+
+9cc: $(OBJS)
+
+$(OBJS): 9cc.h
 
 test: 9cc
 	./test.sh

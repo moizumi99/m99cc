@@ -100,6 +100,10 @@ Node *term() {
     pos++;
     return node;
   }
+  error("Unexpected token (tem): %s",
+        tokens[pos].input);
+  // Code should not reach here.
+  return NULL;
 }
 
 Node *mul() {
@@ -152,6 +156,8 @@ Node *assign() {
     return lhs;
   }
   error ("Unexpected token (assign): %s", tokens[pos].input);
+  // code should not reach here.
+  return NULL;
 }
 
 Node **program() {
