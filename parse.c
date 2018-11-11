@@ -3,6 +3,22 @@
 #include <stdlib.h>
 #include "9cc.h"
 
+// Token types
+typedef struct {
+  int ty;      // token type
+  int val;     // value if ty is TK_NUM
+  char *input;
+} Token;
+
+// Token values
+enum {
+  TK_NUM = 256, // Integer token
+  TK_IDENT,     // Identifier
+  TK_EQ,        // Equal (==) sign
+  TK_NE,        // Not-equal (!=) sign
+  TK_EOF        // End of input
+};
+
 // Store tokens in this array. Max is 100 for now.
 Token tokens[100];
 
@@ -26,7 +42,24 @@ void tokenize(char *p) {
       continue;
     }
 
-    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '=' || *p == ';') {
+    if (*p == '=' && *(p + 1) == '=') {
+      tokens[i].ty = TK_EQ;
+      tokens[i].input = p;
+      i++;
+      p+=2;
+      continue;
+    }
+
+    if (*p == '!' && *(p + 1) == '=') {
+      tokens[i].ty = TK_NE;
+      tokens[i].input = p;
+      i++;
+      p+=2;
+      continue;
+    }
+
+    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' ||
+        *p == '(' || *p == ')' || *p == '=' || *p == ';' ) {
       tokens[i].ty = *p;
       tokens[i].input = p;
       i++;
@@ -67,8 +100,6 @@ Node *new_node(int op, Node *lhs, Node *rhs) {
   return node;
 }
 
-Node *expr();
-
 Node *new_node_num(int val) {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_NUM;
@@ -83,6 +114,8 @@ Node *new_node_ident(int val) {
   return node;
 }
 
+Node *compare();
+
 Node *term() {
   if (tokens[pos].ty == TK_NUM) {
     return new_node_num(tokens[pos++].val);
@@ -92,7 +125,7 @@ Node *term() {
   }
   if (tokens[pos].ty == '(') {
     pos++;
-    Node *node = expr();
+    Node *node = compare();
     if (tokens[pos].ty != ')') {
       error("No right parenthesis corresponding to left parenthesis (term): %s",
             tokens[pos].input);
@@ -140,17 +173,34 @@ Node *expr() {
   return lhs;
 }
 
-Node *expr_assign_dash() {
+Node *compare() {
   Node *lhs = expr();
+  if (tokens[pos].ty == TK_EOF) {
+    return lhs;
+  }
+  if (tokens[pos].ty == TK_EQ) {
+    pos++;
+    return new_node(ND_EQ, lhs, expr());
+  }
+  if (tokens[pos].ty == TK_NE) {
+    pos++;
+    return new_node(ND_NE, lhs, expr());
+  }
+  // error("Unexpected token (expr): %s", tokens[pos].input);
+  return lhs;
+}
+
+Node *assign_dash() {
+  Node *lhs = compare();
   if (tokens[pos].ty == '=') {
     pos++;
-    return new_node('=', lhs, expr_assign_dash());
+    return new_node('=', lhs, assign_dash());
   }
   return lhs;
 }
 
 Node *assign() {
-  Node *lhs = expr_assign_dash();
+  Node *lhs = assign_dash();
   if (tokens[pos].ty == ';') {
     pos++;
     return lhs;
