@@ -28,11 +28,15 @@ Token tokens[100];
 int pos;
 
 typedef struct Node {
-  int ty;
-  struct Node *lhs;
-  struct Node *rhs;
-  int val;
+  int ty;            // ND_NUM or ND_IDENT
+  struct Node *lhs;  // left hand size
+  struct Node *rhs;  // right hand side
+  int val;           // Used only when ty == ND_NUM
+  char name;         // Used only when ty == ND_IDENT 
 } Node;
+
+// Store nodes in this array. Max is 100 fornow.
+Node *code[100];
 
 // Error reporting function.
 void error(char *s, char *message) {
@@ -58,9 +62,19 @@ Node *new_node_num(int val) {
   return node;
 }
 
+Node *new_node_ident(int val) {
+  Node *node = malloc(sizeof(Node));
+  node->ty = ND_IDENT;
+  node->name = val;
+  return node;
+}
+
 Node *term() {
   if (tokens[pos].ty == TK_NUM) {
     return new_node_num(tokens[pos++].val);
+  }
+  if (tokens[pos].ty == TK_IDENT) {
+    return new_node_ident(tokens[pos++].val);
   }
   if (tokens[pos].ty == '(') {
     pos++;
@@ -108,12 +122,70 @@ Node *expr() {
   return lhs;
 }
 
+Node *expr_assign_dash() {
+  Node *lhs = expr();
+  if (tokens[pos].ty == '=') {
+    pos++;
+    return new_node('=', lhs, expr_assign_dash());
+  }
+  return lhs;
+}
+
+Node *assign() {
+  Node *lhs = expr_assign_dash();
+  if (tokens[pos].ty == ';') {
+    pos++;
+    return lhs;
+  }
+  error ("Unexpected token (assign): %s", tokens[pos].input);
+}
+
+Node **program() {
+  int line = 0;
+  while (tokens[pos].ty != TK_EOF) {
+    code[line] = assign();
+    line++;
+  }
+  code[line] = NULL;
+  return code;
+}
+
+void gen_lval(Node *node) {
+  if (node->ty == ND_IDENT) {
+    printf("  mov rax, rbp\n");
+    printf("  sub rax, %d\n",
+           ('z' - node->name + 1) * 8);
+    printf("  push rax\n");
+    return;
+  }
+  error("%s", "Left hand value isn't a variable.");
+}
+
 void gen(Node *node) {
   if (node->ty == ND_NUM) {
     printf("  push %d\n", node->val);
     return;
   }
 
+  if (node->ty == ND_IDENT) {
+    gen_lval(node);
+    printf("  pop rax\n");
+    printf("  mov rax, [rax]\n");
+    printf("  push rax\n");
+    return;
+  }
+
+  if (node->ty == '=') {
+    gen_lval(node->lhs);
+    gen(node->rhs);
+
+    printf("  pop rdi\n");
+    printf("  pop rax\n");
+    printf("  mov [rax], rdi\n");
+    printf("  push rdi\n");
+    return;
+  }
+  
   gen(node->lhs);
   gen(node->rhs);
 
@@ -148,7 +220,7 @@ void tokenize(char *p) {
       continue;
     }
 
-    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')') {
+    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '=' || *p == ';') {
       tokens[i].ty = *p;
       tokens[i].input = p;
       i++;
@@ -159,6 +231,7 @@ void tokenize(char *p) {
     if ('a' <= *p && *p <= 'z') {
       tokens[i].ty = TK_IDENT;
       tokens[i].input = p;
+      tokens[i].val = *p - 'a';
       i++;
       p++;
       continue;
@@ -188,18 +261,32 @@ int main(int argc, char **argv) {
 
   // Tokenize and parse.
   tokenize(argv[1]);
-  Node *node = expr();
-
+  program();
+  
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
   printf("main:\n");
 
-  // Generate codes while goind down the abstact tree.
-  gen(node);
+  // Prologue.
+  // Secure room for 26 variables (26 * 8 = 208 bytes).
+  printf("  push rbp\n");
+  printf("  mov rbp, rsp\n");
+  printf("  sub rsp, 208\n");
 
+  // Generate codes from the top line to bottom
+  for (int i = 0; code[i]; i++) {
+    gen(code[i]);
+
+    // The evaluated value is at the top of stack.
+    // Need to pop this value so the stack is not overflown.
+    printf("  pop rax\n");
+  }
+
+  // Epilogue
   // The value on the top of the stack is the final value.
-  // Load it to rax as the final value.
-  printf("  pop rax\n");
+  // The last value is already in rax, which is return value.
+  printf("  mov rsp, rbp\n");
+  printf("  pop rbp\n");
   printf("  ret\n");
   return 0;
 }

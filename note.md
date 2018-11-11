@@ -19,17 +19,7 @@ git push -u origin master
 
 # step 3
 
-```c
-typedef struct Node {
-  int ty;           // 演算子かND_NUM
-  struct Node *lhs; // 左辺
-  struct Node *rhs; // 右辺
-  int val;          // tyがND_NUMの場合のみ使う
-  int op;
-} Node;
-```
-
-```error()``` should be like this.
+### ```error()``` should be like this.
 
 ```c
 void error(char *s, int i) {
@@ -38,9 +28,23 @@ void error(char *s, int i) {
 }
 ```
 
-```mul()``` needs ```tokens[pos].ty```
+###```mul()``` needs ```tokens[pos].ty```
 
-Inside ```new_node()``` and ```new_node_num()```, ```node->op``` should be ```node->ty```.
+### Inside ```new_node()``` and ```new_node_num()```, ```node->op``` should be ```node->ty```.
 
 ### At the end of ```expr()``` and ```term()```, they should return ```lhs```;
+
+# step 4
+
+### Tokenizer also needs to include ```=```
+
+### Add extraction of identifer in ```term()```
+
+### Add ```new_node_ident()``` to create a node for an identifier.
+
+### Add ```assign()``` and ```program()``` function calls.
+
+### Add ";" at the end of each test case.
+
+### Add more tests with identifiers and value assignment.
 
