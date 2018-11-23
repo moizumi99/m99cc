@@ -1,8 +1,11 @@
 #include <stdio.h>
+#include <string.h>
 #include "9cc.h"
 
-// Store nodes in this array. Max is 100 fornow.
-Node *code[100];
+// Store nodes in this vector.
+Vector *code;
+
+#define GET_CODE(i) ((Node *)code->data[i])
 
 int main(int argc, char **argv) {
   if (argc != 2) {
@@ -10,10 +13,15 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  if (strcmp(argv[1], "-test") == 0) {
+    runtest();
+    return 0;
+  }
+
   // Tokenize and parse.
   tokenize(argv[1]);
   program();
-  
+
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
   printf("main:\n");
@@ -23,10 +31,11 @@ int main(int argc, char **argv) {
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
   printf("  sub rsp, 208\n");
+  // do "sub rsp, 8" everytime there's a new variable.
 
   // Generate codes from the top line to bottom
-  for (int i = 0; code[i]; i++) {
-    gen(code[i]);
+  for (int i = 0; GET_CODE(i); i++) {
+    gen(GET_CODE(i));
 
     // The evaluated value is at the top of stack.
     // Need to pop this value so the stack is not overflown.

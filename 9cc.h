@@ -13,11 +13,34 @@ enum {
   ND_NE,        // Not-equal operation (!=)
 };
 
-Node **program();
+typedef struct {
+  void **data;
+  int capacity;
+  int len;
+} Vector;
+
+typedef struct {
+  Vector *keys;
+  Vector *vals;
+} Map;
+
+Vector *program();
 
 void tokenize(char *p);
 
 void gen(Node *node);
 
 void error(char *s, char *message);
+
+Vector *new_vector();
+
+void vec_push(Vector *vec, void *elem);
+
+Map *new_map();
+
+void map_put(Map *map, char *key, void *val);
+
+void *map_get(Map *map, char *key);
+
+void runtest();
 

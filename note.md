@@ -48,3 +48,51 @@ void error(char *s, int i) {
 
 ### Add more tests with identifiers and value assignment.
 
+## Step 7
+
+### Map struct is probably wrong
+
+```c
+typedef struct {
+  Vector *keys;
+  Vector *vals;
+} Map;
+```
+
+### vec_push is probably wrong. Need ```sizeof(void *) * vec->capacity``` instead of just ```vec->capacity```.
+
+```c
+void vec_push(Vector *vec, void *elem) {
+  if (vec->capacity == vec->len) {
+    vec->capacity *= 2;
+    vec->data = realloc(vec->data, sizeof(void *) * vec->capacity);
+  }
+  vec->data[vec->len++] = elem;
+}
+```
+
+## After Step 7
+
+I may follow the order here.
+https://note.mu/ruiu/n/n00ebc977fd60
+
+1. Add/Subtract
+2. Multiply/Divid
+3. Local variable
+4. Function call without arguments
+5. Function call with arguments
+6. Function declaration without arguments
+7. Function declaration with arguments
+8. Global variable
+9. Array
+10. Pointer
+11. char type
+12. String literal
+13. Struct
+14. #include
+
+Nov 21.
+So far, p to the middle of 3 is done.
+Let's implement variable using map and vector.
+
+
