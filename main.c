@@ -4,8 +4,11 @@
 
 // Store nodes in this vector.
 Vector *code;
+// pics the pointer for a node at i-th position fcom code.
+#define GET_CODE_P(i) ((Node *)code->data[i])
 
-#define GET_CODE(i) ((Node *)code->data[i])
+// Store variable look up table
+Map *variables;
 
 int main(int argc, char **argv) {
   if (argc != 2) {
@@ -17,6 +20,10 @@ int main(int argc, char **argv) {
     runtest();
     return 0;
   }
+
+  // initialize
+  code = new_vector();
+  variables = new_map();
 
   // Tokenize and parse.
   tokenize(argv[1]);
@@ -30,12 +37,11 @@ int main(int argc, char **argv) {
   // Secure room for 26 variables (26 * 8 = 208 bytes).
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, 208\n");
-  // do "sub rsp, 8" everytime there's a new variable.
+  printf("  sub rsp, %d\n", variables->keys->len * 8);
 
   // Generate codes from the top line to bottom
-  for (int i = 0; GET_CODE(i); i++) {
-    gen(GET_CODE(i));
+  for (int i = 0; GET_CODE_P(i); i++) {
+    gen(GET_CODE_P(i));
 
     // The evaluated value is at the top of stack.
     // Need to pop this value so the stack is not overflown.

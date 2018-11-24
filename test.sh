@@ -10,7 +10,7 @@ try() {
     actual="$?"
 
     if [ "$actual" != "$expected" ]; then
-        echo "$input expected, but got $actual"
+        echo "for $input, $expected is expected, but got $actual"
         exit 1
     fi
 }
@@ -31,5 +31,6 @@ try 0 '0==1;'
 try 1 '0!=1;'
 try 0 '1!=1;'
 try 5 'a=(1==1)+(1!=1)*2+(0!=2)*4+(4!=4);a;'
+try 20 'a=b=j=z=4;b+j*z;'
 
 echo OK

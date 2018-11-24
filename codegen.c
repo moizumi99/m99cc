@@ -1,11 +1,25 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "9cc.h"
+
+extern Map *variables;
+
+void add_variable(int name);
+
+void *variable_address(char name);
 
 void gen_lval(Node *node) {
   if (node->ty == ND_IDENT) {
     printf("  mov rax, rbp\n");
-    printf("  sub rax, %d\n",
-           ('z' - node->name + 1) * 8);
+    void *address = variable_address(node->name);
+    // If new variable, create a room.
+    if (address == NULL) {
+      fprintf(stderr, "Undefined variable used.");
+      exit(1);
+    }
+    //    printf("  sub rax, %d\n",
+    //           ('z' - node->name + 1) * 8);
+    printf("  sub rax, %d\n", (int) address);
     printf("  push rax\n");
     return;
   }

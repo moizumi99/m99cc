@@ -39,7 +39,7 @@ void add_token(int i) {
   vec_push(tokens, (void *)atoken);
 }
 
-#define GET_TOKEN(i) (*((Token *)(tokens->data[i])))
+#define GET_TOKEN(i) (*((Token *)tokens->data[i]))
 
 // split chars pointed by p into tokens
 void tokenize(char *p) {
@@ -123,10 +123,29 @@ Node *new_node_num(int val) {
   return node;
 }
 
+extern Map *variables;
+
+void add_variable(int name) {
+  static int variable_address = 0;
+  char *str = malloc(sizeof(char) * 2);
+  str[0] = (char) name;
+  map_put(variables, str, (void *) (++variable_address * 8));
+}
+
+void *variable_address(char name) {
+  char str[2] = {'\0', '\0'};
+  str[0] = name;
+  return  map_get(variables, str);
+}
+
 Node *new_node_ident(int val) {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_IDENT;
-  node->name = val;
+  node->val = val;
+  node->name = val + 'a';
+  if (variable_address(node->name) == NULL) {
+    add_variable(node->name);
+  }
   return node;
 }
 
@@ -236,7 +255,6 @@ void add_code(int i) {
 #define GET_CODE_P(i) (code->data[i])
 
 Vector *program() {
-  code = new_vector();
   int line = 0;
   while (GET_TOKEN(pos).ty != TK_EOF) {
     add_code(line);
@@ -247,3 +265,4 @@ Vector *program() {
   GET_CODE_P(line) = NULL;
   return code;
 }
+
