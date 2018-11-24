@@ -39,6 +39,7 @@ void add_token(int i) {
   vec_push(tokens, (void *)atoken);
 }
 
+// Macro for getting the next token.
 #define GET_TOKEN(i) (*((Token *)tokens->data[i]))
 
 // split chars pointed by p into tokens
@@ -149,6 +150,17 @@ Node *new_node_ident(int val) {
   return node;
 }
 
+Node *new_node_function(int val) {
+  Node *node = malloc(sizeof(Node));
+  node->ty = ND_FUNC;
+  node->val = val;
+  node->name = val + 'a';
+  if (variable_address(node->name) == NULL) {
+    add_variable(node->name);
+  }
+  return node;
+}
+
 Node *compare();
 
 Node *term() {
@@ -156,7 +168,15 @@ Node *term() {
     return new_node_num(GET_TOKEN(pos++).val);
   }
   if (GET_TOKEN(pos).ty == TK_IDENT) {
-    return new_node_ident(GET_TOKEN(pos++).val);
+    if (GET_TOKEN(pos+1).ty == '(') {
+      Node *node = new_node_function(GET_TOKEN(pos++).val);
+      // TODO: add arguments analysis.
+      while (GET_TOKEN(pos++).ty != ')')
+        ;
+      return node;
+    } else {
+      return new_node_ident(GET_TOKEN(pos++).val);
+    }
   }
   if (GET_TOKEN(pos).ty == '(') {
     pos++;
@@ -168,7 +188,7 @@ Node *term() {
     pos++;
     return node;
   }
-  error("Unexpected token (tem): %s",
+  error("Unexpected token (in term): %s",
         GET_TOKEN(pos).input);
   // Code should not reach here.
   return NULL;
@@ -238,6 +258,11 @@ Node *assign() {
   Node *lhs = assign_dash();
   if (GET_TOKEN(pos).ty == ';') {
     pos++;
+    return lhs;
+  } else if (GET_TOKEN(pos).ty == '(') {
+    while (GET_TOKEN(pos).ty != ')') {
+      ++pos;
+    }
     return lhs;
   }
   error ("Unexpected token (assign): %s", GET_TOKEN(pos).input);

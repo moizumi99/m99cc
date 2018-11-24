@@ -40,6 +40,13 @@ void gen(Node *node) {
     return;
   }
 
+  if (node->ty == ND_FUNC) {
+    // TODO: align rsp to 16 byte boundary.
+    printf("  call _func\n");
+    printf("  push rax\n");
+    return;
+  }
+
   if (node->ty == '=') {
     gen_lval(node->lhs);
     gen(node->rhs);
