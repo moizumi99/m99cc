@@ -14,6 +14,22 @@ enum {
   ND_NE,        // Not-equal operation (!=)
 };
 
+// Token types
+typedef struct {
+  int ty;      // token type
+  int val;     // value if ty is TK_NUM
+  char *input;
+} Token;
+
+// Token values
+enum {
+  TK_NUM = 256, // Integer token
+  TK_IDENT,     // Identifier
+  TK_EQ,        // Equal (==) sign
+  TK_NE,        // Not-equal (!=) sign
+  TK_EOF        // End of input
+};
+
 typedef struct {
   void **data;
   int capacity;

@@ -95,4 +95,31 @@ Nov 21.
 So far, p to the middle of 3 is done.
 Let's implement variable using map and vector.
 
+Nov 23.
+4. Function call without arguments is added.
 
+
+## Structure Tree
+
+program: assign program'
+program': ε | assign program'
+
+assign: expr assign' ";"
+assign': ε | "=" expr assign'
+
+compare: expr
+compare: expr "==" expr
+compare: expr "!=" expr
+
+expr: mul
+expr: mul "+" expr
+expr: mul "-" expr
+mul:  term
+mul:  term "*" mul
+mul:  term "/" mul
+term: number | ident
+term: "(" expr ")"
+term: ident "(" arguments ")"
+
+arguments: expr arguments'
+arguments': ε | ", " expr arguments'

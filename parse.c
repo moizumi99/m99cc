@@ -3,22 +3,6 @@
 #include <stdlib.h>
 #include "9cc.h"
 
-// Token types
-typedef struct {
-  int ty;      // token type
-  int val;     // value if ty is TK_NUM
-  char *input;
-} Token;
-
-// Token values
-enum {
-  TK_NUM = 256, // Integer token
-  TK_IDENT,     // Identifier
-  TK_EQ,        // Equal (==) sign
-  TK_NE,        // Not-equal (!=) sign
-  TK_EOF        // End of input
-};
-
 Vector *tokens;
 
 // Error reporting function.
@@ -161,7 +145,78 @@ Node *new_node_function(int val) {
   return node;
 }
 
-Node *compare();
+#define HIGH_PRIORITY (8)
+#define MULTIPLE_PRIORITY (HIGH_PRIORITY - 1)
+#define ADD_PRIORITY (HIGH_PRIORITY - 2)
+#define COMPARE_PRIORITY (HIGH_PRIORITY - 3)
+#define EQUAL_PRIORITY (HIGH_PRIORITY - 4)
+#define AND_PRIORITY (HIGH_PRIORITY - 5)
+#define OR_PRIORITY (HIGH_PRIORITY - 6)
+#define ASSIGN_PRIORITY (HIGH_PRIORITY - 7)
+#define LOW_PRIORITY (0)
+
+int operation_priority(int token_type) {
+  switch(token_type) {
+  case '*':
+  case '/':
+  case '%':
+    return MULTIPLE_PRIORITY;
+  case '+':
+  case '-':
+    return ADD_PRIORITY;
+  case '<':
+  case '>':
+  /* case TK_LE: */
+  /* case TK_GE: */
+    return COMPARE_PRIORITY;
+  case TK_EQ:
+  case TK_NE:
+    return EQUAL_PRIORITY;
+  /* case TK_AND: */
+    /* return AND_PRIORITY; */
+  /* case TK_OR: */
+  /*   return OR_PRIORITY */
+  case '=':
+    return ASSIGN_PRIORITY;
+  default:
+    return LOW_PRIORITY;
+  }
+}
+
+int get_node_type(int token_type) {
+  switch (token_type) {
+  case TK_NUM:
+    return ND_NUM;
+  case TK_IDENT:
+    return ND_IDENT;
+  case TK_EQ:
+    return ND_EQ;
+  case TK_NE:
+    return ND_NE;
+  default:
+    // For other operations (*/+- others, token_type -> node_type)
+    return token_type;
+  }
+}
+
+Node *term();
+
+Node *expression(int priority) {
+  if (priority == HIGH_PRIORITY) {
+    return term();
+  }
+  Node *lhs = expression(priority + 1);
+  if (GET_TOKEN(pos).ty == TK_EOF) {
+    return lhs;
+  }
+  int token_type = GET_TOKEN(pos).ty;
+  if (operation_priority(token_type) == priority) {
+    pos++;
+    int node_type = get_node_type(token_type);
+    return new_node(node_type, lhs, expression(priority));
+  }
+  return lhs;
+}
 
 Node *term() {
   if (GET_TOKEN(pos).ty == TK_NUM) {
@@ -180,7 +235,7 @@ Node *term() {
   }
   if (GET_TOKEN(pos).ty == '(') {
     pos++;
-    Node *node = compare();
+    Node *node = expression(ASSIGN_PRIORITY + 1);
     if (GET_TOKEN(pos).ty != ')') {
       error("No right parenthesis corresponding to left parenthesis (term): %s",
             GET_TOKEN(pos).input);
@@ -194,59 +249,8 @@ Node *term() {
   return NULL;
 }
 
-Node *mul() {
-  Node *lhs = term();
-  if (GET_TOKEN(pos).ty == TK_EOF) {
-    return lhs;
-  }
-  if (GET_TOKEN(pos).ty == '*') {
-    pos++;
-    return new_node('*', lhs, mul());
-  }
-  if (GET_TOKEN(pos).ty == '/') {
-    pos++;
-    return new_node('/', lhs, mul());
-  }
-  //error("Unexpected token (mul): %s", GET_TOKEN(pos).input);
-  return lhs;
-}
-
-Node *expr() {
-  Node *lhs = mul();
-  if (GET_TOKEN(pos).ty == TK_EOF) {
-    return lhs;
-  }
-  if (GET_TOKEN(pos).ty == '+') {
-    pos++;
-    return new_node('+', lhs, expr());
-  }
-  if (GET_TOKEN(pos).ty == '-') {
-    pos++;
-    return new_node('-', lhs, expr());
-  }
-  // error("Unexpected token (expr): %s", GET_TOKEN(pos).input);
-  return lhs;
-}
-
-Node *compare() {
-  Node *lhs = expr();
-  if (GET_TOKEN(pos).ty == TK_EOF) {
-    return lhs;
-  }
-  if (GET_TOKEN(pos).ty == TK_EQ) {
-    pos++;
-    return new_node(ND_EQ, lhs, expr());
-  }
-  if (GET_TOKEN(pos).ty == TK_NE) {
-    pos++;
-    return new_node(ND_NE, lhs, expr());
-  }
-  // error("Unexpected token (expr): %s", GET_TOKEN(pos).input);
-  return lhs;
-}
-
 Node *assign_dash() {
-  Node *lhs = compare();
+  Node *lhs = expression(ASSIGN_PRIORITY + 1);
   if (GET_TOKEN(pos).ty == '=') {
     pos++;
     return new_node('=', lhs, assign_dash());
