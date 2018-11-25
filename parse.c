@@ -73,7 +73,7 @@ void tokenize(char *p) {
       GET_TOKEN(i).input = p;
       GET_TOKEN(i).val = *p - 'a';
       int len = 0;
-      while('a' <= *p && *p <= 'z') {
+      while(('a' <= *p && *p <= 'z') || ('0' <= *p && *p <= '9')) {
         len++;
         p++;
       }
@@ -143,17 +143,6 @@ Node *new_node_ident(int val, char *name, int len) {
   }
   return node;
 }
-
-/* Node *new_node_function(char *name, Node *arg) { */
-/*   Node *node = malloc(sizeof(Node)); */
-/*   node->ty = ND_FUNC; */
-/*   node->rhs = arg; */
-/*   node->name = create_name_perm(name); */
-/*   if (get_variable_address(node->name) == NULL) { */
-/*     add_variable(node->name); */
-/*   } */
-/*   return node; */
-/* } */
 
 #define HIGH_PRIORITY (8)
 #define MULTIPLE_PRIORITY (HIGH_PRIORITY - 1)
