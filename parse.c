@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <string.h>
 #include "9cc.h"
 
 Vector *tokens;
@@ -56,7 +57,8 @@ void tokenize(char *p) {
     }
 
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' ||
-        *p == '(' || *p == ')' || *p == '=' || *p == ';' ) {
+        *p == '(' || *p == ')' || *p == '=' || *p == ';' ||
+        *p == '{' || *p == '}') {
       add_token(i);
       GET_TOKEN(i).ty = *p;
       GET_TOKEN(i).input = p;
@@ -70,8 +72,13 @@ void tokenize(char *p) {
       GET_TOKEN(i).ty = TK_IDENT;
       GET_TOKEN(i).input = p;
       GET_TOKEN(i).val = *p - 'a';
+      int len = 0;
+      while('a' <= *p && *p <= 'z') {
+        len++;
+        p++;
+      }
+      GET_TOKEN(i).len = len;
       i++;
-      p++;
       continue;
     }
 
@@ -110,41 +117,43 @@ Node *new_node_num(int val) {
 
 extern Map *variables;
 
-void add_variable(int name) {
+void add_variable(char *name_perm) {
   static int variable_address = 0;
-  char *str = malloc(sizeof(char) * 2);
-  str[0] = (char) name;
-  map_put(variables, str, (void *) (++variable_address * 8));
+  map_put(variables, name_perm, (void *) (++variable_address * 8));
 }
 
-void *variable_address(char name) {
-  char str[2] = {'\0', '\0'};
-  str[0] = name;
-  return  map_get(variables, str);
+void *get_variable_address(char *name) {
+  return  map_get(variables, name);
 }
 
-Node *new_node_ident(int val) {
+char *create_name_perm(char *name, int len) {
+  char *str = malloc(sizeof(char) * IDENT_LEN);
+  int copy_len = (len < IDENT_LEN) ? len : IDENT_LEN;
+  strncpy(str, name, copy_len);
+  return str;
+}
+
+Node *new_node_ident(int val, char *name, int len) {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_IDENT;
   node->val = val;
-  node->name = val + 'a';
-  if (variable_address(node->name) == NULL) {
+  node->name = create_name_perm(name, len);
+  if (get_variable_address(node->name) == NULL) {
     add_variable(node->name);
   }
   return node;
 }
 
-Node *new_node_function(int val, Node *arg) {
-  Node *node = malloc(sizeof(Node));
-  node->ty = ND_FUNC;
-  node->val = val;
-  node->name = val + 'a';
-  node->rhs = arg;
-  if (variable_address(node->name) == NULL) {
-    add_variable(node->name);
-  }
-  return node;
-}
+/* Node *new_node_function(char *name, Node *arg) { */
+/*   Node *node = malloc(sizeof(Node)); */
+/*   node->ty = ND_FUNC; */
+/*   node->rhs = arg; */
+/*   node->name = create_name_perm(name); */
+/*   if (get_variable_address(node->name) == NULL) { */
+/*     add_variable(node->name); */
+/*   } */
+/*   return node; */
+/* } */
 
 #define HIGH_PRIORITY (8)
 #define MULTIPLE_PRIORITY (HIGH_PRIORITY - 1)
@@ -201,6 +210,7 @@ int get_node_type(int token_type) {
 }
 
 Node *term();
+Node *argument();
 
 Node *expression(int priority) {
   if (priority == HIGH_PRIORITY) {
@@ -219,6 +229,7 @@ Node *expression(int priority) {
   return lhs;
 }
 
+// term : number | identifier | ( expression )
 Node *term() {
   // Simple number
   if (GET_TOKEN(pos).ty == TK_NUM) {
@@ -227,14 +238,16 @@ Node *term() {
 
   // Variable or Function
   if (GET_TOKEN(pos).ty == TK_IDENT) {
-    Node *id = new_node_ident(GET_TOKEN(pos++).val);
+    Node *id = new_node_ident(GET_TOKEN(pos).val, GET_TOKEN(pos).input,
+                              GET_TOKEN(pos).len);
+    pos++;
     // if followed by (, it's a function call.
     if (GET_TOKEN(pos).ty == '(') {
       ++pos;
       Node *arg = NULL;
       // No argument case.
       if (GET_TOKEN(pos).ty != ')') {
-        arg = expression(ASSIGN_PRIORITY + 1);
+        arg = argument();
       }
       if (GET_TOKEN(pos).ty != ')') {
         error("No right parenthesis corresponding to left parenthesis (term, function): \"%s\"",
@@ -263,6 +276,11 @@ Node *term() {
   error("Unexpected token (parse.c term): \"%s\"",
         GET_TOKEN(pos).input);
   return NULL;
+}
+
+Node *argument() {
+  // TODO: make argument a list.
+  return expression(ASSIGN_PRIORITY + 1);
 }
 
 Node *assign_dash() {
@@ -299,15 +317,45 @@ void add_code(int i) {
 
 #define GET_CODE_P(i) (code->data[i])
 
-Vector *program() {
-  int line = 0;
+void line() {
+  int line_counter = 0;
   while (GET_TOKEN(pos).ty != TK_EOF) {
-    add_code(line);
-    GET_CODE_P(line) = assign();
-    line++;
+    add_code(line_counter);
+    GET_CODE_P(line_counter) = assign();
+    line_counter++;
   }
-  add_code(line);
-  GET_CODE_P(line) = NULL;
-  return code;
+  add_code(line_counter);
+  GET_CODE_P(line_counter) = NULL;
+}
+
+/* void function() { */
+/*   while (GET_TOKEN(pos).ty != TK_EOF) { */
+/*     if (GET_TOKEN(pos++).ty != TK_IDENT) { */
+/*       error("Unexpected token (function): \"%s\"", GET_TOKEN(pos).input); */
+/*     } */
+/*     if (GET_TOKEN(pos++).ty != '(') { */
+/*       error("Left parenthesis '(' missing (function): \"%s\"", GET_TOKEN(pos).input); */
+/*     } */
+/*     Node *arg = NULL; */
+/*     if (GET_TOKEN(pos).ty != ')') { */
+/*       arg = argument(); */
+/*       fprintf(stderr, "Argument Val = %d", arg->val); */
+/*     } */
+/*     if (GET_TOKEN(pos++).ty != ')') { */
+/*       error("Right parenthesis ')' missing (function): \"%s\"", GET_TOKEN(pos).input); */
+/*     } */
+/*     if (GET_TOKEN(pos++).ty != '{') { */
+/*       error("Left brace '{' missing (function): \"%s\"", GET_TOKEN(pos).input); */
+/*     } */
+/*     line(); */
+/*     if (GET_TOKEN(pos++).ty != '}') { */
+/*       error("Right brace '}' missing (function): \"%s\"", GET_TOKEN(pos).input); */
+/*     } */
+/*   } */
+/* } */
+
+void program() {
+  //  function();
+  line();
 }
 

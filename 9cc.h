@@ -1,7 +1,13 @@
+#ifndef M99CC_H
+#define M99CC_H
+
+#define IDENT_LEN 256
+
 // Token types
 typedef struct {
   int ty;      // token type
   int val;     // value if ty is TK_NUM
+  int len; // length of name if ty is IK_IDENT
   char *input;
 } Token;
 
@@ -19,7 +25,7 @@ typedef struct Node {
   struct Node *lhs;  // left hand size
   struct Node *rhs;  // right hand side
   int val;           // Used only when ty == ND_NUM
-  char name;         // Used only when ty == ND_IDENT 
+  char *name;         // Used only when ty == ND_IDENT
 } Node;
 
 // Node type.s
@@ -43,7 +49,7 @@ typedef struct {
   Vector *vals;
 } Map;
 
-Vector *program();
+void program();
 
 void tokenize(char *p);
 
@@ -63,3 +69,8 @@ void *map_get(Map *map, char *key);
 
 void runtest();
 
+void add_variable(char *name);
+
+void *get_variable_address(char *name);
+
+#endif // M99CC-H

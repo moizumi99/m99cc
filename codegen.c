@@ -4,14 +4,10 @@
 
 extern Map *variables;
 
-void add_variable(int name);
-
-void *variable_address(char name);
-
 void gen_lval(Node *node) {
   if (node->ty == ND_IDENT) {
     printf("  mov rax, rbp\n");
-    void *address = variable_address(node->name);
+    void *address = get_variable_address(node->name);
     // If new variable, create a room.
     if (address == NULL) {
       fprintf(stderr, "Undefined variable used.");
