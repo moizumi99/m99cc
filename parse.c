@@ -134,11 +134,12 @@ Node *new_node_ident(int val) {
   return node;
 }
 
-Node *new_node_function(int val) {
+Node *new_node_function(int val, Node *arg) {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_FUNC;
   node->val = val;
   node->name = val + 'a';
+  node->rhs = arg;
   if (variable_address(node->name) == NULL) {
     add_variable(node->name);
   }
@@ -219,33 +220,49 @@ Node *expression(int priority) {
 }
 
 Node *term() {
+  // Simple number
   if (GET_TOKEN(pos).ty == TK_NUM) {
     return new_node_num(GET_TOKEN(pos++).val);
   }
+
+  // Variable or Function
   if (GET_TOKEN(pos).ty == TK_IDENT) {
-    if (GET_TOKEN(pos+1).ty == '(') {
-      Node *node = new_node_function(GET_TOKEN(pos++).val);
-      // TODO: add arguments analysis.
-      while (GET_TOKEN(pos++).ty != ')')
-        ;
+    Node *id = new_node_ident(GET_TOKEN(pos++).val);
+    // if followed by (
+    if (GET_TOKEN(pos).ty == '(') {
+      ++pos;
+      Node *arg = NULL;
+      // No argument case.
+      if (GET_TOKEN(pos).ty != ')') {
+        arg = expression(ASSIGN_PRIORITY + 1);
+        pos++;
+      }
+      if (GET_TOKEN(pos).ty != ')') {
+        error("No right parenthesis corresponding to left parenthesis (term): \"%s\"",
+              GET_TOKEN(pos).input);
+      }
+      pos++;
+      Node *node = new_node(ND_FUNC, id, arg);
       return node;
     } else {
-      return new_node_ident(GET_TOKEN(pos++).val);
+      // If not followed by (, it's a variable.
+      return id;
     }
   }
+  // "( expression )"
   if (GET_TOKEN(pos).ty == '(') {
     pos++;
     Node *node = expression(ASSIGN_PRIORITY + 1);
     if (GET_TOKEN(pos).ty != ')') {
-      error("No right parenthesis corresponding to left parenthesis (term): %s",
+      error("No right parenthesis corresponding to left parenthesis (term): \"%s\"",
             GET_TOKEN(pos).input);
     }
     pos++;
     return node;
   }
-  error("Unexpected token (in term): %s",
-        GET_TOKEN(pos).input);
   // Code should not reach here.
+  error("Unexpected token (parse.c term): \"%s\"",
+        GET_TOKEN(pos).input);
   return NULL;
 }
 

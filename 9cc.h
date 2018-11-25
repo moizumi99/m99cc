@@ -1,19 +1,3 @@
-typedef struct Node {
-  int ty;            // ND_NUM or ND_IDENT or operation
-  struct Node *lhs;  // left hand size
-  struct Node *rhs;  // right hand side
-  int val;           // Used only when ty == ND_NUM
-  char name;         // Used only when ty == ND_IDENT 
-} Node;
-
-enum {
-  ND_NUM = 256, // Integer node
-  ND_IDENT,     // Identifier node
-  ND_FUNC,      // Function node
-  ND_EQ,        // Equal operation (==)
-  ND_NE,        // Not-equal operation (!=)
-};
-
 // Token types
 typedef struct {
   int ty;      // token type
@@ -30,6 +14,24 @@ enum {
   TK_EOF        // End of input
 };
 
+typedef struct Node {
+  int ty;            // ND_NUM or ND_IDENT or operation
+  struct Node *lhs;  // left hand size
+  struct Node *rhs;  // right hand side
+  int val;           // Used only when ty == ND_NUM
+  char name;         // Used only when ty == ND_IDENT 
+} Node;
+
+// Node type.s
+enum {
+  ND_NUM = 256, // Integer node
+  ND_IDENT,     // Identifier node
+  ND_FUNC,      // Function node
+  ND_EQ,        // Equal operation (==)
+  ND_NE,        // Not-equal operation (!=)
+};
+
+// For Vector definition. //
 typedef struct {
   void **data;
   int capacity;

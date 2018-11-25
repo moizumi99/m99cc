@@ -110,7 +110,6 @@ assign': ε | "=" expr assign'
 compare: expr
 compare: expr "==" expr
 compare: expr "!=" expr
-
 expr: mul
 expr: mul "+" expr
 expr: mul "-" expr
@@ -118,8 +117,8 @@ mul:  term
 mul:  term "*" mul
 mul:  term "/" mul
 term: number | ident
-term: "(" expr ")"
 term: ident "(" arguments ")"
+term: "(" expr ")"
 
 arguments: expr arguments'
 arguments': ε | ", " expr arguments'
