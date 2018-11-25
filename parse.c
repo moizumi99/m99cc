@@ -13,8 +13,6 @@ void error(char *s, char *message) {
   exit(1);
 }
 
-extern Vector *code;
-
 int pos;
 
 Node *new_node(int op, Node *lhs, Node *rhs) {
@@ -214,54 +212,54 @@ Node *assign() {
   return NULL;
 }
 
-void add_code(int i) {
+void add_code(Vector *code, int i) {
   if (code->len > i)
     return;
-  Token *atoken = malloc(sizeof(Node));
-  vec_push(code, (void *)atoken);
+  vec_push(code, malloc(sizeof(Node)));
 }
 
-#define GET_CODE_P(i) (code->data[i])
-
-void line() {
-  int line_counter = 0;
-  while (GET_TOKEN(pos).ty != TK_EOF && GET_TOKEN(pos).ty != '}') {
-    add_code(line_counter);
-    GET_CODE_P(line_counter) = assign();
-    line_counter++;
+void code_block(Vector *code) {
+  if (GET_TOKEN(pos++).ty != '{') {
+    error("Left brace '{' missing (code_block): \"%s\"", GET_TOKEN(pos - 1).input);
   }
-  add_code(line_counter);
-  GET_CODE_P(line_counter) = NULL;
+  while (GET_TOKEN(pos).ty != '}') {
+    vec_push(code, assign());
+  }
+  if (GET_TOKEN(pos++).ty != '}') {
+    error("Right brace '}' missing (code_block): \"%s\"", GET_TOKEN(pos - 1).input);
+  }
 }
 
-void function() {
+void function(Vector *code) {
   while (GET_TOKEN(pos).ty != TK_EOF) {
-    if (GET_TOKEN(pos++).ty != TK_IDENT) {
+    if (GET_TOKEN(pos).ty != TK_IDENT) {
       error("Unexpected token (function): \"%s\"", GET_TOKEN(pos).input);
     }
+    Node *id = new_node_ident(GET_TOKEN(pos).val, GET_TOKEN(pos).input,
+                              GET_TOKEN(pos).len);
+    pos++;
     if (GET_TOKEN(pos++).ty != '(') {
-      error("Left parenthesis '(' missing (function): \"%s\"", GET_TOKEN(pos).input);
+      error("Left parenthesis '(' missing (function): \"%s\"", GET_TOKEN(pos - 1).input);
     }
     Node *arg = NULL;
     if (GET_TOKEN(pos).ty != ')') {
       arg = argument();
-      fprintf(stderr, "Argument Val = %d", arg->val);
     }
     if (GET_TOKEN(pos++).ty != ')') {
-      error("Right parenthesis ')' missing (function): \"%s\"", GET_TOKEN(pos).input);
+      // TODO: add support of nmultiple arguments.
+      error("Right parenthesis ')' missing (function): \"%s\"", GET_TOKEN(pos - 1).input);
     }
-    if (GET_TOKEN(pos++).ty != '{') {
-      error("Left brace '{' missing (function): \"%s\"", GET_TOKEN(pos).input);
-    }
-    line();
-    if (GET_TOKEN(pos++).ty != '}') {
-      error("Right brace '}' missing (function): \"%s\"", GET_TOKEN(pos).input);
-    }
+    Node *f = new_node(ND_FUNCDEF, id, arg);
+    vec_push(code, f);
+    code_block(code);
+    vec_push(code, NULL);
   }
 }
 
-void program() {
-  function();
-  //  line();
+void program(Vector *program_code) {
+  Vector *vec = new_vector();
+  vec_push(program_code, vec);
+  function(program_code->data[0]);
+  vec_push(program_code, NULL);
 }
 

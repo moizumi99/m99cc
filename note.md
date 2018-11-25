@@ -101,8 +101,7 @@ Let's implement variable using map and vector.
 program: function program'
 program': ε | function program'
 
-function: ident "(" expression ")" function'
-function': ε | "{" code "}"
+function: ident "(" expression ")" "{" line "}"
 
 line: assign | line
 line': ε | assign line'
@@ -120,8 +119,8 @@ mul:  term
 mul:  term "*" term
 mul:  term "/" term
 term: number | variable | functioncall | "(" expr ")"
-variable: ident
 functioncall: ident "(" arguments ")"
+variable: ident
 
 arguments: ε | expr
 

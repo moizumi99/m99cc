@@ -3,9 +3,9 @@
 #include "9cc.h"
 
 // Store nodes in this vector.
-Vector *code;
+Vector *program_code;
 // pics the pointer for a node at i-th position fcom code.
-#define GET_CODE_P(i) ((Node *)code->data[i])
+#define GET_NODE_P(i) ((Node *)((Vector *)program_code->data[0])->data[i])
 
 // Store variable look up table
 Map *variables;
@@ -22,12 +22,13 @@ int main(int argc, char **argv) {
   }
 
   // initialize
-  code = new_vector();
+  program_code = new_vector();
   variables = new_map();
 
-  // Tokenize and parse.
+  // Tokenize
   tokenize(argv[1]);
-  program();
+  // Parse
+  program(program_code);
 
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
@@ -39,8 +40,8 @@ int main(int argc, char **argv) {
   printf("  sub rsp, %d\n", variables->keys->len * 8);
 
   // Generate codes from the top line to bottom
-  for (int i = 0; GET_CODE_P(i); i++) {
-    gen(GET_CODE_P(i));
+  for (int i = 0; GET_NODE_P(i); i++) {
+    gen(GET_NODE_P(i));
 
     // The evaluated value is at the top of stack.
     // Need to pop this value so the stack is not overflown.

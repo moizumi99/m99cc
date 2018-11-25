@@ -3,6 +3,18 @@
 
 #define IDENT_LEN 256
 
+// For Vector definition. //
+typedef struct {
+  void **data;
+  int capacity;
+  int len;
+} Vector;
+
+typedef struct {
+  Vector *keys;
+  Vector *vals;
+} Map;
+
 // Token types
 typedef struct {
   int ty;      // token type
@@ -28,31 +40,21 @@ typedef struct Node {
   struct Node *lhs;  // left hand size
   struct Node *rhs;  // right hand side
   int val;           // Used only when ty == ND_NUM
-  char *name;         // Used only when ty == ND_IDENT
+  char *name;        // Used only when ty == ND_IDENT
 } Node;
 
 // Node type.s
 enum {
-  ND_NUM = 256, // Integer node
-  ND_IDENT,     // Identifier node
-  ND_FUNCCALL,  // Function call node
-  ND_EQ,        // Equal operation (==)
-  ND_NE,        // Not-equal operation (!=)
+  ND_NUM = 256, // Integer node.
+  ND_IDENT,     // Identifier node.
+  ND_FUNCCALL,  // Function call node.
+  ND_FUNCDEF,   // Function definition.
+  ND_ROOT,      // The root of the entire program
+  ND_EQ,        // Equal operation (==).
+  ND_NE,        // Not-equal operation (!=).
 };
 
-// For Vector definition. //
-typedef struct {
-  void **data;
-  int capacity;
-  int len;
-} Vector;
-
-typedef struct {
-  Vector *keys;
-  Vector *vals;
-} Map;
-
-void program();
+void program(Vector *program_code);
 
 void tokenize(char *p);
 

@@ -30,6 +30,12 @@ void gen(Node *node) {
     return;
   }
 
+  if (node->ty == ND_FUNCDEF) {
+    // TODO: Add arguments and memory control.
+    printf("  push rax\n");
+    return;
+  }
+
   if (node->ty == ND_IDENT) {
     gen_lval(node);
     printf("  pop rax\n");
