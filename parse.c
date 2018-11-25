@@ -4,7 +4,7 @@
 #include <string.h>
 #include "9cc.h"
 
-Vector *tokens;
+extern Vector *tokens;
 
 // Error reporting function.
 void error(char *s, char *message) {
@@ -16,89 +16,6 @@ void error(char *s, char *message) {
 extern Vector *code;
 
 int pos;
-
-void add_token(int i) {
-  if (tokens->len > i)
-    return;
-  Token *atoken = malloc(sizeof(Token));
-  vec_push(tokens, (void *)atoken);
-}
-
-// Macro for getting the next token.
-#define GET_TOKEN(i) (*((Token *)tokens->data[i]))
-
-// split chars pointed by p into tokens
-void tokenize(char *p) {
-  tokens = new_vector();
-  int i = 0;
-  while (*p) {
-    // skip spaces
-    if (isspace(*p)) {
-      p++;
-      continue;
-    }
-
-    if (*p == '=' && *(p + 1) == '=') {
-      add_token(i);
-      GET_TOKEN(i).ty = TK_EQ;
-      GET_TOKEN(i).input = p;
-      i++;
-      p+=2;
-      continue;
-    }
-
-    if (*p == '!' && *(p + 1) == '=') {
-      add_token(i);
-      GET_TOKEN(i).ty = TK_NE;
-      GET_TOKEN(i).input = p;
-      i++;
-      p+=2;
-      continue;
-    }
-
-    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' ||
-        *p == '(' || *p == ')' || *p == '=' || *p == ';' ||
-        *p == '{' || *p == '}') {
-      add_token(i);
-      GET_TOKEN(i).ty = *p;
-      GET_TOKEN(i).input = p;
-      i++;
-      p++;
-      continue;
-    }
-
-    if ('a' <= *p && *p <= 'z') {
-      add_token(i);
-      GET_TOKEN(i).ty = TK_IDENT;
-      GET_TOKEN(i).input = p;
-      GET_TOKEN(i).val = *p - 'a';
-      int len = 0;
-      while(('a' <= *p && *p <= 'z') || ('0' <= *p && *p <= '9')) {
-        len++;
-        p++;
-      }
-      GET_TOKEN(i).len = len;
-      i++;
-      continue;
-    }
-
-    if (isdigit(*p)) {
-      add_token(i);
-      GET_TOKEN(i).ty = TK_NUM;
-      GET_TOKEN(i).input = p;
-      GET_TOKEN(i).val = strtol(p, &p, 10);
-      i++;
-      continue;
-    }
-
-    fprintf(stderr, "Can't tokenize: %s\n", p);
-    exit(1);
-  }
-
-  add_token(i);
-  GET_TOKEN(i).ty = TK_EOF;
-  GET_TOKEN(i).input = p;
-}
 
 Node *new_node(int op, Node *lhs, Node *rhs) {
   Node *node = malloc(sizeof(Node));

@@ -20,6 +20,9 @@ enum {
   TK_EOF        // End of input
 };
 
+// Macro for getting the next token.
+#define GET_TOKEN(i) (*((Token *)tokens->data[i]))
+
 typedef struct Node {
   int ty;            // ND_NUM or ND_IDENT or operation
   struct Node *lhs;  // left hand size
