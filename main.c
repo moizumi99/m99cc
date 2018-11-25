@@ -32,11 +32,10 @@ int main(int argc, char **argv) {
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
   printf("main:\n");
-
   // Prologue.
-  // Secure room for 26 variables (26 * 8 = 208 bytes).
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
+  // Secure room for 26 variables (26 * 8 = 208 bytes).
   printf("  sub rsp, %d\n", variables->keys->len * 8);
 
   // Generate codes from the top line to bottom
@@ -56,7 +55,7 @@ int main(int argc, char **argv) {
   printf("  ret\n");
   // Function call. f(n) return 2*n;
   printf("_func:\n");
-  printf("  add rax, rax\n");
+  printf("  mov rax, 5\n");
   printf("  ret\n");
   return 0;
 }

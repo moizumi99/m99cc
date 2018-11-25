@@ -35,7 +35,7 @@ typedef struct Node {
 enum {
   ND_NUM = 256, // Integer node
   ND_IDENT,     // Identifier node
-  ND_FUNC,      // Function node
+  ND_FUNCCALL,  // Function call node
   ND_EQ,        // Equal operation (==)
   ND_NE,        // Not-equal operation (!=)
 };

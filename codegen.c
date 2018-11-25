@@ -38,7 +38,7 @@ void gen(Node *node) {
     return;
   }
 
-  if (node->ty == ND_FUNC) {
+  if (node->ty == ND_FUNCCALL) {
     // TODO: align rsp to 16 byte boundary.
     if (node->lhs->ty != ND_IDENT) {
       error("%s\n", "Function node doesn't have identifer.");

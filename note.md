@@ -119,11 +119,11 @@ expr: mul "-" expr
 mul:  term
 mul:  term "*" term
 mul:  term "/" term
-term: number | ident
-term: ident "(" argument ")"
-term: "(" expr ")"
+term: number | variable | functioncall | "(" expr ")"
+variable: ident
+functioncall: ident "(" arguments ")"
 
-arguments: expr
+arguments: ε | expr
 
 // argument will be like below eventually.
 // argument: expr argument'

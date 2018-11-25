@@ -160,7 +160,7 @@ Node *term() {
               GET_TOKEN(pos).input);
       }
       pos++;
-      Node *node = new_node(ND_FUNC, id, arg);
+      Node *node = new_node(ND_FUNCCALL, id, arg);
       return node;
     } else {
       // If not followed by (, it's a variable.
@@ -225,7 +225,7 @@ void add_code(int i) {
 
 void line() {
   int line_counter = 0;
-  while (GET_TOKEN(pos).ty != TK_EOF) {
+  while (GET_TOKEN(pos).ty != TK_EOF && GET_TOKEN(pos).ty != '}') {
     add_code(line_counter);
     GET_CODE_P(line_counter) = assign();
     line_counter++;
@@ -234,34 +234,34 @@ void line() {
   GET_CODE_P(line_counter) = NULL;
 }
 
-/* void function() { */
-/*   while (GET_TOKEN(pos).ty != TK_EOF) { */
-/*     if (GET_TOKEN(pos++).ty != TK_IDENT) { */
-/*       error("Unexpected token (function): \"%s\"", GET_TOKEN(pos).input); */
-/*     } */
-/*     if (GET_TOKEN(pos++).ty != '(') { */
-/*       error("Left parenthesis '(' missing (function): \"%s\"", GET_TOKEN(pos).input); */
-/*     } */
-/*     Node *arg = NULL; */
-/*     if (GET_TOKEN(pos).ty != ')') { */
-/*       arg = argument(); */
-/*       fprintf(stderr, "Argument Val = %d", arg->val); */
-/*     } */
-/*     if (GET_TOKEN(pos++).ty != ')') { */
-/*       error("Right parenthesis ')' missing (function): \"%s\"", GET_TOKEN(pos).input); */
-/*     } */
-/*     if (GET_TOKEN(pos++).ty != '{') { */
-/*       error("Left brace '{' missing (function): \"%s\"", GET_TOKEN(pos).input); */
-/*     } */
-/*     line(); */
-/*     if (GET_TOKEN(pos++).ty != '}') { */
-/*       error("Right brace '}' missing (function): \"%s\"", GET_TOKEN(pos).input); */
-/*     } */
-/*   } */
-/* } */
+void function() {
+  while (GET_TOKEN(pos).ty != TK_EOF) {
+    if (GET_TOKEN(pos++).ty != TK_IDENT) {
+      error("Unexpected token (function): \"%s\"", GET_TOKEN(pos).input);
+    }
+    if (GET_TOKEN(pos++).ty != '(') {
+      error("Left parenthesis '(' missing (function): \"%s\"", GET_TOKEN(pos).input);
+    }
+    Node *arg = NULL;
+    if (GET_TOKEN(pos).ty != ')') {
+      arg = argument();
+      fprintf(stderr, "Argument Val = %d", arg->val);
+    }
+    if (GET_TOKEN(pos++).ty != ')') {
+      error("Right parenthesis ')' missing (function): \"%s\"", GET_TOKEN(pos).input);
+    }
+    if (GET_TOKEN(pos++).ty != '{') {
+      error("Left brace '{' missing (function): \"%s\"", GET_TOKEN(pos).input);
+    }
+    line();
+    if (GET_TOKEN(pos++).ty != '}') {
+      error("Right brace '}' missing (function): \"%s\"", GET_TOKEN(pos).input);
+    }
+  }
+}
 
 void program() {
-  //  function();
-  line();
+  function();
+  //  line();
 }
 
