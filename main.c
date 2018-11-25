@@ -54,9 +54,9 @@ int main(int argc, char **argv) {
   printf("  mov rsp, rbp\n");
   printf("  pop rbp\n");
   printf("  ret\n");
-  // Function call (just return 3)
+  // Function call. f(n) return 2*n;
   printf("_func:\n");
-  printf("  mov rax, 3\n");
+  printf("  add rax, rax\n");
   printf("  ret\n");
   return 0;
 }

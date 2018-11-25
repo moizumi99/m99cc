@@ -26,6 +26,8 @@ void gen_lval(Node *node) {
   error("%s", "Left hand value isn't a variable.");
 }
 
+
+
 void gen(Node *node) {
   if (node->ty == ND_NUM) {
     printf("  push %d\n", node->val);
@@ -42,6 +44,14 @@ void gen(Node *node) {
 
   if (node->ty == ND_FUNC) {
     // TODO: align rsp to 16 byte boundary.
+    if (node->lhs->ty != ND_IDENT) {
+      error("%s\n", "Function node doesn't have identifer.");
+    }
+    if (node->rhs == NULL) {
+      error("%s\n", "Function node needs an argument.");
+    }
+    gen(node->rhs);
+    printf("  pop rax\n");
     printf("  call _func\n");
     printf("  push rax\n");
     return;

@@ -228,17 +228,16 @@ Node *term() {
   // Variable or Function
   if (GET_TOKEN(pos).ty == TK_IDENT) {
     Node *id = new_node_ident(GET_TOKEN(pos++).val);
-    // if followed by (
+    // if followed by (, it's a function call.
     if (GET_TOKEN(pos).ty == '(') {
       ++pos;
       Node *arg = NULL;
       // No argument case.
       if (GET_TOKEN(pos).ty != ')') {
         arg = expression(ASSIGN_PRIORITY + 1);
-        pos++;
       }
       if (GET_TOKEN(pos).ty != ')') {
-        error("No right parenthesis corresponding to left parenthesis (term): \"%s\"",
+        error("No right parenthesis corresponding to left parenthesis (term, function): \"%s\"",
               GET_TOKEN(pos).input);
       }
       pos++;
@@ -254,7 +253,7 @@ Node *term() {
     pos++;
     Node *node = expression(ASSIGN_PRIORITY + 1);
     if (GET_TOKEN(pos).ty != ')') {
-      error("No right parenthesis corresponding to left parenthesis (term): \"%s\"",
+      error("No right parenthesis corresponding to left parenthesis (term, parenthesis): \"%s\"",
             GET_TOKEN(pos).input);
     }
     pos++;
