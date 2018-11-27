@@ -23,7 +23,6 @@ void gen_lval(Node *node) {
 }
 
 
-
 void gen(Node *node) {
   if (node->ty == ND_NUM) {
     printf("  push %d\n", node->val);
@@ -31,8 +30,7 @@ void gen(Node *node) {
   }
 
   if (node->ty == ND_FUNCDEF) {
-    // TODO: Add arguments and memory control.
-    printf("  push rax\n");
+    // code shouldn't reach here
     return;
   }
 
@@ -54,7 +52,7 @@ void gen(Node *node) {
     }
     gen(node->rhs);
     printf("  pop rax\n");
-    printf("  call _func\n");
+    printf("  call %s\n", node->lhs->name);
     printf("  push rax\n");
     return;
   }

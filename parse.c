@@ -231,35 +231,36 @@ void code_block(Vector *code) {
 }
 
 void function(Vector *code) {
-  while (GET_TOKEN(pos).ty != TK_EOF) {
-    if (GET_TOKEN(pos).ty != TK_IDENT) {
-      error("Unexpected token (function): \"%s\"", GET_TOKEN(pos).input);
-    }
-    Node *id = new_node_ident(GET_TOKEN(pos).val, GET_TOKEN(pos).input,
-                              GET_TOKEN(pos).len);
-    pos++;
-    if (GET_TOKEN(pos++).ty != '(') {
-      error("Left parenthesis '(' missing (function): \"%s\"", GET_TOKEN(pos - 1).input);
-    }
-    Node *arg = NULL;
-    if (GET_TOKEN(pos).ty != ')') {
-      arg = argument();
-    }
-    if (GET_TOKEN(pos++).ty != ')') {
-      // TODO: add support of nmultiple arguments.
-      error("Right parenthesis ')' missing (function): \"%s\"", GET_TOKEN(pos - 1).input);
-    }
-    Node *f = new_node(ND_FUNCDEF, id, arg);
-    vec_push(code, f);
-    code_block(code);
-    vec_push(code, NULL);
+  if (GET_TOKEN(pos).ty != TK_IDENT) {
+    error("Unexpected token (function): \"%s\"", GET_TOKEN(pos).input);
   }
+  Node *id = new_node_ident(GET_TOKEN(pos).val, GET_TOKEN(pos).input,
+                            GET_TOKEN(pos).len);
+  pos++;
+  if (GET_TOKEN(pos++).ty != '(') {
+    error("Left parenthesis '(' missing (function): \"%s\"", GET_TOKEN(pos - 1).input);
+  }
+  Node *arg = NULL;
+  if (GET_TOKEN(pos).ty != ')') {
+    arg = argument();
+  }
+  if (GET_TOKEN(pos++).ty != ')') {
+    // TODO: add support of nmultiple arguments.
+    error("Right parenthesis ')' missing (function): \"%s\"", GET_TOKEN(pos - 1).input);
+  }
+  Node *f = new_node(ND_FUNCDEF, id, arg);
+  vec_push(code, f);
+  code_block(code);
+  vec_push(code, NULL);
 }
 
 void program(Vector *program_code) {
-  Vector *vec = new_vector();
-  vec_push(program_code, vec);
-  function(program_code->data[0]);
+  int function_counter = 0;
+  while (GET_TOKEN(pos).ty != TK_EOF) {
+    vec_push(program_code, new_vector());
+    function(program_code->data[function_counter]);
+    function_counter++;
+  }
   vec_push(program_code, NULL);
 }
 
