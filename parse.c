@@ -5,6 +5,7 @@
 #include "9cc.h"
 
 extern Vector *tokens;
+// TODO: separate local and global symbol table.
 extern Map *variables;
 
 enum {
@@ -50,8 +51,12 @@ void add_variable(char *name_perm, int type) {
   map_put(variables, name_perm, (void *) new_symbol);
 }
 
+void *get_variable(char *name) {
+  return map_get(variables, name);
+}
+
 void *get_variable_address(char *name) {
-  Symbol *tmp_symbol = map_get(variables, name);
+  Symbol *tmp_symbol = get_variable(name);
   if (tmp_symbol == NULL) {
     return NULL;
   }
@@ -161,14 +166,14 @@ Node *term() {
     pos++;
     // if followed by (, it's a function call.
     if (GET_TOKEN(pos).ty == '(') {
-      if (get_variable_address(id->name) == NULL) {
+      if (get_variable(id->name) == NULL) {
         add_variable(id->name, ID_FUNC);
       }
       ++pos;
       Node *arg = NULL;
       // No argument case.
       if (GET_TOKEN(pos).ty != ')') {
-        arg = argument();
+        arg = expression(LOW_PRIORITY + 1);
       }
       if (GET_TOKEN(pos).ty != ')') {
         error("No right parenthesis corresponding to left parenthesis (term, function): \"%s\"",
@@ -179,7 +184,7 @@ Node *term() {
       return node;
     } else {
       // If not followed by (, it's a variable.
-      if (get_variable_address(id->name) == NULL) {
+      if (get_variable(id->name) == NULL) {
         add_variable(id->name, ID_VAR);
       }
       return id;
@@ -204,7 +209,11 @@ Node *term() {
 
 Node *argument() {
   // TODO: make argument a list.
-  return expression(ASSIGN_PRIORITY + 1);
+  Node *arg = term();
+  if (arg->ty != ND_IDENT) {
+    error("Argument declaration wrong. \"%s\"", arg->name);
+  }
+  return arg;
 }
 
 Node *assign_dash() {
@@ -256,7 +265,7 @@ void function(Vector *code) {
   }
   Node *id = new_node_ident(GET_TOKEN(pos).val, GET_TOKEN(pos).input,
                             GET_TOKEN(pos).len);
-  if (get_variable_address(id->name) == NULL) {
+  if (get_variable(id->name) == NULL) {
     add_variable(id->name, ID_FUNC);
   } else {
     error("Function name conflict. \"%s\"", id->name);
