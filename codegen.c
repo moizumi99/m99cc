@@ -2,12 +2,14 @@
 #include <stdlib.h>
 #include "9cc.h"
 
-extern Map *variables;
+extern Map *global_symbols;
+extern Vector *local_symbols;
+extern Map *current_local_symbols;
 
 void gen_lval(Node *node) {
   if (node->ty == ND_IDENT) {
     printf("  mov rax, rbp\n");
-    void *address = get_variable_address(node->name);
+    void *address = get_local_symbol_address(node->name);
     // If new variable, create a room.
     if (address == NULL) {
       fprintf(stderr, "Undefined variable used.");

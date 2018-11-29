@@ -8,7 +8,9 @@ Vector *program_code;
 
 // Store variable look up table
 // Put variables into vector, and make a list of variable for each code block.
-Map *variables;
+Map *global_symbols;
+Vector *local_symbols;
+Map *current_local_symbols;
 
 // pics the pointer for a node at i-th position fcom code.
 #define GET_NODE_P(j, i) ((Node *)((Vector *)program_code->data[j])->data[i])
@@ -26,7 +28,8 @@ int main(int argc, char **argv) {
 
   // initialize
   program_code = new_vector();
-  variables = new_map();
+  global_symbols = new_map();
+  local_symbols = new_vector();
 
   // Tokenize
   tokenize(argv[1]);
@@ -40,6 +43,7 @@ int main(int argc, char **argv) {
   printf("  ret\n");
 
   for (int j = 0; program_code->data[j]; j++) {
+    current_local_symbols = (Map *)local_symbols->data[j];
     // functions
     if (GET_NODE_P(j, 0)->ty != ND_FUNCDEF) {
       fprintf(stderr, "The first line of the function isn't function definition");
@@ -54,9 +58,10 @@ int main(int argc, char **argv) {
     // Prologue.
     printf("  push rbp\n");
     printf("  mov rbp, rsp\n");
-    // Secure room for variables (26 * 8 = 208 bytes).
-    printf("  sub rsp, %d\n", variables->keys->len * 8);
-    printf("  push rax\n");
+    // Secure room for variables
+    printf("  sub rsp, %d\n", current_local_symbols->keys->len * 8);
+    // argument
+    printf("  mov [rbp - 8], rax\n");
     // Generate codes from the top line to bottom
     for (int i = 1; GET_NODE_P(j, i); i++)
       gen(GET_NODE_P(j, i));

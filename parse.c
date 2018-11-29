@@ -6,7 +6,9 @@
 
 extern Vector *tokens;
 // TODO: separate local and global symbol table.
-extern Map *variables;
+extern Map *global_symbols;
+extern Vector *local_symbols;
+extern Map *current_local_symbols;
 
 enum {
   ID_VAR,   // variable.
@@ -43,20 +45,40 @@ Node *new_node_num(int val) {
   return node;
 }
 
-void add_variable(char *name_perm, int type) {
-  static int variable_counter = 0;
+void add_global_symbol(char *name_perm, int type) {
+  static int global_symbol_counter = 0;
   Symbol *new_symbol = malloc(sizeof(Symbol));
-  new_symbol->address = (void *) (++variable_counter * 8);
+  new_symbol->address = (void *) (++global_symbol_counter * 8);
   new_symbol->type = type;
-  map_put(variables, name_perm, (void *) new_symbol);
+  map_put(global_symbols, name_perm, (void *) new_symbol);
 }
 
-void *get_variable(char *name) {
-  return map_get(variables, name);
+void *get_global_symbol(char *name) {
+  return map_get(global_symbols, name);
 }
 
-void *get_variable_address(char *name) {
-  Symbol *tmp_symbol = get_variable(name);
+void *get_global_symbol_address(char *name) {
+  Symbol *tmp_symbol = get_global_symbol(name);
+  if (tmp_symbol == NULL) {
+    return NULL;
+  }
+  return tmp_symbol->address;
+}
+
+static int local_symbol_counter = 0;
+void add_local_symbol(char *name_perm, int type) {
+  Symbol *new_symbol = malloc(sizeof(Symbol));
+  new_symbol->address = (void *) (++local_symbol_counter * 8);
+  new_symbol->type = type;
+  map_put(current_local_symbols, name_perm, (void *) new_symbol);
+}
+
+void *get_local_symbol(char *name) {
+  return map_get(current_local_symbols, name);
+}
+
+void *get_local_symbol_address(char *name) {
+  Symbol *tmp_symbol = get_local_symbol(name);
   if (tmp_symbol == NULL) {
     return NULL;
   }
@@ -166,9 +188,6 @@ Node *term() {
     pos++;
     // if followed by (, it's a function call.
     if (GET_TOKEN(pos).ty == '(') {
-      if (get_variable(id->name) == NULL) {
-        add_variable(id->name, ID_FUNC);
-      }
       ++pos;
       Node *arg = NULL;
       // No argument case.
@@ -184,8 +203,8 @@ Node *term() {
       return node;
     } else {
       // If not followed by (, it's a variable.
-      if (get_variable(id->name) == NULL) {
-        add_variable(id->name, ID_VAR);
+      if (get_local_symbol(id->name) == NULL) {
+        add_local_symbol(id->name, ID_VAR);
       }
       return id;
     }
@@ -265,8 +284,8 @@ void function(Vector *code) {
   }
   Node *id = new_node_ident(GET_TOKEN(pos).val, GET_TOKEN(pos).input,
                             GET_TOKEN(pos).len);
-  if (get_variable(id->name) == NULL) {
-    add_variable(id->name, ID_FUNC);
+  if (get_global_symbol(id->name) == NULL) {
+    add_global_symbol(id->name, ID_FUNC);
   } else {
     error("Function name conflict. \"%s\"", id->name);
   }
@@ -292,9 +311,13 @@ void program(Vector *program_code) {
   int function_counter = 0;
   while (GET_TOKEN(pos).ty != TK_EOF) {
     vec_push(program_code, new_vector());
+    current_local_symbols = new_map();
+    local_symbol_counter = 0;
+    vec_push(local_symbols, current_local_symbols);
     function(program_code->data[function_counter]);
     function_counter++;
   }
   vec_push(program_code, NULL);
+  vec_push(local_symbols, NULL);
 }
 

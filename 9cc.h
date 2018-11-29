@@ -74,8 +74,12 @@ void *map_get(Map *map, char *key);
 
 void runtest();
 
-void add_variable(char *name, int type);
+void add_global_symbol(char *name, int type);
 
-void *get_variable_address(char *name);
+void *get_global_symbol_address(char *name);
+
+void add_local_symbol(char *name, int type);
+
+void *get_local_symbol_address(char *name);
 
 #endif // M99CC-H
