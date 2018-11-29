@@ -5,6 +5,18 @@
 #include "9cc.h"
 
 extern Vector *tokens;
+extern Map *variables;
+
+enum {
+  ID_VAR,   // variable.
+  ID_FUNC,  // function.
+  ID_ARG,   // argument.
+};
+
+typedef struct {
+  int *type;
+  void *address;
+} Symbol;
 
 // Error reporting function.
 void error(char *s, char *message) {
@@ -30,15 +42,19 @@ Node *new_node_num(int val) {
   return node;
 }
 
-extern Map *variables;
-
 void add_variable(char *name_perm) {
-  static int variable_address = 0;
-  map_put(variables, name_perm, (void *) (++variable_address * 8));
+  static int variable_counter = 0;
+  Symbol *new_symbol = malloc(sizeof(Symbol));
+  new_symbol->address = (void *) (++variable_counter * 8);
+  map_put(variables, name_perm, (void *) new_symbol);
 }
 
 void *get_variable_address(char *name) {
-  return  map_get(variables, name);
+  Symbol *tmp_symbol = map_get(variables, name);
+  if (tmp_symbol == NULL) {
+    return NULL;
+  }
+  return tmp_symbol->address;
 }
 
 char *create_name_perm(char *name, int len) {
