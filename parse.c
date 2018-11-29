@@ -14,7 +14,7 @@ enum {
 };
 
 typedef struct {
-  int *type;
+  int type;
   void *address;
 } Symbol;
 
@@ -42,10 +42,11 @@ Node *new_node_num(int val) {
   return node;
 }
 
-void add_variable(char *name_perm) {
+void add_variable(char *name_perm, int type) {
   static int variable_counter = 0;
   Symbol *new_symbol = malloc(sizeof(Symbol));
   new_symbol->address = (void *) (++variable_counter * 8);
+  new_symbol->type = type;
   map_put(variables, name_perm, (void *) new_symbol);
 }
 
@@ -69,9 +70,6 @@ Node *new_node_ident(int val, char *name, int len) {
   node->ty = ND_IDENT;
   node->val = val;
   node->name = create_name_perm(name, len);
-  if (get_variable_address(node->name) == NULL) {
-    add_variable(node->name);
-  }
   return node;
 }
 
@@ -163,6 +161,9 @@ Node *term() {
     pos++;
     // if followed by (, it's a function call.
     if (GET_TOKEN(pos).ty == '(') {
+      if (get_variable_address(id->name) == NULL) {
+        add_variable(id->name, ID_FUNC);
+      }
       ++pos;
       Node *arg = NULL;
       // No argument case.
@@ -178,6 +179,9 @@ Node *term() {
       return node;
     } else {
       // If not followed by (, it's a variable.
+      if (get_variable_address(id->name) == NULL) {
+        add_variable(id->name, ID_VAR);
+      }
       return id;
     }
   }
@@ -252,6 +256,11 @@ void function(Vector *code) {
   }
   Node *id = new_node_ident(GET_TOKEN(pos).val, GET_TOKEN(pos).input,
                             GET_TOKEN(pos).len);
+  if (get_variable_address(id->name) == NULL) {
+    add_variable(id->name, ID_FUNC);
+  } else {
+    error("Function name conflict. \"%s\"", id->name);
+  }
   pos++;
   if (GET_TOKEN(pos++).ty != '(') {
     error("Left parenthesis '(' missing (function): \"%s\"", GET_TOKEN(pos - 1).input);

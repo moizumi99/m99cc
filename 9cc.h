@@ -74,7 +74,7 @@ void *map_get(Map *map, char *key);
 
 void runtest();
 
-void add_variable(char *name);
+void add_variable(char *name, int type);
 
 void *get_variable_address(char *name);
 
