@@ -304,19 +304,19 @@ void function(Vector *code) {
           GET_TOKEN(pos - 1).input);
   }
   Node *f = new_node(ND_FUNCDEF, id, arg);
+  // TODO: implement function declaration.
+  f->block = new_vector();
+  code_block(f->block);
   vec_push(code, f);
-  code_block(code);
-  vec_push(code, NULL);
+  vec_push(f->block, NULL);
 }
 
 void program(Vector *program_code) {
-  int function_counter = 0;
   while (GET_TOKEN(pos).ty != TK_EOF) {
-    vec_push(program_code, new_vector());
     current_local_symbols = new_map();
     local_symbol_counter = 0;
     vec_push(local_symbols, current_local_symbols);
-    function(program_code->data[function_counter++]);
+    function(program_code);
   }
   vec_push(program_code, NULL);
   vec_push(local_symbols, NULL);

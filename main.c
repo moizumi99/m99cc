@@ -16,7 +16,8 @@ Map *current_local_symbols;
 /* void dump_symbols(Map *); */
 
 // pics the pointer for a node at i-th position fcom code.
-#define GET_NODE_P(j, i) ((Node *)((Vector *)program_code->data[j])->data[i])
+#define GET_FUNCTION_P(j) ((Node *)program_code->data[j])
+#define GET_NODE_P(j, i) ((Node *)(((Vector *)GET_FUNCTION_P(j)->block)->data[i]))
 
 int main(int argc, char **argv) {
   if (argc != 2) {
@@ -49,11 +50,11 @@ int main(int argc, char **argv) {
     current_local_symbols = (Map *)local_symbols->data[j];
     //dump_symbols(current_local_symbols);
     // functions
-    if (GET_NODE_P(j, 0)->ty != ND_FUNCDEF) {
+    if (GET_FUNCTION_P(j)->ty != ND_FUNCDEF) {
       fprintf(stderr, "The first line of the function isn't function definition");
       exit(1);
     }
-    Node *func_ident = GET_NODE_P(j, 0)->lhs;
+    Node *func_ident = GET_FUNCTION_P(j)->lhs;
     if (strcmp(func_ident->name, "main") == 0) {
       printf("func_main:\n");
     } else {
@@ -80,7 +81,7 @@ int main(int argc, char **argv) {
       }
     }
     // Generate codes from the top line to bottom
-    for (int i = 1; GET_NODE_P(j, i); i++)
+    for (int i = 0; GET_NODE_P(j, i); i++)
       gen(GET_NODE_P(j, i));
 
     // The evaluated value is at the top of stack.
