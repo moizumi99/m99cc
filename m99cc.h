@@ -29,6 +29,8 @@ enum {
   TK_IDENT,     // Identifier
   TK_EQ,        // Equal (==) sign
   TK_NE,        // Not-equal (!=) sign
+  TK_IF,        // if clause
+  TK_ELSE,      // else keyword
   TK_EOF        // End of input
 };
 
@@ -65,6 +67,7 @@ enum {
   ND_ROOT,      // The root of the entire program
   ND_EQ,        // Equal operation (==).
   ND_NE,        // Not-equal operation (!=).
+  ND_IF,        // IF node.
 };
 
 void program(Vector *program_code);

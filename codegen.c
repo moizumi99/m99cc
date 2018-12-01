@@ -6,8 +6,14 @@ extern Map *global_symbols;
 extern Vector *local_symbols;
 extern Map *current_local_symbols;
 
+Node *get_node_p(Vector *code, int i) {
+  return (Node *)code->data[i];
+}
 
-
+void gen_block(Vector *block_code) {
+    for (int i = 0; get_node_p(block_code, i); i++)
+      gen(get_node_p(block_code, i));
+}
 
 void gen_lval(Node *node) {
   if (node->ty == ND_IDENT) {
@@ -26,7 +32,6 @@ void gen_lval(Node *node) {
   }
   error("%s", "Left hand value isn't a variable.");
 }
-
 
 void gen(Node *node) {
   if (node->ty == ND_NUM) {
@@ -73,6 +78,16 @@ void gen(Node *node) {
     return;
   }
 
+  if (node->ty == ND_IF) {
+    gen(node->lhs);
+    printf("  pop rax;\n");
+    printf("  cmp rax, 0\n");
+    printf("  je _else_\n");
+    gen_block(node->block);
+    printf("_else_:\n");
+    return;
+  }
+
   gen(node->lhs);
   gen(node->rhs);
 
@@ -95,11 +110,19 @@ void gen(Node *node) {
     break;
   case ND_EQ:
   case ND_NE:
+  case '<':
+  case '>':
     printf("  cmp rdi, rax\n");
     if (node->ty == ND_EQ) {
       printf("  sete al\n");
-    } else {
+    } else if (node->ty == ND_NE) {
       printf("  setne al\n");
+    } else if (node->ty == '>') {
+      printf("  setl al\n");
+    } else if (node->ty == '<') {
+      printf("  setle al\n");
+    } else {
+      error("%s\n", "Code shouldn't reach here (codegen.c compare).");
     }
     printf("  movzb rax, al\n");
     break;

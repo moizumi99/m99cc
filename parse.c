@@ -266,22 +266,44 @@ void add_code(Vector *code, int i) {
   vec_push(code, malloc(sizeof(Node)));
 }
 
+void code_block(Vector *code);
+
+Node *if_node() {
+  pos++;
+  if (GET_TOKEN(pos++).ty != '(') {
+    error("Left paraenthesis '(' missing (if): \"%s\"\n",
+          GET_TOKEN(pos - 1).input);
+  }
+  Node *cond = expression(ASSIGN_PRIORITY);
+  if (GET_TOKEN(pos++).ty != ')') {
+    error("Right paraenthesis ')' missing (if): \"%s\"\n",
+          GET_TOKEN(pos - 1).input);
+  }
+  Node *ifnd = new_node(ND_IF, cond, NULL);
+  ifnd->block = new_vector();
+  code_block(ifnd->block);
+  vec_push(ifnd->block, NULL);
+  // TODO: Add else
+  return ifnd;
+}
+
 void code_block(Vector *code) {
   if (GET_TOKEN(pos++).ty != '{') {
     error("Left brace '{' missing (code_block): \"%s\"", GET_TOKEN(pos - 1).input);
   }
   while (GET_TOKEN(pos).ty != '}') {
-    vec_push(code, assign());
+    if (GET_TOKEN(pos).ty == TK_IF) {
+      vec_push(code, if_node());
+    } else {
+      vec_push(code, assign());
+    }
   }
   if (GET_TOKEN(pos++).ty != '}') {
     error("Right brace '}' missing (code_block): \"%s\"", GET_TOKEN(pos - 1).input);
   }
 }
 
-void function(Vector *code) {
-  if (GET_TOKEN(pos).ty != TK_IDENT) {
-    error("Unexpected token (function): \"%s\"", GET_TOKEN(pos).input);
-  }
+void identifier_node(Vector *code) {
   Node *id = new_node_ident(GET_TOKEN(pos).val, GET_TOKEN(pos).input,
                             GET_TOKEN(pos).len);
   if (get_global_symbol(id->name) == NULL) {
@@ -309,6 +331,16 @@ void function(Vector *code) {
   code_block(f->block);
   vec_push(code, f);
   vec_push(f->block, NULL);
+  return;
+}
+
+void function(Vector *code) {
+  if (GET_TOKEN(pos).ty == TK_IDENT) {
+    // TODO: Move this out to a new function.
+    identifier_node(code);
+    return;
+  }
+  error("Unexpected token (function): \"%s\"", GET_TOKEN(pos).input);
 }
 
 void program(Vector *program_code) {

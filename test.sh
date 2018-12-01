@@ -37,5 +37,11 @@ try 6 'main(){a4=2;ab=3;a4*ab;}'
 try 5 'f(a){5;} main(){f(3);}'
 try 5 'f(a){a + 2;} main(){f(3);}'
 try 4 'f(a){2 * a;} main(){c=f(f(b=1));c;}'
+try 2 'main(){a=b=1; if (a == 1) {b=2;} b;}'
 
+try 2 'f(a){b=1;if(a>2){b=f(a-1)+f(a-2);} b;} main(){f(3);}'
+try 3 'f(a){b=1;if(a>2){b=f(a-1)+f(a-2);} b;} main(){f(4);}'
+try 5 'f(a){b=1;if(a>2){b=f(a-1)+f(a-2);} b;} main(){f(5);}'
+try 8 'f(a){b=1;if(a>2){b=f(a-1)+f(a-2);} b;} main(){f(6);}'
+try 13 'f(a){b=1;if(a>2){b=f(a-1)+f(a-2);} b;} main(){f(7);}'
 echo OK
