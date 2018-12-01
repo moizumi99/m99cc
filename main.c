@@ -12,6 +12,9 @@ Map *global_symbols;
 Vector *local_symbols;
 Map *current_local_symbols;
 
+/* // for debugging. */
+/* void dump_symbols(Map *); */
+
 // pics the pointer for a node at i-th position fcom code.
 #define GET_NODE_P(j, i) ((Node *)((Vector *)program_code->data[j])->data[i])
 
@@ -60,8 +63,21 @@ int main(int argc, char **argv) {
     printf("  mov rbp, rsp\n");
     // Secure room for variables
     printf("  sub rsp, %d\n", current_local_symbols->keys->len * 8);
-    // argument
-    printf("  mov [rbp - 8], rax\n");
+    // store argument
+    int symbol_number = current_local_symbols->vals->len;
+    for(int arg_cnt = 0; arg_cnt < symbol_number; arg_cnt++) {
+      Symbol *next_symbol = (Symbol *)current_local_symbols->vals->data[arg_cnt];
+      if (next_symbol->type != ID_ARG) {
+        continue;
+      }
+      if (arg_cnt == 0) {
+        printf("  mov [rbp - %d], rax\n", (int) next_symbol->address);
+      } else {
+        // TODO: Support two or more argunents.
+        fprintf(stderr, "Error: Currently, only one argument can be used.");
+        exit(1);
+      }
+    }
     // Generate codes from the top line to bottom
     for (int i = 1; GET_NODE_P(j, i); i++)
       gen(GET_NODE_P(j, i));

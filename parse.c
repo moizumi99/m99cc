@@ -10,17 +10,6 @@ extern Map *global_symbols;
 extern Vector *local_symbols;
 extern Map *current_local_symbols;
 
-enum {
-  ID_VAR,   // variable.
-  ID_FUNC,  // function.
-  ID_ARG,   // argument.
-};
-
-typedef struct {
-  int type;
-  void *address;
-} Symbol;
-
 // Error reporting function.
 void error(char *s, char *message) {
   fprintf(stderr, s, message);
@@ -190,12 +179,13 @@ Node *term() {
     if (GET_TOKEN(pos).ty == '(') {
       ++pos;
       Node *arg = NULL;
-      // No argument case.
+      // Argument exists.
       if (GET_TOKEN(pos).ty != ')') {
         arg = expression(LOW_PRIORITY + 1);
       }
       if (GET_TOKEN(pos).ty != ')') {
-        error("No right parenthesis corresponding to left parenthesis (term, function): \"%s\"",
+        error("No right parenthesis corresponding to left parenthesis"
+              " (term, function): \"%s\"",
               GET_TOKEN(pos).input);
       }
       pos++;
@@ -214,7 +204,8 @@ Node *term() {
     pos++;
     Node *node = expression(ASSIGN_PRIORITY + 1);
     if (GET_TOKEN(pos).ty != ')') {
-      error("No right parenthesis corresponding to left parenthesis (term, parenthesis): \"%s\"",
+      error("No right parenthesis corresponding to left parenthesis "
+            "(term, parenthesis): \"%s\"",
             GET_TOKEN(pos).input);
     }
     pos++;
@@ -228,11 +219,20 @@ Node *term() {
 
 Node *argument() {
   // TODO: make argument a list.
-  Node *arg = term();
-  if (arg->ty != ND_IDENT) {
-    error("Argument declaration wrong. \"%s\"", arg->name);
+  if (GET_TOKEN(pos).ty != TK_IDENT) {
+    error("Invalid (not IDENT) token in argument declaration position \"%s\"",
+          GET_TOKEN(pos).input);
   }
-  return arg;
+  // argument name?
+  char *name = create_name_perm(GET_TOKEN(pos).input, GET_TOKEN(pos).len);
+  if (get_local_symbol(name) != NULL) {
+    error("Argument name conflict: %s\n", name);
+  }
+  add_local_symbol(name, ID_ARG);
+  Node *id = new_node_ident(GET_TOKEN(pos).val, GET_TOKEN(pos).input,
+                              GET_TOKEN(pos).len);
+  pos++;
+  return id;
 }
 
 Node *assign_dash() {
@@ -291,7 +291,8 @@ void function(Vector *code) {
   }
   pos++;
   if (GET_TOKEN(pos++).ty != '(') {
-    error("Left parenthesis '(' missing (function): \"%s\"", GET_TOKEN(pos - 1).input);
+    error("Left parenthesis '(' missing (function): \"%s\"",
+          GET_TOKEN(pos - 1).input);
   }
   Node *arg = NULL;
   if (GET_TOKEN(pos).ty != ')') {
@@ -299,7 +300,8 @@ void function(Vector *code) {
   }
   if (GET_TOKEN(pos++).ty != ')') {
     // TODO: add support of nmultiple arguments.
-    error("Right parenthesis ')' missing (function): \"%s\"", GET_TOKEN(pos - 1).input);
+    error("Right parenthesis ')' missing (function): \"%s\"",
+          GET_TOKEN(pos - 1).input);
   }
   Node *f = new_node(ND_FUNCDEF, id, arg);
   vec_push(code, f);

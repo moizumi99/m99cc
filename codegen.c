@@ -6,6 +6,9 @@ extern Map *global_symbols;
 extern Vector *local_symbols;
 extern Map *current_local_symbols;
 
+
+
+
 void gen_lval(Node *node) {
   if (node->ty == ND_IDENT) {
     printf("  mov rax, rbp\n");

@@ -32,6 +32,17 @@ enum {
   TK_EOF        // End of input
 };
 
+enum {
+  ID_VAR,   // variable.
+  ID_FUNC,  // function.
+  ID_ARG,   // argument.
+};  // Symbol table ID
+
+typedef struct {
+  int type;
+  void *address;
+} Symbol;
+
 // Macro for getting the next token.
 #define GET_TOKEN(i) (*((Token *)tokens->data[i]))
 
