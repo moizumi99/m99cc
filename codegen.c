@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "9cc.h"
+#include "m99cc.h"
 
 extern Map *global_symbols;
 extern Vector *local_symbols;

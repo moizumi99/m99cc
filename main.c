@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "9cc.h"
+#include "m99cc.h"
 
 // Store nodes in this vector.
 Vector *program_code;

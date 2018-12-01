@@ -2,7 +2,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include "9cc.h"
+#include "m99cc.h"
 
 extern Vector *tokens;
 // TODO: separate local and global symbol table.
