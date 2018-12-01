@@ -47,6 +47,7 @@ int main(int argc, char **argv) {
 
   for (int j = 0; program_code->data[j]; j++) {
     current_local_symbols = (Map *)local_symbols->data[j];
+    //dump_symbols(current_local_symbols);
     // functions
     if (GET_NODE_P(j, 0)->ty != ND_FUNCDEF) {
       fprintf(stderr, "The first line of the function isn't function definition");

@@ -52,6 +52,7 @@ typedef struct Node {
   struct Node *rhs;  // right hand side
   int val;           // Used only when ty == ND_NUM
   char *name;        // Used only when ty == ND_IDENT
+  Vector *block;      // Used only when ty == ND_BLOCK or ND_FUNCDEF
 } Node;
 
 // Node type.s
@@ -60,6 +61,7 @@ enum {
   ND_IDENT,     // Identifier node.
   ND_FUNCCALL,  // Function call node.
   ND_FUNCDEF,   // Function definition.
+  ND_BLOCK,     // Block code.
   ND_ROOT,      // The root of the entire program
   ND_EQ,        // Equal operation (==).
   ND_NE,        // Not-equal operation (!=).

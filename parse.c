@@ -181,7 +181,7 @@ Node *term() {
       Node *arg = NULL;
       // Argument exists.
       if (GET_TOKEN(pos).ty != ')') {
-        arg = expression(LOW_PRIORITY + 1);
+        arg = expression(ASSIGN_PRIORITY);
       }
       if (GET_TOKEN(pos).ty != ')') {
         error("No right parenthesis corresponding to left parenthesis"
@@ -202,7 +202,7 @@ Node *term() {
   // "( expression )"
   if (GET_TOKEN(pos).ty == '(') {
     pos++;
-    Node *node = expression(ASSIGN_PRIORITY + 1);
+    Node *node = expression(ASSIGN_PRIORITY);
     if (GET_TOKEN(pos).ty != ')') {
       error("No right parenthesis corresponding to left parenthesis "
             "(term, parenthesis): \"%s\"",
@@ -236,7 +236,7 @@ Node *argument() {
 }
 
 Node *assign_dash() {
-  Node *lhs = expression(ASSIGN_PRIORITY + 1);
+  Node *lhs = expression(ASSIGN_PRIORITY);
   if (GET_TOKEN(pos).ty == '=') {
     pos++;
     return new_node('=', lhs, assign_dash());
@@ -316,8 +316,7 @@ void program(Vector *program_code) {
     current_local_symbols = new_map();
     local_symbol_counter = 0;
     vec_push(local_symbols, current_local_symbols);
-    function(program_code->data[function_counter]);
-    function_counter++;
+    function(program_code->data[function_counter++]);
   }
   vec_push(program_code, NULL);
   vec_push(local_symbols, NULL);

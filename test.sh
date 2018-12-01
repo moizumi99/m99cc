@@ -36,5 +36,6 @@ try 4 'main(){ab0=4;ab0;}'
 try 6 'main(){a4=2;ab=3;a4*ab;}'
 try 5 'f(a){5;} main(){f(3);}'
 try 5 'f(a){a + 2;} main(){f(3);}'
+try 4 'f(a){2 * a;} main(){c=f(f(b=1));c;}'
 
 echo OK
