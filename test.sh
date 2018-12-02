@@ -40,8 +40,7 @@ try 4 'f(a){2 * a;} main(){c=f(f(b=1));c;}'
 try 2 'main(){a=b=1; if (a == 1) {b=2;} b;}'
 
 try 2 'f(a){b=1;if(a>2){b=f(a-1)+f(a-2);} b;} main(){f(3);}'
-try 3 'f(a){b=1;if(a>2){b=f(a-1)+f(a-2);} b;} main(){f(4);}'
-try 5 'f(a){b=1;if(a>2){b=f(a-1)+f(a-2);} b;} main(){f(5);}'
-try 8 'f(a){b=1;if(a>2){b=f(a-1)+f(a-2);} b;} main(){f(6);}'
 try 13 'f(a){b=1;if(a>2){b=f(a-1)+f(a-2);} b;} main(){f(7);}'
+
+try 4 'main(){a=b=1; if (a==0) {b = 3;} else {b = 4;} b;}'
 echo OK

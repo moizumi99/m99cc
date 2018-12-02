@@ -282,6 +282,17 @@ Node *if_node() {
   Node *ifnd = new_node(ND_IF, cond, NULL);
   ifnd->block = new_vector();
   code_block(ifnd->block);
+  if (GET_TOKEN(pos).ty == TK_ELSE) {
+    pos++;
+    if (GET_TOKEN(pos).ty == TK_IF) {
+      ifnd->rhs = if_node();
+    } else {
+      ifnd->rhs = new_node(ND_BLOCK, NULL, NULL);
+      ifnd->rhs->block = new_vector();
+      code_block(ifnd->rhs->block);
+      vec_push(ifnd->rhs->block, NULL);
+    }
+  }
   vec_push(ifnd->block, NULL);
   // TODO: Add else
   return ifnd;

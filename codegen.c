@@ -84,7 +84,21 @@ void gen(Node *node) {
     printf("  cmp rax, 0\n");
     printf("  je _else_\n");
     gen_block(node->block);
-    printf("_else_:\n");
+    if (node->rhs != NULL) {
+      printf("  jmp _if_end_\n");
+      printf("_else_:\n");
+      if (node->rhs->ty == ND_IF) {
+        // TODO: support if-else-if sequence.
+        error("%s\n", "if-else-if is not supported yet.");
+      } else if (node->rhs->ty == ND_BLOCK) {
+        gen_block(node->rhs->block);
+      } else {
+        error("Unexpected node %s after if-else \n", node->name);
+      }
+    } else {
+      printf("_else_:\n");
+    }
+    printf("_if_end_:\n");
     return;
   }
 
