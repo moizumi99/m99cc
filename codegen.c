@@ -33,6 +33,8 @@ void gen_lval(Node *node) {
   error("%s", "Left hand value isn't a variable.");
 }
 
+static int label_counter = 0;
+
 void gen(Node *node) {
   if (node->ty == ND_NUM) {
     printf("  push %d\n", node->val);
@@ -82,11 +84,13 @@ void gen(Node *node) {
     gen(node->lhs);
     printf("  pop rax;\n");
     printf("  cmp rax, 0\n");
-    printf("  je _else_\n");
+    int else_label = label_counter++;
+    printf("  je _else_%d\n", else_label);
     gen_block(node->block);
+    int end_label = label_counter++;
+    printf("  jmp _if_end_%d\n", end_label);
+    printf("_else_%d:\n", else_label);
     if (node->rhs != NULL) {
-      printf("  jmp _if_end_\n");
-      printf("_else_:\n");
       if (node->rhs->ty == ND_IF) {
         // TODO: support if-else-if sequence.
         error("%s\n", "if-else-if is not supported yet.");
@@ -96,9 +100,8 @@ void gen(Node *node) {
         error("Unexpected node %s after if-else \n", node->name);
       }
     } else {
-      printf("_else_:\n");
     }
-    printf("_if_end_:\n");
+    printf("_if_end_%d:\n", end_label);
     return;
   }
 

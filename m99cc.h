@@ -82,6 +82,8 @@ Vector *new_vector();
 
 void vec_push(Vector *vec, void *elem);
 
+void *vec_pop(Vector *vec);
+
 Map *new_map();
 
 void map_put(Map *map, char *key, void *val);

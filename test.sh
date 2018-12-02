@@ -41,6 +41,7 @@ try 2 'main(){a=b=1; if (a == 1) {b=2;} b;}'
 
 try 2 'f(a){b=1;if(a>2){b=f(a-1)+f(a-2);} b;} main(){f(3);}'
 try 13 'f(a){b=1;if(a>2){b=f(a-1)+f(a-2);} b;} main(){f(7);}'
-
 try 4 'main(){a=b=1; if (a==0) {b = 3;} else {b = 4;} b;}'
+try 20 'main(){a=b=1; if (a==1) {b = 2;} else {b = 3;} if (b != 2) {a = 10;} else {a = 20;} a;}'
+
 echo OK
