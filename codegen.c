@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "m99cc.h"
 
 extern Map *global_symbols;
@@ -35,6 +36,23 @@ void gen_lval(Node *node) {
 
 static int label_counter = 0;
 
+int is_systemcall(Node *nd) {
+  if (strcmp(nd->name, "putchar") == 0) {
+    return 1;
+  }
+  return 0;
+}
+
+void gen_syscall(Node *nd) {
+  if (strcmp(nd->name, "putchar") == 0) {
+    printf("  mov edi, eax\n");
+    printf("  call putchar@PLT\n");
+    printf("  mov eax, 0\n");
+  } else {
+    error("%s is not supported yet.\n", nd->name);
+  }
+}
+
 void gen(Node *node) {
   if (node->ty == ND_NUM) {
     printf("  push %d\n", node->val);
@@ -65,7 +83,11 @@ void gen(Node *node) {
     }
     printf("  mov rbx, rsp\n");
     printf("  and rsp, ~0x0f\n");
-    printf("  call %s\n", node->lhs->name);
+    if (is_systemcall(node->lhs)) {
+      gen_syscall(node->lhs);
+    } else {
+      printf("  call %s\n", node->lhs->name);
+    }
     printf("  mov rsp, rbx\n");
     printf("  push rax\n");
     return;
