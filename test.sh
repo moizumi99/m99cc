@@ -54,5 +54,7 @@ try 4 'main(){a=b=1; if (a==2) {b = 3;} else if (a==1) {b = 4;} else {b = 5;} b;
 try 1 'main(){a=1; a<11;}'
 try 11 'main(){a=1; while (a<11) {a=a+1;} a;}'
 try 55 'main(){b=0; a=1; while (a<11) {b = b + a; a = a + 1;} b;}'
+try 11 'main(){for(a=1; a<11; a=a+1) {b=0;} a;}'
+try 55 'main(){b=0; for(a=1; a<11; a = a+1) {b = b + a;} b;}'
 
 echo OK

@@ -316,7 +316,39 @@ Node *while_node() {
   return while_nd;
 }
 
-  void code_block(Vector *code) {
+void for_node(Vector *code) {
+  // TODO: allow multiple statement using ','.
+  pos++;
+  if (GET_TOKEN(pos++).ty != '(') {
+    error("Left paraenthesis '(' missing (for): \"%s\"\n",
+          GET_TOKEN(pos - 1).input);
+  }
+  Node *init = expression(ASSIGN_PRIORITY);
+  vec_push(code, init);
+  if (GET_TOKEN(pos++).ty != ';') {
+    error("1st Semicolon ';' missing (for): \"%s\"\n",
+          GET_TOKEN(pos - 1).input);
+  }
+  Node *cond = expression(ASSIGN_PRIORITY);
+  if (GET_TOKEN(pos++).ty != ';') {
+    error("2nd Semicolon ';' missing (for): \"%s\"\n",
+          GET_TOKEN(pos - 1).input);
+  }
+  Node *increment = expression(ASSIGN_PRIORITY);
+  if (GET_TOKEN(pos++).ty != ')') {
+    error("Right paraenthesis '(' missing (for): \"%s\"\n",
+          GET_TOKEN(pos - 1).input);
+  }
+  Node *for_nd = new_node(ND_WHILE, cond, NULL);
+  vec_push(code, for_nd);
+  // Add the increment code and {} block 
+  for_nd->block = new_vector();
+  code_block(for_nd->block);
+  vec_push(for_nd->block, increment);
+  vec_push(for_nd->block, NULL);
+}
+
+void code_block(Vector *code) {
   if (GET_TOKEN(pos++).ty != '{') {
     error("Left brace '{' missing (code_block): \"%s\"", GET_TOKEN(pos - 1).input);
   }
@@ -325,6 +357,8 @@ Node *while_node() {
       vec_push(code, if_node());
     } else if (GET_TOKEN(pos).ty == TK_WHILE) {
       vec_push(code, while_node());
+    } else if (GET_TOKEN(pos).ty == TK_FOR) {
+      for_node(code);
     } else {
       vec_push(code, assign());
     }

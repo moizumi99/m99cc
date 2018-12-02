@@ -31,7 +31,8 @@ enum {
   TK_NE,        // Not-equal (!=) sign
   TK_IF,        // if clause
   TK_ELSE,      // else keyword
-  TK_WHILE,      // else keyword
+  TK_WHILE,     // while keyword
+  TK_FOR,       // for keyword
   TK_EOF        // End of input
 };
 
@@ -70,6 +71,8 @@ enum {
   ND_NE,        // Not-equal operation (!=).
   ND_IF,        // IF node.
   ND_WHILE,     // While node.
+  // TODO implement For loop without using while.
+  /* ND_FOR,       // For node. */
 };
 
 void program(Vector *program_code);
