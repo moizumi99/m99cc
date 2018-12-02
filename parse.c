@@ -298,13 +298,33 @@ Node *if_node() {
   return ifnd;
 }
 
-void code_block(Vector *code) {
+Node *while_node() {
+  pos++;
+  if (GET_TOKEN(pos++).ty != '(') {
+    error("Left paraenthesis '(' missing (while): \"%s\"\n",
+          GET_TOKEN(pos - 1).input);
+  }
+  Node *cond = expression(ASSIGN_PRIORITY);
+  if (GET_TOKEN(pos++).ty != ')') {
+    error("Right paraenthesis ')' missing (while): \"%s\"\n",
+          GET_TOKEN(pos - 1).input);
+  }
+  Node *while_nd = new_node(ND_WHILE, cond, NULL);
+  while_nd->block = new_vector();
+  code_block(while_nd->block);
+  vec_push(while_nd->block, NULL);
+  return while_nd;
+}
+
+  void code_block(Vector *code) {
   if (GET_TOKEN(pos++).ty != '{') {
     error("Left brace '{' missing (code_block): \"%s\"", GET_TOKEN(pos - 1).input);
   }
   while (GET_TOKEN(pos).ty != '}') {
     if (GET_TOKEN(pos).ty == TK_IF) {
       vec_push(code, if_node());
+    } else if (GET_TOKEN(pos).ty == TK_WHILE) {
+      vec_push(code, while_node());
     } else {
       vec_push(code, assign());
     }

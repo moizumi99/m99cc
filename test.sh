@@ -30,6 +30,10 @@ try 1 'main(){1==1;}'
 try 0 'main(){0==1;}'
 try 1 'main(){0!=1;}'
 try 0 'main(){1!=1;}'
+try 1 'main(){0<1;}'
+try 0 'main(){1<1;}'
+try 0 'main(){0>1;}'
+try 1 'main(){1>0;}'
 try 5 'main(){a=(1==1)+(1!=1)*2+(0!=2)*4+(4!=4);a;}'
 try 20 'main(){a=b=j=z=4;b+j*z;}'
 try 4 'main(){ab0=4;ab0;}'
@@ -46,5 +50,9 @@ try 4 'main(){a=b=1; if (a==0) {b = 3;} else {b = 4;} b;}'
 try 20 'main(){a=b=1; if (a==1) {b = 2;} else {b = 3;} if (b != 2) {a = 10;} else {a = 20;} a;}'
 # if-else-if-else.
 try 4 'main(){a=b=1; if (a==2) {b = 3;} else if (a==1) {b = 4;} else {b = 5;} b;}'
+
+try 1 'main(){a=1; a<11;}'
+try 11 'main(){a=1; while (a<11) {a=a+1;} a;}'
+try 55 'main(){b=0; a=1; while (a<11) {b = b + a; a = a + 1;} b;}'
 
 echo OK

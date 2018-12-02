@@ -98,9 +98,22 @@ void gen(Node *node) {
       } else {
         error("Unexpected node %s after if-else \n", node->name);
       }
-    } else {
     }
     printf("_if_end_%d:\n", end_label);
+    return;
+  }
+
+  if (node->ty == ND_WHILE) {
+    int while_label = label_counter++;
+    int while_end = label_counter++;;
+    printf("_while_%d:\n", while_label);
+    gen(node->lhs);
+    printf("  pop rax;\n");
+    printf("  cmp rax, 0\n");
+    printf("  je _while_end_%d\n", while_end);
+    gen_block(node->block);
+    printf("  jmp _while_%d\n", while_label);
+    printf("_while_end_%d:\n", while_end);
     return;
   }
 
@@ -136,7 +149,7 @@ void gen(Node *node) {
     } else if (node->ty == '>') {
       printf("  setl al\n");
     } else if (node->ty == '<') {
-      printf("  setle al\n");
+      printf("  setg al\n");
     } else {
       error("%s\n", "Code shouldn't reach here (codegen.c compare).");
     }
