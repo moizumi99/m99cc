@@ -92,8 +92,7 @@ void gen(Node *node) {
     printf("_else_%d:\n", else_label);
     if (node->rhs != NULL) {
       if (node->rhs->ty == ND_IF) {
-        // TODO: support if-else-if sequence.
-        error("%s\n", "if-else-if is not supported yet.");
+        gen(node->rhs);
       } else if (node->rhs->ty == ND_BLOCK) {
         gen_block(node->rhs->block);
       } else {
