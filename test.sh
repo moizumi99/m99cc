@@ -69,4 +69,6 @@ try 55 'main(){b=0; a=1; while (a<11) {b = b + a; a = a + 1;} b;}'
 try 11 'main(){for(a=1; a<11; a=a+1) {b=0;} a;}'
 try 55 'main(){b=0; for(a=1; a<11; a = a+1) {b = b + a;} b;}'
 
+try 2 'main(){putchar(97); putchar(13); putchar(10); 2;}'
+
 echo OK
