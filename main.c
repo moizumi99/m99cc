@@ -68,6 +68,7 @@ int main(int argc, char **argv) {
       printf("%s:\n", func_ident->name);
     }
     // Prologue.
+    printf("  push rbx\n");
     printf("  push rbp\n");
     printf("  mov rbp, rsp\n");
     // Secure room for variables
@@ -99,6 +100,7 @@ int main(int argc, char **argv) {
     // The last value is already in rax, which is return value.
     printf("  mov rsp, rbp\n");
     printf("  pop rbp\n");
+    printf("  pop rbx\n");
     printf("  ret\n");
   }
   return 0;

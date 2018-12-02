@@ -59,12 +59,14 @@ void gen(Node *node) {
     if (node->lhs->ty != ND_IDENT) {
       error("%s\n", "Function node doesn't have identifer.");
     }
-    if (node->rhs == NULL) {
-      error("%s\n", "Function node needs an argument.");
+    if (node->rhs != NULL) {
+      gen(node->rhs);
+      printf("  pop rax\n");
     }
-    gen(node->rhs);
-    printf("  pop rax\n");
+    printf("  mov rbx, rsp\n");
+    printf("  and rsp, ~0x0f\n");
     printf("  call %s\n", node->lhs->name);
+    printf("  mov rsp, rbx\n");
     printf("  push rax\n");
     return;
   }
