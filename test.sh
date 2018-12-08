@@ -98,7 +98,7 @@ try 10 'a; main(){a=10;}'
 try 10 'a; f(){a;} main(){a=10;f();}'
 
 # pointer
-try 4 'main(){a=2;b=&a;*b=4;}'
-try 4 'a; main(){a=2;b=&a;*b=4;}'
+try 4 'main(){a=2;b=&a;*b=4;a;}'
+try 4 'a; main(){a=2;b=&a;*b=4;a;}'
 
 echo OK
