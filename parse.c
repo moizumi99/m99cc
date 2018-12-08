@@ -211,6 +211,13 @@ Node *term() {
     pos++;
     return node;
   }
+  // Single term operators
+  if (GET_TOKEN(pos).ty == '+' || GET_TOKEN(pos).ty == '-') {
+    int type = GET_TOKEN(pos).ty;
+    pos++;
+    Node *rhs = term();
+    return new_node(type, NULL, rhs);
+  }
   // Code should not reach here.
   error("Unexpected token (parse.c term): \"%s\"",
         GET_TOKEN(pos).input);

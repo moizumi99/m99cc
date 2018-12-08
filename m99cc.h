@@ -72,6 +72,8 @@ enum {
   ND_FUNCDEF,   // Function definition.
   ND_BLOCK,     // Block code.
   ND_ROOT,      // The root of the entire program
+  ND_PLUS,      // Single term operator (+).
+  ND_MINUS,     // Single term operator (-).
   ND_EQ,        // Equal operation (==).
   ND_NE,        // Not-equal operation (!=).
   ND_IF,        // IF node.

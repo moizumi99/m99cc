@@ -53,6 +53,10 @@ try 1 'main(){1>0;}'
 try 1 'main(){a=1; a<11;}'
 try 0 'main(){a=2; 2>a;}'
 
+try 7 'main(){+7;}'
+try 250 'main(){-6;}'
+try 1 'main(){a = -4; -a - 3;}'
+
 try 5 'main(){a=(1==1)+(1!=1)*2+(0!=2)*4+(4!=4);a;}'
 try 20 'main(){a=b=j=z=4;b+j*z;}'
 try 4 'main(){ab0=4;ab0;}'

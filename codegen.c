@@ -151,6 +151,25 @@ void gen(Node *node) {
     return;
   }
 
+  if (node->lhs == NULL) {
+    // Single term operation
+    gen(node->rhs);
+    switch (node->ty) {
+    case '+':
+      break;
+    case '-':
+      printf("  pop rax\n");
+      printf("  neg rax\n");
+      printf("  push rax\n");
+      break;
+    default:
+      fprintf(stderr, "Error. Unsupported single term operation %d.\n", node->ty);
+      exit(1);
+    }
+    return;
+  }
+
+  // two term operation
   gen(node->lhs);
   gen(node->rhs);
 
