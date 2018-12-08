@@ -193,7 +193,7 @@ Node *term() {
       return node;
     } else {
       // If not followed by (, it's a variable.
-      if (get_local_symbol(id->name) == NULL) {
+      if (get_global_symbol(id->name) == NULL && get_local_symbol(id->name) == NULL) {
         add_local_symbol(id->name, ID_VAR);
       }
       return id;
@@ -371,16 +371,18 @@ void code_block(Vector *code) {
 void identifier_node(Vector *code) {
   Node *id = new_node_ident(GET_TOKEN(pos).val, GET_TOKEN(pos).input,
                             GET_TOKEN(pos).len);
-  if (get_global_symbol(id->name) == NULL) {
-    add_global_symbol(id->name, ID_FUNC);
-  } else {
-    error("Function name conflict. \"%s\"", id->name);
+  if (get_global_symbol(id->name) != NULL) {
+    error("Global name conflict. \"%s\"", id->name);
   }
   pos++;
   if (GET_TOKEN(pos++).ty != '(') {
-    error("Left parenthesis '(' missing (function): \"%s\"",
-          GET_TOKEN(pos - 1).input);
+    // global variable.
+    vec_push(code, id);
+    add_global_symbol(id->name, ID_VAR);
+    // TODO: add initialization.
+    return;
   }
+  add_global_symbol(id->name, ID_FUNC);
   Node *arg = NULL;
   if (GET_TOKEN(pos).ty != ')') {
     arg = argument();

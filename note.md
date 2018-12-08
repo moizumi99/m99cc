@@ -22,7 +22,7 @@ Nov 21.
 So far, p to the middle of 3 is done.
 Let's implement variable using map and vector.
 
-Nov 26, Function declaration without arguments is done.
+
 
 # Note
 

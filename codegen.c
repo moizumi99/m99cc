@@ -18,6 +18,12 @@ void gen_block(Vector *block_code) {
 
 void gen_lval(Node *node) {
   if (node->ty == ND_IDENT) {
+    if (get_global_symbol_address(node->name) != NULL) {
+      // global address.
+      printf("  lea rax, %s[rip]\n", node->name);
+      printf("  push rax\n");
+      return;
+    }
     printf("  mov rax, rbp\n");
     void *address = get_local_symbol_address(node->name);
     // If new variable, create a room.
@@ -65,9 +71,13 @@ void gen(Node *node) {
   }
 
   if (node->ty == ND_IDENT) {
-    gen_lval(node);
-    printf("  pop rax\n");
-    printf("  mov rax, [rax]\n");
+    if (get_global_symbol_address(node->name) != NULL) {
+      printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
+    } else {
+      gen_lval(node);
+      printf("  pop rax\n");
+      printf("  mov rax, [rax]\n");
+    }
     printf("  push rax\n");
     return;
   }

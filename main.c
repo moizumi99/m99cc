@@ -65,14 +65,34 @@ int main(int argc, char **argv) {
   }
   *(sp-1) = '\0';
   fclose(srcfile);
-  
+
   // Tokenize
   tokenize(src);
   // Parse
   program(program_code);
 
-  printf(".intel_syntax noprefix\n");
+  printf("  .intel_syntax noprefix\n");
+  printf("  .text\n");
+
+  // Global variables.
+  for (int i = 0; i < global_symbols->keys->len; i++) {
+    Symbol *s = global_symbols->vals->data[i];
+    char *name = (char *) global_symbols->keys->data[i];
+    if (s->type == ID_VAR) {
+      printf("  .globl  %s\n", name);
+      printf("  .bss\n");
+      printf("  .align 8\n");
+      printf("  .type   %s, @object\n", name);
+      printf("  .size   %s, 4\n", name);
+      printf("%s:\n", name);
+      printf("  .zero   8\n");
+    }
+  }
+
+  // Main function.
+  printf("  .text\n");
   printf(".global main\n");
+  printf(".type main, @function\n");
   printf("main:\n");
   printf("  call func_main\n");
   printf("  ret\n");
@@ -81,12 +101,16 @@ int main(int argc, char **argv) {
     current_local_symbols = (Map *)local_symbols->data[j];
     //dump_symbols(current_local_symbols);
     // functions
-    Node *function = get_function_p(j);
-    if (function->ty != ND_FUNCDEF) {
+    Node *identifier = get_function_p(j);
+    if (identifier->ty == ND_IDENT) {
+      // TODO: add initialization.
+      continue;
+    }
+    if (identifier->ty != ND_FUNCDEF) {
       fprintf(stderr, "The first line of the function isn't function definition");
       exit(1);
     }
-    Node *func_ident = function->lhs;
+    Node *func_ident = identifier->lhs;
     if (strcmp(func_ident->name, "main") == 0) {
       printf("func_main:\n");
     } else {
@@ -114,7 +138,7 @@ int main(int argc, char **argv) {
       }
     }
     // Generate codes from the top line to bottom
-    Vector *block = function->block;
+    Vector *block = identifier->block;
     gen_block(block);
 
     // The evaluated value is at the top of stack.
