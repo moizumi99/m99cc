@@ -29,6 +29,8 @@ enum {
   TK_IDENT,     // Identifier
   TK_EQ,        // Equal (==) sign
   TK_NE,        // Not-equal (!=) sign
+  TK_LE,        // Less than or equal (<=) sign
+  TK_GE,        // Greater than or equal (>=) sign
   TK_IF,        // if clause
   TK_ELSE,      // else keyword
   TK_WHILE,     // while keyword
@@ -95,8 +97,6 @@ void map_put(Map *map, char *key, void *val);
 
 void *map_get(Map *map, char *key);
 
-void runtest();
-
 void add_global_symbol(char *name, int type);
 
 void *get_global_symbol_address(char *name);
@@ -104,5 +104,10 @@ void *get_global_symbol_address(char *name);
 void add_local_symbol(char *name, int type);
 
 void *get_local_symbol_address(char *name);
+
+// Unit tests.
+void runtest();
+
+void runtest_tokenize();
 
 #endif // M99CC-H

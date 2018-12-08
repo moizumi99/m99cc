@@ -36,13 +36,38 @@ int main(int argc, char **argv) {
     return 0;
   }
 
+  if (strcmp(argv[1], "-test_token") == 0) {
+    runtest_tokenize();
+    return 0;
+  }
+
   // initialize
   program_code = new_vector();
   global_symbols = new_map();
   local_symbols = new_vector();
 
+  // open input
+  FILE *srcfile = fopen(argv[1], "r");
+  if (srcfile == NULL) {
+    fprintf(stderr, "Cant open file %s\n", argv[1]);
+    exit(1);
+  }
+  int size = 256;
+  char *src = malloc(size);
+  char *sp = src;
+  int cnt = 0;
+  while(!feof(srcfile)) {
+    *(sp++) = fgetc(srcfile);
+    if (++cnt >= size - 1) {
+      size += 256;
+      src = (char *)realloc(src, size);
+    }
+  }
+  *(sp-1) = '\0';
+  fclose(srcfile);
+  
   // Tokenize
-  tokenize(argv[1]);
+  tokenize(src);
   // Parse
   program(program_code);
 

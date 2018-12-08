@@ -4,7 +4,23 @@ try() {
     expected="$1"
     input="$2"
 
-    ./m99cc "$input" > tmp.s
+    echo "$input" > tmp.c
+    ./m99cc tmp.c > tmp.s
+    gcc -o tmp tmp.s
+    ./tmp
+    actual="$?"
+
+    if [ "$actual" != "$expected" ]; then
+        echo "for \"$input\", \"$expected\" is expected, but got \"$actual\""
+        exit 1
+    fi
+}
+
+run() {
+    expected="$1"
+    input="$2"
+
+    ./m99cc $input > tmp.s
     gcc -o tmp tmp.s
     ./tmp
     actual="$?"
@@ -70,5 +86,7 @@ try 11 'main(){for(a=1; a<11; a=a+1) {b=0;} a;}'
 try 55 'main(){b=0; for(a=1; a<11; a = a+1) {b = b + a;} b;}'
 
 try 2 'main(){putchar(97); putchar(13); putchar(10); 2;}'
+
+run 0 program/hello.c
 
 echo OK
