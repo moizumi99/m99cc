@@ -36,8 +36,12 @@ void gen_lval(Node *node) {
     printf("  sub rax, %d\n", (int) address);
     printf("  push rax\n");
     return;
+  } else if (node->ty == '*') {
+    gen(node->rhs);
+    return;
   }
-  error("%s", "Left hand value isn't a variable.");
+  fprintf(stderr, "The node type %d can not be left size value", node->ty);
+  exit(1);
 }
 
 static int label_counter = 0;
@@ -153,13 +157,24 @@ void gen(Node *node) {
 
   if (node->lhs == NULL) {
     // Single term operation
-    gen(node->rhs);
     switch (node->ty) {
     case '+':
+      gen(node->rhs);
       break;
     case '-':
+      gen(node->rhs);
       printf("  pop rax\n");
       printf("  neg rax\n");
+      printf("  push rax\n");
+      break;
+    case '&':
+      // Reference.
+      gen_lval(node->rhs);
+      break;
+    case '*':
+      // De-reference.
+      gen(node->rhs);
+      printf("  mov rax, [rax]\n");
       printf("  push rax\n");
       break;
     default:

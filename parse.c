@@ -212,7 +212,7 @@ Node *term() {
     return node;
   }
   // Single term operators
-  if (GET_TOKEN(pos).ty == '+' || GET_TOKEN(pos).ty == '-') {
+  if (GET_TOKEN(pos).ty == '+' || GET_TOKEN(pos).ty == '-' || GET_TOKEN(pos).ty == '*' || GET_TOKEN(pos).ty == '&') {
     int type = GET_TOKEN(pos).ty;
     pos++;
     Node *rhs = term();
@@ -348,7 +348,7 @@ void for_node(Vector *code) {
   }
   Node *for_nd = new_node(ND_WHILE, cond, NULL);
   vec_push(code, for_nd);
-  // Add the increment code and {} block 
+  // Add the increment code and {} block.
   for_nd->block = new_vector();
   code_block(for_nd->block);
   vec_push(for_nd->block, increment);
