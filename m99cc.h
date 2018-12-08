@@ -35,7 +35,10 @@ enum {
   TK_ELSE,      // else keyword
   TK_WHILE,     // while keyword
   TK_FOR,       // for keyword
-  TK_EOF        // End of input
+  TK_VOID,      // for void
+  TK_INT,       // for integer
+  TK_CHAR,      // for char
+  TK_EOF,       // End of input
 };
 
 enum {
@@ -75,6 +78,9 @@ enum {
   ND_WHILE,     // While node.
   // TODO implement For loop without using while.
   /* ND_FOR,       // For node. */
+  ND_VOID,      // for void
+  ND_INT,       // for integer
+  ND_CHAR,      // for char
 };
 
 void program(Vector *program_code);
