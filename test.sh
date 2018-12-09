@@ -101,4 +101,10 @@ try 10 'a; f(){a;} main(){a=10;f();}'
 try 4 'main(){a=2;b=&a;*b=4;a;}'
 try 4 'a; main(){a=2;b=&a;*b=4;a;}'
 
+# array
+try 2 'main(){a[4];a[0]=2;a[0];}'
+try 4 'main(){a[3];a[0]=2;a[1]=3;a[2]=4;a[a[0]];}'
+try 3 'main(){a[2];a[0]=1;a[1]=2;a[0]+a[1];}'
+try 3 'a[2]; main(){a[0]=1;a[1]=2;a[0]+a[1];}'
+
 echo OK

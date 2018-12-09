@@ -1,5 +1,5 @@
 CFLAGS=-Wall -std=c11 -g -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast
-SRCS=main.c codegen.c parse.c token.c util.c token_test.c util_test.c
+SRCS=main.c codegen.c parse.c token.c util.c token_test.c parse_test.c util_test.c
 OBJS=$(SRCS:.c=.o)
 
 m99cc: $(OBJS)

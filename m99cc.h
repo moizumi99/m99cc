@@ -50,6 +50,7 @@ enum {
 typedef struct {
   int type;
   void *address;
+  int num;
 } Symbol;
 
 // Macro for getting the next token.
@@ -59,7 +60,7 @@ typedef struct Node {
   int ty;            // ND_NUM or ND_IDENT or operation
   struct Node *lhs;  // left hand size
   struct Node *rhs;  // right hand side
-  int val;           // Used only when ty == ND_NUM
+  int val;           // Value when ty == ND_NUM, array size when ty == ND_IDENT
   char *name;        // Used only when ty == ND_IDENT
   Vector *block;      // Used only when ty == ND_BLOCK or ND_FUNCDEF
 } Node;
@@ -79,13 +80,13 @@ enum {
   ND_IF,        // IF node.
   ND_WHILE,     // While node.
   // TODO implement For loop without using while.
-  /* ND_FOR,       // For node. */
+  ND_FOR,       // For node
   ND_VOID,      // for void
   ND_INT,       // for integer
   ND_CHAR,      // for char
 };
 
-void program(Vector *program_code);
+void program(Vector *code);
 
 void tokenize(char *p);
 
@@ -105,17 +106,24 @@ void map_put(Map *map, char *key, void *val);
 
 void *map_get(Map *map, char *key);
 
-void add_global_symbol(char *name, int type);
+void add_global_symbol(char *name, int type, int num);
 
 void *get_global_symbol_address(char *name);
 
-void add_local_symbol(char *name, int type);
+int get_global_symbol_size(char *name);
+
+void add_local_symbol(char *name, int type, int num);
 
 void *get_local_symbol_address(char *name);
+
+int get_local_symbol_size(char *name);
 
 // Unit tests.
 void runtest();
 
 void runtest_tokenize();
+void dump_token();
+
+void runtest_parse();
 
 #endif // M99CC-H

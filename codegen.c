@@ -76,13 +76,24 @@ void gen(Node *node) {
 
   if (node->ty == ND_IDENT) {
     if (get_global_symbol_address(node->name) != NULL) {
-      printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
-    } else {
+      if (get_global_symbol_size(node->name) == 0) {
+        // regular variable. De-reference.
+        printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
+      } else {
+        // Array address. Don't de-reference.
+        printf("  lea rax, %s[rip]\n", node->name);
+      }
+      printf("  push rax\n");
+    }else {
       gen_lval(node);
-      printf("  pop rax\n");
-      printf("  mov rax, [rax]\n");
+      if (get_local_symbol_size(node->name) == 0) {
+        // regular variable. De-reference.
+        printf("  pop rax\n");
+        printf("  mov rax, [rax]\n");
+        printf("  push rax\n");
+      }
+      // Don't de-reference if array address.
     }
-    printf("  push rax\n");
     return;
   }
 
@@ -174,6 +185,7 @@ void gen(Node *node) {
     case '*':
       // De-reference.
       gen(node->rhs);
+      printf("  pop rax\n");
       printf("  mov rax, [rax]\n");
       printf("  push rax\n");
       break;
