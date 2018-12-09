@@ -331,7 +331,7 @@ Node *assign() {
     }
     return lhs;
   }
-  if (GET_TOKEN(pos).ty == ';') {
+  while (GET_TOKEN(pos).ty == ';') {
     pos++;
   }
   return lhs;
@@ -452,16 +452,22 @@ void identifier_node(Vector *code) {
     error("Global name conflict. \"%s\"", id->name);
   }
   pos++;
-  if (GET_TOKEN(pos++).ty != '(') {
+  if (GET_TOKEN(pos).ty != '(') {
     // global variable.
     vec_push(code, id);
     int num = get_array_size();
     add_global_symbol(id->name, ID_VAR, num);
     // TODO: add initialization.
+    while (GET_TOKEN(pos).ty == ';') {
+      pos++;
+    }
     return;
   }
+  // TODO: implement function declaration.
+  // function definition..
   add_global_symbol(id->name, ID_FUNC, 0);
   Node *arg = NULL;
+  pos++;
   if (GET_TOKEN(pos).ty != ')') {
     arg = argument();
   }
@@ -471,7 +477,6 @@ void identifier_node(Vector *code) {
           GET_TOKEN(pos - 1).input);
   }
   Node *f = new_node(ND_FUNCDEF, id, arg);
-  // TODO: implement function declaration.
   f->block = new_vector();
   code_block(f->block);
   vec_push(code, f);
