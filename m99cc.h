@@ -3,6 +3,7 @@
 
 #define IDENT_LEN 256
 
+
 // For Vector definition. //
 typedef struct {
   void **data;
@@ -53,9 +54,6 @@ typedef struct {
   int num;
 } Symbol;
 
-// Macro for getting the next token.
-#define GET_TOKEN(i) (*((Token *)tokens->data[i]))
-
 typedef struct Node {
   int ty;            // ND_NUM or ND_IDENT or operation
   struct Node *lhs;  // left hand size
@@ -86,11 +84,16 @@ enum {
   ND_CHAR,      // for char
 };
 
-void program(Vector *code);
+// Macro for getting the next token.
+#define GET_TOKEN(i) (*((Token *)tokens->data[i]))
 
 void tokenize(char *p);
 
-void gen(Node *node);
+void parse(Vector *code);
+
+void gen_program();
+
+void gen_node(Node *node);
 
 void error(char *s, char *message);
 

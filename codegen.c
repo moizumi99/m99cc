@@ -6,6 +6,7 @@
 extern Map *global_symbols;
 extern Vector *local_symbols;
 extern Map *current_local_symbols;
+static int label_counter = 0;
 
 Node *get_node_p(Vector *code, int i) {
   return (Node *)code->data[i];
@@ -13,7 +14,7 @@ Node *get_node_p(Vector *code, int i) {
 
 void gen_block(Vector *block_code) {
     for (int i = 0; get_node_p(block_code, i); i++)
-      gen(get_node_p(block_code, i));
+      gen_node(get_node_p(block_code, i));
 }
 
 void gen_lval(Node *node) {
@@ -37,14 +38,12 @@ void gen_lval(Node *node) {
     printf("  push rax\n");
     return;
   } else if (node->ty == '*') {
-    gen(node->rhs);
+    gen_node(node->rhs);
     return;
   }
   fprintf(stderr, "The node type %d can not be left size value", node->ty);
   exit(1);
 }
-
-static int label_counter = 0;
 
 int is_systemcall(Node *nd) {
   if (strcmp(nd->name, "putchar") == 0) {
@@ -63,7 +62,7 @@ void gen_syscall(Node *nd) {
   }
 }
 
-void gen(Node *node) {
+void gen_node(Node *node) {
   if (node->ty == ND_NUM) {
     printf("  push %d\n", node->val);
     return;
@@ -103,7 +102,7 @@ void gen(Node *node) {
       error("%s\n", "Function node doesn't have identifer.");
     }
     if (node->rhs != NULL) {
-      gen(node->rhs);
+      gen_node(node->rhs);
       printf("  pop rax\n");
     }
     printf("  mov rbx, rsp\n");
@@ -120,7 +119,7 @@ void gen(Node *node) {
 
   if (node->ty == '=') {
     gen_lval(node->lhs);
-    gen(node->rhs);
+    gen_node(node->rhs);
 
     printf("  pop rdi\n");
     printf("  pop rax\n");
@@ -130,7 +129,7 @@ void gen(Node *node) {
   }
 
   if (node->ty == ND_IF) {
-    gen(node->lhs);
+    gen_node(node->lhs);
     printf("  pop rax;\n");
     printf("  cmp rax, 0\n");
     int else_label = label_counter++;
@@ -141,7 +140,7 @@ void gen(Node *node) {
     printf("_else_%d:\n", else_label);
     if (node->rhs != NULL) {
       if (node->rhs->ty == ND_IF) {
-        gen(node->rhs);
+        gen_node(node->rhs);
       } else if (node->rhs->ty == ND_BLOCK) {
         gen_block(node->rhs->block);
       } else {
@@ -156,7 +155,7 @@ void gen(Node *node) {
     int while_label = label_counter++;
     int while_end = label_counter++;;
     printf("_while_%d:\n", while_label);
-    gen(node->lhs);
+    gen_node(node->lhs);
     printf("  pop rax;\n");
     printf("  cmp rax, 0\n");
     printf("  je _while_end_%d\n", while_end);
@@ -170,10 +169,10 @@ void gen(Node *node) {
     // Single term operation
     switch (node->ty) {
     case '+':
-      gen(node->rhs);
+      gen_node(node->rhs);
       break;
     case '-':
-      gen(node->rhs);
+      gen_node(node->rhs);
       printf("  pop rax\n");
       printf("  neg rax\n");
       printf("  push rax\n");
@@ -184,7 +183,7 @@ void gen(Node *node) {
       break;
     case '*':
       // De-reference.
-      gen(node->rhs);
+      gen_node(node->rhs);
       printf("  pop rax\n");
       printf("  mov rax, [rax]\n");
       printf("  push rax\n");
@@ -197,8 +196,8 @@ void gen(Node *node) {
   }
 
   // two term operation
-  gen(node->lhs);
-  gen(node->rhs);
+  gen_node(node->lhs);
+  gen_node(node->rhs);
 
   printf("  pop rdi\n");
   printf("  pop rax\n");
@@ -238,4 +237,103 @@ void gen(Node *node) {
   }
 
   printf("  push rax\n");
+}
+
+int accumulate_variable_size(Vector *symbols) {
+  int num = 0;
+  for (int i = 0; i < symbols->len; i++) {
+    Symbol *s = (Symbol *)symbols->data[i];
+    num += (s->num == 0) ? 1 : s->num;
+  }
+  return num;
+}
+
+// pics the pointer for a node at i-th position fcom code.
+/* #define GET_FUNCTION_P(j) ((Node *)program_code->data[j]) */
+/* #define GET_NODE_P(j, i) ((Node *)(((Vector *)GET_FUNCTION_P(j)->block)->data[i])) */
+
+Node *get_function_p(Vector *program_code, int i) {
+  return (Node *) program_code->data[i];
+}
+
+void gen_program(Vector *program_code) {
+  printf("  .intel_syntax noprefix\n");
+
+  // Global variables.
+  if (global_symbols->keys->len > 0) {
+    printf("  .text\n");
+    for (int i = 0; i < global_symbols->keys->len; i++) {
+      Symbol *s = global_symbols->vals->data[i];
+      char *name = (char *) global_symbols->keys->data[i];
+      if (s->type == ID_VAR) {
+        int num = (s->num > 0) ? s->num : 1;
+        printf("  .comm  %s, %d, %d\n", name, num * 8, num * 8);
+      }
+    }
+  }
+
+  // Main function.
+  printf("  .text\n");
+  printf(".global main\n");
+  printf(".type main, @function\n");
+  printf("main:\n");
+  printf("  call func_main\n");
+  printf("  ret\n");
+
+  for (int j = 0; program_code->data[j]; j++) {
+    current_local_symbols = (Map *)local_symbols->data[j];
+    //dump_symbols(current_local_symbols);
+    // functions
+    Node *identifier = get_function_p(program_code, j);
+    if (identifier->ty == ND_IDENT) {
+      // TODO: add initialization.
+      continue;
+    }
+    if (identifier->ty != ND_FUNCDEF) {
+      fprintf(stderr, "The first line of the function isn't function definition");
+      exit(1);
+    }
+    Node *func_ident = identifier->lhs;
+    if (strcmp(func_ident->name, "main") == 0) {
+      printf("func_main:\n");
+    } else {
+      printf("%s:\n", func_ident->name);
+    }
+    // Prologue.
+    printf("  push rbx\n");
+    printf("  push rbp\n");
+    printf("  mov rbp, rsp\n");
+    // Secure room for variables
+    int local_variable_size = accumulate_variable_size(current_local_symbols->vals);
+    printf("  sub rsp, %d\n", local_variable_size * 8);
+    // store argument
+    int symbol_number = current_local_symbols->vals->len;
+    for(int arg_cnt = 0; arg_cnt < symbol_number; arg_cnt++) {
+      Symbol *next_symbol = (Symbol *)current_local_symbols->vals->data[arg_cnt];
+      if (next_symbol->type != ID_ARG) {
+        continue;
+      }
+      if (arg_cnt == 0) {
+        printf("  mov [rbp - %d], rax\n", (int) next_symbol->address);
+      } else {
+        // TODO: Support two or more argunents.
+        fprintf(stderr, "Error: Currently, only one argument can be used.");
+        exit(1);
+      }
+    }
+    // Generate codes from the top line to bottom
+    Vector *block = identifier->block;
+    gen_block(block);
+
+    // The evaluated value is at the top of stack.
+    // Need to pop this value so the stack is not overflown.
+    printf("  pop rax\n");
+    // Epilogue
+    // The value on the top of the stack is the final value.
+    // The last value is already in rax, which is return value.
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
+    printf("  pop rbx\n");
+    printf("  ret\n");
+  }
 }
