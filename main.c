@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
   // initialize
   // Store nodes in this vector.
   Vector *program_code;
-  program_code = new_vector();
+  // program_code = new_vector();
   global_symbols = new_map();
   local_symbols = new_vector();
 
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
   // Tokenize
   tokenize(src);
   // Parse
-  parse(program_code);
+  program_code = parse();
 
   gen_program(program_code);
 

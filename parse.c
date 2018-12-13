@@ -493,7 +493,8 @@ void function(Vector *code) {
   error("Unexpected token (function): \"%s\"", GET_TOKEN(pos).input);
 }
 
-void parse(Vector *code) {
+Vector *parse() {
+  Vector *code = new_vector();
   while (GET_TOKEN(pos).ty != TK_EOF) {
     current_local_symbols = new_map();
     local_symbol_counter = 0;
@@ -502,5 +503,6 @@ void parse(Vector *code) {
   }
   vec_push(code, NULL);
   vec_push(local_symbols, NULL);
+  return code;
 }
 

@@ -89,7 +89,7 @@ enum {
 
 void tokenize(char *p);
 
-void parse(Vector *code);
+Vector *parse();
 
 void gen_program();
 
