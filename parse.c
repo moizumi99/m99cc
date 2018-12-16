@@ -97,10 +97,25 @@ int get_symbol_type(Map *symbols, char *name) {
   return tmp_symbol->dtype;
 }
 
+int data_size(int dtype) {
+  switch(dtype) {
+  case DT_VOID: return 8;
+  case DT_INT: return 8;
+  case DT_CHAR: return 1;
+  default: return 8;
+  }
+}
+
+int get_symbol_datasize(Map *symbols, char *name) {
+  Symbol *tmp_symbol = map_get(symbols, name);
+  return data_size(tmp_symbol->dtype);
+}
+
 static int local_symbol_counter = 0;
 void add_local_symbol(char *name_perm, int type, int num, int dtype) {
   Symbol *new_symbol = malloc(sizeof(Symbol));
-  local_symbol_counter += (num == 0) ? 1 : num;
+  int dsize = data_size(dtype);
+  local_symbol_counter += (num == 0) ? dsize : num * dsize;
   new_symbol->address = (void *) (local_symbol_counter * 8);
   new_symbol->type = type;
   new_symbol->num = num;
@@ -286,9 +301,10 @@ Node *term() {
   return NULL;
 }
 
-Node *argument(int dtype) {
+Node *argument() {
   // TODO: make argument a list.
-  if (get_data_type(GET_TOKEN(tokens, pos++).ty) == DT_INVALID) {
+  int dtype = get_data_type(GET_TOKEN(tokens, pos++).ty);
+  if (dtype == DT_INVALID) {
     error("Invalid (not data type) token in argument declaration position \"%s\"",
           GET_TOKEN(tokens, pos - 1).input);
   }
@@ -468,7 +484,7 @@ Node *identifier_node(int dtype) {
   Node *arg = NULL;
   pos++;
   if (GET_TOKEN(tokens, pos).ty != ')') {
-    arg = argument(dtype);
+    arg = argument();
   }
   if (GET_TOKEN(tokens, pos++).ty != ')') {
     // TODO: add support of nmultiple arguments.

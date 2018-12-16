@@ -88,10 +88,10 @@ enum {
 
 // Data type.
 enum {
-  DT_VOID,      // for void
-  DT_INT,       // for integer
-  DT_CHAR,      // for char
-  DT_INVALID,   // for invalid
+  DT_VOID,      // 0 for void
+  DT_INT,       // 1 for integer
+  DT_CHAR,      // 2 for char
+  DT_INVALID,   // 3 for invalid
 };
 
 Vector *tokenize(char *p);
@@ -119,6 +119,10 @@ void *map_get(Map *map, char *key);
 void *get_symbol_address(Map *symbols, char *name);
 
 int get_symbol_size(Map *symbols, char *name);
+
+int get_symbol_type(Map *symbols, char *name);
+
+int data_size(int dtype);
 
 // Unit tests.
 void runtest();

@@ -111,4 +111,8 @@ try 4 'int main(){int a[3];a[0]=2;a[1]=3;a[2]=4;a[a[0]];}'
 try 3 'int main(){int a[2];a[0]=1;a[1]=2;a[0]+a[1];}'
 try 3 'int a[2]; int main(){a[0]=1;a[1]=2;a[0]+a[1];}'
 
+# char type
+try 2 'int main(){char a; a = 2; a;}'
+try 1 'int main(){char a; a = 257; a;}'
+
 echo OK

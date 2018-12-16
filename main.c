@@ -12,7 +12,7 @@ Vector *local_symbols;
 // Map *current_local_symbols;
 
 // for debugging.
-/* void dump_symbols(Map *); */
+void dump_symbols(Map *);
 void dump_tree(Vector *code);
 
 int main(int argc, char **argv) {
@@ -21,7 +21,8 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  bool dump_enable = false;
+  bool dump_tree_enbale = false;
+  bool dump_symbols_enable = false;
   FILE *srcfile;
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-test") == 0) {
@@ -37,8 +38,12 @@ int main(int argc, char **argv) {
       return 0;
     }
 
-    if (strcmp(argv[i], "-dump") == 0) {
-      dump_enable = true;
+    if (strcmp(argv[i], "-dump_tree") == 0) {
+      dump_tree_enbale = true;
+      continue;
+    }
+    if (strcmp(argv[i], "-dump_symbols") == 0) {
+      dump_symbols_enable = true;
       continue;
     }
     srcfile = fopen(argv[i], "r");
@@ -77,9 +82,14 @@ int main(int argc, char **argv) {
   // Parse
   program_code = parse(tokens);
 
-  if (dump_enable) {
+  if (dump_symbols_enable) {
+    dump_symbols(global_symbols);
+    for(int i = 0; local_symbols->data[i]; i++) {
+      dump_symbols((Map *)(local_symbols->data[i]));
+    }
+  }
+  if (dump_tree_enbale) {
     dump_tree(program_code);
-    return 0;
   }
   gen_program(program_code);
 

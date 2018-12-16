@@ -1,7 +1,7 @@
 #include "m99cc.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 Vector *new_vector() {
   Vector *vec = malloc(sizeof(Vector));
@@ -19,9 +19,7 @@ void vec_push(Vector *vec, void *elem) {
   vec->data[vec->len++] = elem;
 }
 
-void *vec_pop(Vector *vec) {
-  return vec->data[vec->len--];
-}
+void *vec_pop(Vector *vec) { return vec->data[vec->len--]; }
 
 Map *new_map() {
   Map *map = malloc(sizeof(Map));
@@ -52,6 +50,7 @@ void dump_symbols(Map *symbol_table) {
   for (int cnt = 0; cnt < symbol_number; cnt++) {
     Symbol *sym = (Symbol *)symbol_table->vals->data[cnt];
     char *name = (char *)symbol_table->keys->data[cnt];
-    fprintf(stderr, "name: %s, type: %d, address: %d\n", name, sym->type, (int) sym->address);
+    fprintf(stderr, "name: %s, type: %d, data_type: %d, address: %d\n", name,
+            sym->type, sym->dtype, (int)sym->address);
   }
 }

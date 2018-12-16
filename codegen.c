@@ -77,7 +77,14 @@ void gen_node(Node *node) {
     if (get_symbol_address(global_symbols, node->name) != NULL) {
       if (get_symbol_size(global_symbols, node->name) == 0) {
         // regular variable. De-reference.
-        printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
+        int dtype = get_symbol_type(global_symbols, node->name);
+        if (dtype == DT_INT) {
+          printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
+        } else if (dtype == DT_CHAR) {
+          printf("  mov al, BYTE PTR %s[rip]\n", node->name);
+        } else {
+          error("\"%s\" type is not INT or CHAR. (global load)", node->name);
+        }
       } else {
         // Array address. Don't de-reference.
         printf("  lea rax, %s[rip]\n", node->name);
@@ -88,7 +95,15 @@ void gen_node(Node *node) {
       if (get_symbol_size(current_local_symbols, node->name) == 0) {
         // regular variable. De-reference.
         printf("  pop rax\n");
-        printf("  mov rax, [rax]\n");
+        int dtype = get_symbol_type(current_local_symbols, node->name);
+        if (dtype == DT_INT) {
+          printf("  mov rax, [rax]\n");
+        } else if (dtype == DT_CHAR) {
+          printf("  mov al, [rax]\n");
+        } else {
+          fprintf(stderr, "Data type: %d\n", dtype);
+          error("\"%s\" type is not INT or CHAR. (local load)", node->name);
+        }
         printf("  push rax\n");
       }
       // Don't de-reference if array address.
@@ -244,7 +259,6 @@ void gen_node(Node *node) {
     // do nothing.
     break;
   }
-
   printf("  push rax\n");
 }
 
@@ -252,14 +266,11 @@ int accumulate_variable_size(Vector *symbols) {
   int num = 0;
   for (int i = 0; i < symbols->len; i++) {
     Symbol *s = (Symbol *)symbols->data[i];
-    num += (s->num == 0) ? 1 : s->num;
+    int variable_size = (s->num==0) ? 1 : s->num;
+    num += variable_size * data_size(s->dtype);
   }
   return num;
 }
-
-// pics the pointer for a node at i-th position fcom code.
-/* #define GET_FUNCTION_P(j) ((Node *)program_code->data[j]) */
-/* #define GET_NODE_P(j, i) ((Node *)(((Vector *)GET_FUNCTION_P(j)->block)->data[i])) */
 
 Node *get_function_p(Vector *program_code, int i) {
   return (Node *) program_code->data[i];
