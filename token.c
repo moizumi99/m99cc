@@ -6,8 +6,6 @@
 
 #define GET_ATOKEN(T, I) (*((Token *)(T)->data[(I)]))
 
-extern Vector *tokens;
-
 void add_token(Vector *ts, int i) {
   if (ts->len > i)
     return;
@@ -20,8 +18,8 @@ int min(int a, int b) {
 }
 
 // split chars pointed by p into tokens
-void tokenize(char *p) {
-  tokens = new_vector();
+Vector *tokenize(char *p) {
+  Vector *tokens = new_vector();
 
   int i = 0;
   while (*p) {
@@ -131,6 +129,8 @@ void tokenize(char *p) {
   GET_ATOKEN(tokens, i).ty = TK_EOF;
   GET_ATOKEN(tokens, i).input = p;
   GET_ATOKEN(tokens, i).len = 1;
+
+  return tokens;
 }
 
 

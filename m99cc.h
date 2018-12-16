@@ -87,7 +87,7 @@ enum {
 // Macro for getting the next token.
 #define GET_TOKEN(i) (*((Token *)tokens->data[i]))
 
-void tokenize(char *p);
+Vector *tokenize(char *p);
 
 Vector *parse();
 

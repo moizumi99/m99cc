@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
   fclose(srcfile);
 
   // Tokenize
-  tokenize(src);
+  tokens = tokenize(src);
   // Parse
   program_code = parse();
 
