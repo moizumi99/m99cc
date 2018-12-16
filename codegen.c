@@ -5,7 +5,7 @@
 
 extern Map *global_symbols;
 extern Vector *local_symbols;
-extern Map *current_local_symbols;
+Map *current_local_symbols;
 static int label_counter = 0;
 
 Node *get_node_p(Vector *code, int i) {
@@ -19,14 +19,14 @@ void gen_block(Vector *block_code) {
 
 void gen_lval(Node *node) {
   if (node->ty == ND_IDENT) {
-    if (get_global_symbol_address(node->name) != NULL) {
+    if (get_symbol_address(global_symbols, node->name) != NULL) {
       // global address.
       printf("  lea rax, %s[rip]\n", node->name);
       printf("  push rax\n");
       return;
     }
     printf("  mov rax, rbp\n");
-    void *address = get_local_symbol_address(node->name);
+    void *address = get_symbol_address(current_local_symbols, node->name);
     // If new variable, create a room.
     if (address == NULL) {
       fprintf(stderr, "Undefined variable used.");
@@ -74,8 +74,8 @@ void gen_node(Node *node) {
   }
 
   if (node->ty == ND_IDENT) {
-    if (get_global_symbol_address(node->name) != NULL) {
-      if (get_global_symbol_size(node->name) == 0) {
+    if (get_symbol_address(global_symbols, node->name) != NULL) {
+      if (get_symbol_size(global_symbols, node->name) == 0) {
         // regular variable. De-reference.
         printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
       } else {
@@ -85,7 +85,7 @@ void gen_node(Node *node) {
       printf("  push rax\n");
     }else {
       gen_lval(node);
-      if (get_local_symbol_size(node->name) == 0) {
+      if (get_symbol_size(current_local_symbols, node->name) == 0) {
         // regular variable. De-reference.
         printf("  pop rax\n");
         printf("  mov rax, [rax]\n");

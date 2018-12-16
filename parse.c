@@ -8,7 +8,6 @@
 
 Vector *tokens;
 
-// TODO: separate local and global symbol table.
 extern Map *global_symbols;
 extern Vector *local_symbols;
 extern Map *current_local_symbols;
@@ -73,25 +72,29 @@ void add_global_symbol(char *name_perm, int type, int num) {
   map_put(global_symbols, name_perm, (void *) new_symbol);
 }
 
-void *get_global_symbol(char *name) {
-  return map_get(global_symbols, name);
-}
-
-void *get_global_symbol_address(char *name) {
-  Symbol *tmp_symbol = get_global_symbol(name);
+void *get_symbol_address(Map *symbols, char *name) {
+  Symbol *tmp_symbol = map_get(symbols, name);
   if (tmp_symbol == NULL) {
     return NULL;
   }
   return tmp_symbol->address;
 }
 
-int get_global_symbol_size(char *name) {
-  Symbol *tmp_symbol = get_global_symbol(name);
+/* void *get_global_symbol_address(char *name) { */
+/*   return get_symbol_address(global_symbols, name); */
+/* } */
+
+int get_symbol_size(Map *symbols, char *name) {
+  Symbol *tmp_symbol = map_get(symbols, name);
   if (tmp_symbol == NULL) {
     return -1;
   }
   return tmp_symbol->num;
 }
+
+/* int get_global_symbol_size(char *name) { */
+/*   return get_symbol_size(global_symbols, name); */
+/* } */
 
 static int local_symbol_counter = 0;
 void add_local_symbol(char *name_perm, int type, int num) {
@@ -103,25 +106,27 @@ void add_local_symbol(char *name_perm, int type, int num) {
   map_put(current_local_symbols, name_perm, (void *) new_symbol);
 }
 
-void *get_local_symbol(char *name) {
-  return map_get(current_local_symbols, name);
-}
+/* void *get_local_symbol(char *name) { */
+/*   return map_get(current_local_symbols, name); */
+/* } */
 
-void *get_local_symbol_address(char *name) {
-  Symbol *tmp_symbol = get_local_symbol(name);
-  if (tmp_symbol == NULL) {
-    return NULL;
-  }
-  return tmp_symbol->address;
-}
+/* void *get_local_symbol_address(char *name) { */
+/*   return get_symbol_address(current_local_symbols, name); */
+/*   /\* Symbol *tmp_symbol = map_get(current_local_symbols, name); *\/ */
+/*   /\* if (tmp_symbol == NULL) { *\/ */
+/*   /\*   return NULL; *\/ */
+/*   /\* } *\/ */
+/*   /\* return tmp_symbol->address; *\/ */
+/* } */
 
-int get_local_symbol_size(char *name) {
-  Symbol *tmp_symbol = get_local_symbol(name);
-  if (tmp_symbol == NULL) {
-    return -1;
-  }
-  return tmp_symbol->num;
-}
+/* int get_local_symbol_size(char *name) { */
+/*   return get_symbol_size(current_local_symbols, name); */
+/*   /\* Symbol *tmp_symbol = map_get(current_local_symbols, name); *\/ */
+/*   /\* if (tmp_symbol == NULL) { *\/ */
+/*   /\*   return -1; *\/ */
+/*   /\* } *\/ */
+/*   /\* return tmp_symbol->num; *\/ */
+/* } */
 
 char *create_name_perm(char *name, int len) {
   char *str = malloc(sizeof(char) * IDENT_LEN);
@@ -264,7 +269,7 @@ Node *term() {
       Node *offset = new_node('*', index, new_node_num(8));
       node = new_node('*', NULL, new_node('+', id, offset));
     }
-    if (get_global_symbol(id->name) == NULL && get_local_symbol(id->name) == NULL) {
+    if (map_get(global_symbols, id->name) == NULL && map_get(current_local_symbols, id->name) == NULL) {
       // This must be a declaration. Size must be specific;
       if (array_size < 0) {
         fprintf(stderr, "Array size must be defined statically.\n");
@@ -307,7 +312,7 @@ Node *argument() {
   }
   // argument name?
   char *name = create_name_perm(GET_TOKEN(tokens, pos).input, GET_TOKEN(tokens, pos).len);
-  if (get_local_symbol(name) != NULL) {
+  if (map_get(current_local_symbols, name) != NULL) {
     error("Argument name conflict: %s\n", name);
   }
   add_local_symbol(name, ID_ARG, get_array_size());
@@ -451,7 +456,7 @@ void code_block(Vector *code) {
 void identifier_node(Vector *code) {
   Node *id = new_node_ident(GET_TOKEN(tokens, pos).val, GET_TOKEN(tokens, pos).input,
                             GET_TOKEN(tokens, pos).len);
-  if (get_global_symbol(id->name) != NULL) {
+  if (map_get(global_symbols, id->name) != NULL) {
     error("Global name conflict. \"%s\"", id->name);
   }
   pos++;

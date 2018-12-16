@@ -8,7 +8,7 @@
 // Put variables into vector, and make a list of variable for each code block.
 Map *global_symbols;
 Vector *local_symbols;
-Map *current_local_symbols;
+// Map *current_local_symbols;
 
 /* // for debugging. */
 /* void dump_symbols(Map *); */
