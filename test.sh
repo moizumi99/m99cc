@@ -98,7 +98,7 @@ try 55 'int main(){int a, b; b=0; for(a=1; a<11; a = a+1) {b = b + a;} b;}'
 # putchar test
 try 2 'int main(){putchar(97); putchar(13); putchar(10); 2;}'
 run 'hello, world!' program/hello.c
-run '0 1 1 2 3 5 8 13 21 34 55 ' program/fibonacchi.c
+run '0 1 1 2 3 5 8 13 21 34 55 ' program/fibonacci.c
 # global function.
 try 10 'int a; int main(){a=10;}'
 try 10 'int a; int f(){a;} int main(){a=10;f();}'
