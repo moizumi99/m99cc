@@ -22,8 +22,8 @@ run() {
 
     ./m99cc $input > tmp.s
     gcc -o tmp tmp.s
-    ./tmp
-    actual="$?"
+    actual=`./tmp`
+    # actual="$?"
 
     if [ "$actual" != "$expected" ]; then
         echo "for \"$input\", \"$expected\" is expected, but got \"$actual\""
@@ -91,7 +91,7 @@ try 55 'main(){b=0; for(a=1; a<11; a = a+1) {b = b + a;} b;}'
 
 # putchar test
 try 2 'main(){putchar(97); putchar(13); putchar(10); 2;}'
-run 0 program/hello.c
+run 'hello, world!' program/hello.c
 
 # global function.
 try 10 'a; main(){a=10;}'
