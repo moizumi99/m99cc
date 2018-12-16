@@ -49,9 +49,10 @@ enum {
 };  // Symbol table ID
 
 typedef struct {
-  int type;
-  void *address;
-  int num;
+  int type;   // Symbol type (ID_VAR< ID_FUNC, ID_ARG)
+  void *address; // address from the base.
+  int num;    // 0: scalar, >=1: array
+  int dtype;  // Data type (void, int, char)
 } Symbol;
 
 typedef struct Node {

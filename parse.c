@@ -62,13 +62,14 @@ int get_array_size() {
   return num;
 }
 
-void add_global_symbol(char *name_perm, int type, int num) {
+void add_global_symbol(char *name_perm, int type, int num, int dtype) {
   static int global_symbol_counter = 0;
   Symbol *new_symbol = malloc(sizeof(Symbol));
   global_symbol_counter += (num == 0) ? 1 : num;
   new_symbol->address = (void *) (global_symbol_counter * 8);
   new_symbol->type = type;
   new_symbol->num = num;
+  new_symbol->dtype = dtype;
   map_put(global_symbols, name_perm, (void *) new_symbol);
 }
 
@@ -88,13 +89,22 @@ int get_symbol_size(Map *symbols, char *name) {
   return tmp_symbol->num;
 }
 
+int get_symbol_type(Map *symbols, char *name) {
+  Symbol *tmp_symbol = map_get(symbols, name);
+  if (tmp_symbol == NULL) {
+    return DT_INVALID;
+  }
+  return tmp_symbol->dtype;
+}
+
 static int local_symbol_counter = 0;
-void add_local_symbol(char *name_perm, int type, int num) {
+void add_local_symbol(char *name_perm, int type, int num, int dtype) {
   Symbol *new_symbol = malloc(sizeof(Symbol));
   local_symbol_counter += (num == 0) ? 1 : num;
   new_symbol->address = (void *) (local_symbol_counter * 8);
   new_symbol->type = type;
   new_symbol->num = num;
+  new_symbol->dtype = dtype;
   map_put(current_local_symbols, name_perm, (void *) new_symbol);
 }
 
@@ -235,16 +245,9 @@ Node *term() {
     // If not followed by (, it's a variable.
     // is it array?
     Node *node = id;
-    int array_size = 0;
     if (GET_TOKEN(tokens, pos).ty == '[') {
       pos++;
       Node *index = expression(ASSIGN_PRIORITY);
-      if (index->ty == ND_NUM) {
-        array_size = index->val;
-      } else {
-        // put unreasonable number;
-        array_size = -1;
-      }
       if (GET_TOKEN(tokens, pos++).ty != ']') {
         fprintf(stderr, "Closing bracket ']' missing. \"%s\"\n", GET_TOKEN(tokens, pos - 1).input);
         exit(1);
@@ -252,13 +255,9 @@ Node *term() {
       Node *offset = new_node('*', index, new_node_num(8));
       node = new_node('*', NULL, new_node('+', id, offset));
     }
-    if (map_get(global_symbols, id->name) == NULL && map_get(current_local_symbols, id->name) == NULL) {
-      // This must be a declaration. Size must be specific;
-      if (array_size < 0) {
-        fprintf(stderr, "Array size must be defined statically.\n");
-        exit(1);
-      }
-      add_local_symbol(id->name, ID_VAR, array_size);
+    if (map_get(global_symbols, id->name) == NULL &&
+        map_get(current_local_symbols, id->name) == NULL) {
+      error("A symbold (\"%s\" is used without declaration.", id->name);
     }
     return node;
   }
@@ -287,7 +286,7 @@ Node *term() {
   return NULL;
 }
 
-Node *argument() {
+Node *argument(int dtype) {
   // TODO: make argument a list.
   if (get_data_type(GET_TOKEN(tokens, pos++).ty) == DT_INVALID) {
     error("Invalid (not data type) token in argument declaration position \"%s\"",
@@ -302,7 +301,7 @@ Node *argument() {
   if (map_get(current_local_symbols, name) != NULL) {
     error("Argument name conflict: %s\n", name);
   }
-  add_local_symbol(name, ID_ARG, get_array_size());
+  add_local_symbol(name, ID_ARG, get_array_size(), dtype);
   Node *id = new_node_ident(GET_TOKEN(tokens, pos).val, GET_TOKEN(tokens, pos).input,
                               GET_TOKEN(tokens, pos).len);
   pos++;
@@ -445,7 +444,7 @@ void code_block(Vector *code) {
   }
 }
 
-Node *identifier_node() {
+Node *identifier_node(int dtype) {
   if (GET_TOKEN(tokens, pos).ty != TK_IDENT) {
     error("Unexpected token (function): \"%s\"", GET_TOKEN(tokens, pos).input);
   }
@@ -459,17 +458,17 @@ Node *identifier_node() {
   // global variable.
   if (GET_TOKEN(tokens, pos).ty != '(') {
     int num = get_array_size();
-    add_global_symbol(id->name, ID_VAR, num);
+    add_global_symbol(id->name, ID_VAR, num, dtype);
     // TODO: add initialization.
     return id;
   }
   // TODO: implement function declaration.
   // function definition..
-  add_global_symbol(id->name, ID_FUNC, 0);
+  add_global_symbol(id->name, ID_FUNC, 0, dtype);
   Node *arg = NULL;
   pos++;
   if (GET_TOKEN(tokens, pos).ty != ')') {
-    arg = argument();
+    arg = argument(dtype);
   }
   if (GET_TOKEN(tokens, pos++).ty != ')') {
     // TODO: add support of nmultiple arguments.
@@ -483,11 +482,11 @@ Node *identifier_node() {
   return f;
 }
 
-Node *identifier_sequence() {
-  Node *id = identifier_node();
+Node *identifier_sequence(int dtype) {
+  Node *id = identifier_node(dtype);
   if (GET_TOKEN(tokens, pos).ty == ',') {
     pos++;
-    Node *ids = identifier_sequence();
+    Node *ids = identifier_sequence(dtype);
     return new_node(ND_IDENTSEQ, id, ids);
   }
   if (GET_TOKEN(tokens, pos).ty == ';') {
@@ -516,7 +515,7 @@ void declaration_node(Vector *code) {
           GET_TOKEN(tokens, pos-1).input);
   }
   Node *node_dt = new_node_datatype(data_type);
-  Node *node_ids = identifier_sequence();
+  Node *node_ids = identifier_sequence(data_type);
   Node *declaration = new_node(ND_DECLARE, node_dt, node_ids);
   vec_push(code, declaration);
   return;
@@ -526,7 +525,6 @@ Vector *parse(Vector *tokens_input) {
   tokens = tokens_input;
   Vector *code = new_vector();
   while (GET_TOKEN(tokens, pos).ty != TK_EOF) {
-    // TODO: This will cause memory leak in variable declaration.
     current_local_symbols = new_map();
     local_symbol_counter = 0;
     vec_push(local_symbols, current_local_symbols);
