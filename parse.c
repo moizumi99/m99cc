@@ -6,11 +6,11 @@
 
 #define GET_TOKEN(T, I) (*((Token *)(T)->data[(I)]))
 
-Vector *tokens;
+static Vector *tokens;
 
 extern Map *global_symbols;
 extern Vector *local_symbols;
-extern Map *current_local_symbols;
+static Map *current_local_symbols;
 
 // Error reporting function.
 void error(char *s, char *message) {
@@ -80,10 +80,6 @@ void *get_symbol_address(Map *symbols, char *name) {
   return tmp_symbol->address;
 }
 
-/* void *get_global_symbol_address(char *name) { */
-/*   return get_symbol_address(global_symbols, name); */
-/* } */
-
 int get_symbol_size(Map *symbols, char *name) {
   Symbol *tmp_symbol = map_get(symbols, name);
   if (tmp_symbol == NULL) {
@@ -91,10 +87,6 @@ int get_symbol_size(Map *symbols, char *name) {
   }
   return tmp_symbol->num;
 }
-
-/* int get_global_symbol_size(char *name) { */
-/*   return get_symbol_size(global_symbols, name); */
-/* } */
 
 static int local_symbol_counter = 0;
 void add_local_symbol(char *name_perm, int type, int num) {
@@ -105,28 +97,6 @@ void add_local_symbol(char *name_perm, int type, int num) {
   new_symbol->num = num;
   map_put(current_local_symbols, name_perm, (void *) new_symbol);
 }
-
-/* void *get_local_symbol(char *name) { */
-/*   return map_get(current_local_symbols, name); */
-/* } */
-
-/* void *get_local_symbol_address(char *name) { */
-/*   return get_symbol_address(current_local_symbols, name); */
-/*   /\* Symbol *tmp_symbol = map_get(current_local_symbols, name); *\/ */
-/*   /\* if (tmp_symbol == NULL) { *\/ */
-/*   /\*   return NULL; *\/ */
-/*   /\* } *\/ */
-/*   /\* return tmp_symbol->address; *\/ */
-/* } */
-
-/* int get_local_symbol_size(char *name) { */
-/*   return get_symbol_size(current_local_symbols, name); */
-/*   /\* Symbol *tmp_symbol = map_get(current_local_symbols, name); *\/ */
-/*   /\* if (tmp_symbol == NULL) { *\/ */
-/*   /\*   return -1; *\/ */
-/*   /\* } *\/ */
-/*   /\* return tmp_symbol->num; *\/ */
-/* } */
 
 char *create_name_perm(char *name, int len) {
   char *str = malloc(sizeof(char) * IDENT_LEN);

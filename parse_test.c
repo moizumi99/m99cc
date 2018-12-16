@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern Vector *tokens;
+static Vector *tokens;
 extern Vector *local_symbols;
 extern Map *global_symbols;
 extern Vector *program_code;

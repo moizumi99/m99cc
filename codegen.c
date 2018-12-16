@@ -5,7 +5,7 @@
 
 extern Map *global_symbols;
 extern Vector *local_symbols;
-Map *current_local_symbols;
+static Map *current_local_symbols;
 static int label_counter = 0;
 
 Node *get_node_p(Vector *code, int i) {

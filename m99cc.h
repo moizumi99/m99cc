@@ -106,19 +106,9 @@ void map_put(Map *map, char *key, void *val);
 
 void *map_get(Map *map, char *key);
 
-/* void add_global_symbol(char *name, int type, int num); */
-
 void *get_symbol_address(Map *symbols, char *name);
 
-/* int get_global_symbol_size(char *name); */
-
 int get_symbol_size(Map *symbols, char *name);
-
-/* void add_local_symbol(char *name, int type, int num); */
-
-/* void *get_local_symbol_address(char *name); */
-
-/* int get_local_symbol_size(char *name); */
 
 // Unit tests.
 void runtest();
