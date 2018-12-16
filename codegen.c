@@ -334,7 +334,7 @@ void gen_program(Vector *program_code) {
     printf("  mov rbp, rsp\n");
     // Secure room for variables
     int local_variable_size = accumulate_variable_size(current_local_symbols->vals);
-    printf("  sub rsp, %d\n", local_variable_size * 8);
+    printf("  sub rsp, %d\n", local_variable_size);
     // store argument
     int symbol_number = current_local_symbols->vals->len;
     for(int arg_cnt = 0; arg_cnt < symbol_number; arg_cnt++) {

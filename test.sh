@@ -113,6 +113,22 @@ try 3 'int a[2]; int main(){a[0]=1;a[1]=2;a[0]+a[1];}'
 
 # char type
 try 2 'int main(){char a; a = 2; a;}'
+# char overflow
 try 1 'int main(){char a; a = 257; a;}'
+# local char array
+try 3 'int main(){char a[1]; a[0] = 3; a[0];}'
+try 7 'int main(){char a[2]; a[0] = 5; a[1] = 2; a[0] + a[1];}'
+# global char
+try 2 'int a; int main(){a = 2; a;}'
+# global char array
+try 3 'int a[1]; int main(){a[0] = 3; a[0];}'
+try 7 'char a[2]; int main(){a[0] = 5; a[1] = 2; a[0] + a[1];}'
+# replace char value with int
+try 7 'int main(){int a; char b; a = 7; b = a; b;}'
+# replace int value with char
+try 3 'int main(){int a; char b; b = 3; a = b; a;}'
+# replace char value with int and overflow
+try 7 'int main(){int a; char b; a = 7 + 256; b = a; b;}'
+
 
 echo OK

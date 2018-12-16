@@ -65,8 +65,9 @@ int get_array_size() {
 void add_global_symbol(char *name_perm, int type, int num, int dtype) {
   static int global_symbol_counter = 0;
   Symbol *new_symbol = malloc(sizeof(Symbol));
-  global_symbol_counter += (num == 0) ? 1 : num;
-  new_symbol->address = (void *) (global_symbol_counter * 8);
+  int dsize = data_size(dtype);
+  global_symbol_counter += (num == 0) ? dsize : num * dsize;
+  new_symbol->address = (void *) global_symbol_counter;
   new_symbol->type = type;
   new_symbol->num = num;
   new_symbol->dtype = dtype;
@@ -116,7 +117,7 @@ void add_local_symbol(char *name_perm, int type, int num, int dtype) {
   Symbol *new_symbol = malloc(sizeof(Symbol));
   int dsize = data_size(dtype);
   local_symbol_counter += (num == 0) ? dsize : num * dsize;
-  new_symbol->address = (void *) (local_symbol_counter * 8);
+  new_symbol->address = (void *) local_symbol_counter;
   new_symbol->type = type;
   new_symbol->num = num;
   new_symbol->dtype = dtype;
