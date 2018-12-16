@@ -126,8 +126,9 @@ void add_local_symbol(char *name_perm, int type, int num, int dtype) {
 
 char *create_name_perm(char *name, int len) {
   char *str = malloc(sizeof(char) * IDENT_LEN);
-  int copy_len = (len < IDENT_LEN) ? len : IDENT_LEN;
+  int copy_len = (len < IDENT_LEN - 1) ? len : IDENT_LEN - 1;
   strncpy(str, name, copy_len);
+  str[len] = '\0';
   return str;
 }
 

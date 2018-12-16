@@ -61,16 +61,14 @@ int main(int argc, char **argv) {
     fprintf(stderr, "Cant open file %s\n", argv[1]);
     exit(1);
   }
-  int size = 256;
-  char *src = malloc(size);
+  fseek( srcfile , 0L , SEEK_END);
+  long size = ftell( srcfile );
+  rewind( srcfile );
+  char *src = malloc(size + 1);
   char *sp = src;
-  int cnt = 0;
+
   while(!feof(srcfile)) {
     *(sp++) = fgetc(srcfile);
-    if (++cnt >= size - 1) {
-      size += 256;
-      src = (char *)realloc(src, size);
-    }
   }
   *(sp-1) = '\0';
   fclose(srcfile);
