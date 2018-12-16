@@ -17,6 +17,7 @@ char *get_type(int ty) {
   switch(ty) {
   case ND_NUM: return "ND_NUM";
   case ND_IDENT: return "ND_IDENT";
+  case ND_IDENTSEQ: return "ND_IDENTSEQ";
   case ND_FUNCCALL: return "ND_FUNCCALL";
   case ND_FUNCDEF: return "ND_FUNCDEF";
   case ND_BLOCK: return "ND_BLOCK";
@@ -28,9 +29,9 @@ char *get_type(int ty) {
   case ND_IF: return "ND_IF";
   case ND_WHILE: return "ND_WHILE";
   case ND_FOR: return "ND_FOR";
-  case ND_VOID: return "ND_VOID";
-  case ND_INT: return "ND_INT";
-  case ND_CHAR: return "ND_CHAR";
+  case ND_DECLARE: return "ND_DECLARE";
+  case ND_DEFINITION: return "ND_DEFINITION";
+  case ND_DATATYPE: return "ND_DATATYPE";
   default:
     if (ty < 256) {
       num[0] = (char) ty;

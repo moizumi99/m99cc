@@ -170,6 +170,19 @@ int get_node_type(int token_type) {
   }
 }
 
+int get_data_type(int token_type) {
+  switch(token_type) {
+  case TK_VOID:
+    return DT_VOID;
+  case TK_CHAR:
+    return DT_CHAR;
+  case TK_INT:
+    return DT_INT;
+  default:
+    return DT_INVALID;
+  }
+}
+
 Node *term();
 Node *argument();
 
@@ -403,6 +416,8 @@ void for_node(Vector *code) {
   vec_push(for_nd->block, NULL);
 }
 
+void declaration_node(Vector *code);
+
 void code_block(Vector *code) {
   if (GET_TOKEN(tokens, pos++).ty != '{') {
     error("Left brace '{' missing (code_block): \"%s\"", GET_TOKEN(tokens, pos - 1).input);
@@ -414,6 +429,10 @@ void code_block(Vector *code) {
       vec_push(code, while_node());
     } else if (GET_TOKEN(tokens, pos).ty == TK_FOR) {
       for_node(code);
+    }
+    if ( get_data_type((GET_TOKEN(tokens, pos).ty)) != DT_INVALID) {
+      // TODO: declaration_node inside function can not generate function. Check.
+      declaration_node(code);
     } else {
       vec_push(code, assign());
     }
@@ -423,23 +442,23 @@ void code_block(Vector *code) {
   }
 }
 
-void identifier_node(Vector *code) {
+Node *identifier_node() {
+  if (GET_TOKEN(tokens, pos).ty != TK_IDENT) {
+    error("Unexpected token (function): \"%s\"", GET_TOKEN(tokens, pos).input);
+  }
   Node *id = new_node_ident(GET_TOKEN(tokens, pos).val, GET_TOKEN(tokens, pos).input,
                             GET_TOKEN(tokens, pos).len);
   if (map_get(global_symbols, id->name) != NULL) {
     error("Global name conflict. \"%s\"", id->name);
+    return NULL;
   }
   pos++;
+  // global variable.
   if (GET_TOKEN(tokens, pos).ty != '(') {
-    // global variable.
-    vec_push(code, id);
     int num = get_array_size();
     add_global_symbol(id->name, ID_VAR, num);
     // TODO: add initialization.
-    while (GET_TOKEN(tokens, pos).ty == ';') {
-      pos++;
-    }
-    return;
+    return id;
   }
   // TODO: implement function declaration.
   // function definition..
@@ -457,28 +476,58 @@ void identifier_node(Vector *code) {
   Node *f = new_node(ND_FUNCDEF, id, arg);
   f->block = new_vector();
   code_block(f->block);
-  vec_push(code, f);
   vec_push(f->block, NULL);
-  return;
+  return f;
 }
 
-void function(Vector *code) {
-  if (GET_TOKEN(tokens, pos).ty == TK_IDENT) {
-    // TODO: Move this out to a new function.
-    identifier_node(code);
-    return;
+Node *identifier_sequence() {
+  Node *id = identifier_node();
+  if (GET_TOKEN(tokens, pos).ty == ',') {
+    pos++;
+    Node *ids = identifier_sequence();
+    return new_node(ND_IDENTSEQ, id, ids);
   }
-  error("Unexpected token (function): \"%s\"", GET_TOKEN(tokens, pos).input);
+  if (GET_TOKEN(tokens, pos).ty == ';') {
+    pos++;
+    return id;
+  }
+  // error("Invalid token (parse.c, identifier_sequence())): \"%s\"", GET_TOKEN(tokens, pos).input);
+  return id;
+}
+
+Node *new_node_datatype(int data_type) {
+  Node *node = malloc(sizeof(Node));
+  node->ty = ND_DATATYPE;
+  node->lhs = NULL;
+  node->rhs = NULL;
+  node->val = data_type;
+  node->name = NULL;
+  node->block = NULL;
+  return node;
+}
+
+void declaration_node(Vector *code) {
+  int data_type = get_data_type(GET_TOKEN(tokens, pos++).ty);
+  if (data_type == DT_INVALID) {
+    error("Data type needed before declaration of function or variable. (\"%s\")",
+          GET_TOKEN(tokens, pos-1).input);
+  }
+  Node *node_dt = new_node_datatype(data_type);
+  Node *node_ids = identifier_sequence();
+  Node *declaration = new_node(ND_DECLARE, node_dt, node_ids);
+  vec_push(code, declaration);
+  return;
 }
 
 Vector *parse(Vector *tokens_input) {
   tokens = tokens_input;
   Vector *code = new_vector();
   while (GET_TOKEN(tokens, pos).ty != TK_EOF) {
+    // TODO: This will cause memory leak in variable declaration.
     current_local_symbols = new_map();
     local_symbol_counter = 0;
     vec_push(local_symbols, current_local_symbols);
-    function(code);
+    declaration_node(code);
   }
   vec_push(code, NULL);
   vec_push(local_symbols, NULL);

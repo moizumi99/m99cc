@@ -26,20 +26,20 @@ typedef struct {
 
 // Token values
 enum {
-  TK_NUM = 256, // Integer token
-  TK_IDENT,     // Identifier
-  TK_EQ,        // Equal (==) sign
-  TK_NE,        // Not-equal (!=) sign
-  TK_LE,        // Less than or equal (<=) sign
-  TK_GE,        // Greater than or equal (>=) sign
-  TK_IF,        // if clause
-  TK_ELSE,      // else keyword
-  TK_WHILE,     // while keyword
-  TK_FOR,       // for keyword
-  TK_VOID,      // for void
-  TK_INT,       // for integer
-  TK_CHAR,      // for char
-  TK_EOF,       // End of input
+  TK_NUM = 256, // 256 Integer token
+  TK_IDENT,     // 257 Identifier
+  TK_EQ,        // 258 Equal (==) sign
+  TK_NE,        // 259 Not-equal (!=) sign
+  TK_LE,        // 260 Less than or equal (<=) sign
+  TK_GE,        // 261 Greater than or equal (>=) sign
+  TK_IF,        // 262 if clause
+  TK_ELSE,      // 263 else keyword
+  TK_WHILE,     // 264 while keyword
+  TK_FOR,       // 265 for keyword
+  TK_VOID,      // 266 for void
+  TK_INT,       // 267 for integer
+  TK_CHAR,      // 268 for char
+  TK_EOF,       // 269 End of input
 };
 
 enum {
@@ -63,25 +63,34 @@ typedef struct Node {
   Vector *block;      // Used only when ty == ND_BLOCK or ND_FUNCDEF
 } Node;
 
-// Node type.s
+// Node type.
 enum {
-  ND_NUM = 256, // Integer node.
-  ND_IDENT,     // Identifier node.
-  ND_FUNCCALL,  // Function call node.
-  ND_FUNCDEF,   // Function definition.
-  ND_BLOCK,     // Block code.
-  ND_ROOT,      // The root of the entire program
-  ND_PLUS,      // Single term operator (+).
-  ND_MINUS,     // Single term operator (-).
-  ND_EQ,        // Equal operation (==).
-  ND_NE,        // Not-equal operation (!=).
-  ND_IF,        // IF node.
-  ND_WHILE,     // While node.
+  ND_NUM = 256, // 256 Integer node.
+  ND_IDENT,     // 257 Identifier node.
+  ND_IDENTSEQ,  // 258 Identifier sequence.
+  ND_FUNCCALL,  // 259 Function call node.
+  ND_FUNCDEF,   // 260 Function definition.
+  ND_BLOCK,     // 261 Block code.
+  ND_ROOT,      // 262 The root of the entire program
+  ND_PLUS,      // 263 Single term operator (+).
+  ND_MINUS,     // 264 Single term operator (-).
+  ND_EQ,        // 265 Equal operation (==).
+  ND_NE,        // 266 Not-equal operation (!=).
+  ND_IF,        // 267 IF node.
+  ND_WHILE,     // 268 While node.
   // TODO implement For loop without using while.
-  ND_FOR,       // For node
-  ND_VOID,      // for void
-  ND_INT,       // for integer
-  ND_CHAR,      // for char
+  ND_FOR,       // 269 For node
+  ND_DECLARE,   // 270 Declaration of variable/function
+  ND_DEFINITION,// 271 Defintion of variable/function
+  ND_DATATYPE,  // 272 Data type
+};
+
+// Data type.
+enum {
+  DT_VOID,      // for void
+  DT_INT,       // for integer
+  DT_CHAR,      // for char
+  DT_INVALID,   // for invalid
 };
 
 Vector *tokenize(char *p);

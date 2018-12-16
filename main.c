@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "m99cc.h"
 
 
@@ -10,29 +11,37 @@ Map *global_symbols;
 Vector *local_symbols;
 // Map *current_local_symbols;
 
-/* // for debugging. */
+// for debugging.
 /* void dump_symbols(Map *); */
-
+void dump_tree(Vector *code);
 
 int main(int argc, char **argv) {
-  if (argc != 2) {
+  if (argc < 2) {
     fprintf(stderr, "Arguments number not right.\n");
     return 1;
   }
 
-  if (strcmp(argv[1], "-test") == 0) {
-    runtest();
-    return 0;
-  }
-
-  if (strcmp(argv[1], "-test_token") == 0) {
-    runtest_tokenize();
-    return 0;
-  }
-
-  if (strcmp(argv[1], "-test_parse") == 0) {
-    runtest_parse();
-    return 0;
+  bool dump_enable = false;
+  FILE *srcfile;
+  for (int i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "-test") == 0) {
+      runtest();
+      return 0;
+    }
+    if (strcmp(argv[i], "-test_token") == 0) {
+      runtest_tokenize();
+      return 0;
+    }
+    if (strcmp(argv[i], "-test_parse") == 0) {
+      runtest_parse();
+      return 0;
+    }
+    
+    if (strcmp(argv[i], "-dump") == 0) {
+      dump_enable = true;
+      continue;
+    }
+    srcfile = fopen(argv[i], "r");
   }
 
   // initialize
@@ -43,7 +52,6 @@ int main(int argc, char **argv) {
   local_symbols = new_vector();
 
   // open input
-  FILE *srcfile = fopen(argv[1], "r");
   if (srcfile == NULL) {
     fprintf(stderr, "Cant open file %s\n", argv[1]);
     exit(1);
@@ -69,6 +77,10 @@ int main(int argc, char **argv) {
   // Parse
   program_code = parse(tokens);
 
+  if (dump_enable) {
+    dump_tree(program_code);
+    return 0;
+  }
   gen_program(program_code);
 
   return 0;

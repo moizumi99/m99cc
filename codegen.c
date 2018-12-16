@@ -284,13 +284,18 @@ void gen_program(Vector *program_code) {
     current_local_symbols = (Map *)local_symbols->data[j];
     //dump_symbols(current_local_symbols);
     // functions
-    Node *identifier = get_function_p(program_code, j);
+    Node *declaration = get_function_p(program_code, j);
+    if (declaration->ty != ND_DECLARE) {
+      fprintf(stderr, "Defintion of variable or function expected.\n");
+      exit(1);
+    }
+    Node *identifier = declaration->rhs;
     if (identifier->ty == ND_IDENT) {
       // TODO: add initialization.
       continue;
     }
     if (identifier->ty != ND_FUNCDEF) {
-      fprintf(stderr, "The first line of the function isn't function definition");
+      fprintf(stderr, "The first line of the function isn't function definition\n");
       exit(1);
     }
     Node *func_ident = identifier->lhs;
