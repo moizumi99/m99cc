@@ -62,7 +62,7 @@ Vector *tokenize(char *p) {
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' ||
         *p == '(' || *p == ')' || *p == '=' || *p == ';' ||
         *p == '{' || *p == '}' || *p == '<' || *p == '>' ||
-        *p == '&' || *p == '[' || *p == ']') {
+        *p == '&' || *p == '[' || *p == ']' || *p == ',') {
       add_token(tokens,i);
       GET_ATOKEN(tokens, i).ty = *p;
       GET_ATOKEN(tokens, i).input = p;

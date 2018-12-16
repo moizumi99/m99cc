@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
       runtest_parse();
       return 0;
     }
-    
+
     if (strcmp(argv[i], "-dump") == 0) {
       dump_enable = true;
       continue;

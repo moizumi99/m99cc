@@ -1,4 +1,4 @@
-main() {
+int main() {
   putchar(104);
   putchar(101);
   putchar(108);

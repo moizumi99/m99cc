@@ -165,6 +165,11 @@ void gen_node(Node *node) {
     return;
   }
 
+  if (node->ty == ND_DECLARE) {
+    gen_node(node->rhs);
+    return;
+  }
+
   if (node->lhs == NULL) {
     // Single term operation
     switch (node->ty) {
@@ -234,6 +239,10 @@ void gen_node(Node *node) {
     }
     printf("  movzb rax, al\n");
     break;
+  case ND_IDENTSEQ:
+  default:
+    // do nothing.
+    break;
   }
 
   printf("  push rax\n");
@@ -291,6 +300,10 @@ void gen_program(Vector *program_code) {
     }
     Node *identifier = declaration->rhs;
     if (identifier->ty == ND_IDENT) {
+      // TODO: add initialization.
+      continue;
+    }
+    if (identifier->ty == ND_IDENTSEQ) {
       // TODO: add initialization.
       continue;
     }

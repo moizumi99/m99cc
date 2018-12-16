@@ -289,6 +289,10 @@ Node *term() {
 
 Node *argument() {
   // TODO: make argument a list.
+  if (get_data_type(GET_TOKEN(tokens, pos++).ty) == DT_INVALID) {
+    error("Invalid (not data type) token in argument declaration position \"%s\"",
+          GET_TOKEN(tokens, pos - 1).input);
+  }
   if (GET_TOKEN(tokens, pos).ty != TK_IDENT) {
     error("Invalid (not IDENT) token in argument declaration position \"%s\"",
           GET_TOKEN(tokens, pos).input);
@@ -429,8 +433,7 @@ void code_block(Vector *code) {
       vec_push(code, while_node());
     } else if (GET_TOKEN(tokens, pos).ty == TK_FOR) {
       for_node(code);
-    }
-    if ( get_data_type((GET_TOKEN(tokens, pos).ty)) != DT_INVALID) {
+    } else if ( get_data_type((GET_TOKEN(tokens, pos).ty)) != DT_INVALID) {
       // TODO: declaration_node inside function can not generate function. Check.
       declaration_node(code);
     } else {
