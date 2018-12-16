@@ -4,8 +4,6 @@
 #include "m99cc.h"
 
 
-Vector *tokens;
-
 // Store variable look up table
 // Put variables into vector, and make a list of variable for each code block.
 Map *global_symbols;
@@ -65,9 +63,11 @@ int main(int argc, char **argv) {
   fclose(srcfile);
 
   // Tokenize
+  Vector *tokens;
+
   tokens = tokenize(src);
   // Parse
-  program_code = parse();
+  program_code = parse(tokens);
 
   gen_program(program_code);
 

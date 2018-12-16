@@ -4,7 +4,10 @@
 #include <string.h>
 #include "m99cc.h"
 
-extern Vector *tokens;
+#define GET_TOKEN(T, I) (*((Token *)(T)->data[(I)]))
+
+Vector *tokens;
+
 // TODO: separate local and global symbol table.
 extern Map *global_symbols;
 extern Vector *local_symbols;
@@ -42,19 +45,19 @@ Node *new_node_num(int val) {
 }
 
 int get_array_size() {
-  if (GET_TOKEN(pos).ty != '[') {
+  if (GET_TOKEN(tokens, pos).ty != '[') {
     // This is not an array.
     return 0;
   }
   // it's an array declaration.
   ++pos;
   int num = 0;
-  if (GET_TOKEN(pos).ty == TK_NUM) {
-    num = GET_TOKEN(pos++).val;
+  if (GET_TOKEN(tokens, pos).ty == TK_NUM) {
+    num = GET_TOKEN(tokens, pos++).val;
   }
-  if (GET_TOKEN(pos++).ty != ']') {
+  if (GET_TOKEN(tokens, pos++).ty != ']') {
     fprintf(stderr, "Closing bracket ']' is missing (get_array_size): \"%s\"\n",
-            GET_TOKEN(pos-1).input );
+            GET_TOKEN(tokens, pos-1).input );
     exit(1);
   }
   return num;
@@ -200,10 +203,10 @@ Node *expression(int priority) {
     return term();
   }
   Node *lhs = expression(priority + 1);
-  if (GET_TOKEN(pos).ty == TK_EOF) {
+  if (GET_TOKEN(tokens, pos).ty == TK_EOF) {
     return lhs;
   }
-  int token_type = GET_TOKEN(pos).ty;
+  int token_type = GET_TOKEN(tokens, pos).ty;
   if (operation_priority(token_type) == priority) {
     pos++;
     int node_type = get_node_type(token_type);
@@ -215,27 +218,27 @@ Node *expression(int priority) {
 // term : number | identifier | ( expression )
 Node *term() {
   // Simple number
-  if (GET_TOKEN(pos).ty == TK_NUM) {
-    return new_node_num(GET_TOKEN(pos++).val);
+  if (GET_TOKEN(tokens, pos).ty == TK_NUM) {
+    return new_node_num(GET_TOKEN(tokens, pos++).val);
   }
 
   // Variable or Function
-  if (GET_TOKEN(pos).ty == TK_IDENT) {
-    Node *id = new_node_ident(0, GET_TOKEN(pos).input,
-                              GET_TOKEN(pos).len);
+  if (GET_TOKEN(tokens, pos).ty == TK_IDENT) {
+    Node *id = new_node_ident(0, GET_TOKEN(tokens, pos).input,
+                              GET_TOKEN(tokens, pos).len);
     pos++;
     // if followed by (, it's a function call.
-    if (GET_TOKEN(pos).ty == '(') {
+    if (GET_TOKEN(tokens, pos).ty == '(') {
       ++pos;
       Node *arg = NULL;
       // Argument exists.
-      if (GET_TOKEN(pos).ty != ')') {
+      if (GET_TOKEN(tokens, pos).ty != ')') {
         arg = expression(ASSIGN_PRIORITY);
       }
-      if (GET_TOKEN(pos).ty != ')') {
+      if (GET_TOKEN(tokens, pos).ty != ')') {
         error("No right parenthesis corresponding to left parenthesis"
               " (term, function): \"%s\"",
-              GET_TOKEN(pos).input);
+              GET_TOKEN(tokens, pos).input);
       }
       pos++;
       Node *node = new_node(ND_FUNCCALL, id, arg);
@@ -245,7 +248,7 @@ Node *term() {
     // is it array?
     Node *node = id;
     int array_size = 0;
-    if (GET_TOKEN(pos).ty == '[') {
+    if (GET_TOKEN(tokens, pos).ty == '[') {
       pos++;
       Node *index = expression(ASSIGN_PRIORITY);
       if (index->ty == ND_NUM) {
@@ -254,8 +257,8 @@ Node *term() {
         // put unreasonable number;
         array_size = -1;
       }
-      if (GET_TOKEN(pos++).ty != ']') {
-        fprintf(stderr, "Closing bracket ']' missing. \"%s\"\n", GET_TOKEN(pos - 1).input);
+      if (GET_TOKEN(tokens, pos++).ty != ']') {
+        fprintf(stderr, "Closing bracket ']' missing. \"%s\"\n", GET_TOKEN(tokens, pos - 1).input);
         exit(1);
       }
       Node *offset = new_node('*', index, new_node_num(8));
@@ -272,51 +275,51 @@ Node *term() {
     return node;
   }
   // "( expression )"
-  if (GET_TOKEN(pos).ty == '(') {
+  if (GET_TOKEN(tokens, pos).ty == '(') {
     pos++;
     Node *node = expression(ASSIGN_PRIORITY);
-    if (GET_TOKEN(pos).ty != ')') {
+    if (GET_TOKEN(tokens, pos).ty != ')') {
       error("No right parenthesis corresponding to left parenthesis "
             "(term, parenthesis): \"%s\"",
-            GET_TOKEN(pos).input);
+            GET_TOKEN(tokens, pos).input);
     }
     pos++;
     return node;
   }
   // Single term operators
-  if (GET_TOKEN(pos).ty == '+' || GET_TOKEN(pos).ty == '-' || GET_TOKEN(pos).ty == '*' || GET_TOKEN(pos).ty == '&') {
-    int type = GET_TOKEN(pos).ty;
+  if (GET_TOKEN(tokens, pos).ty == '+' || GET_TOKEN(tokens, pos).ty == '-' || GET_TOKEN(tokens, pos).ty == '*' || GET_TOKEN(tokens, pos).ty == '&') {
+    int type = GET_TOKEN(tokens, pos).ty;
     pos++;
     Node *rhs = term();
     return new_node(type, NULL, rhs);
   }
   // Code should not reach here.
   error("Unexpected token (parse.c term): \"%s\"",
-        GET_TOKEN(pos).input);
+        GET_TOKEN(tokens, pos).input);
   return NULL;
 }
 
 Node *argument() {
   // TODO: make argument a list.
-  if (GET_TOKEN(pos).ty != TK_IDENT) {
+  if (GET_TOKEN(tokens, pos).ty != TK_IDENT) {
     error("Invalid (not IDENT) token in argument declaration position \"%s\"",
-          GET_TOKEN(pos).input);
+          GET_TOKEN(tokens, pos).input);
   }
   // argument name?
-  char *name = create_name_perm(GET_TOKEN(pos).input, GET_TOKEN(pos).len);
+  char *name = create_name_perm(GET_TOKEN(tokens, pos).input, GET_TOKEN(tokens, pos).len);
   if (get_local_symbol(name) != NULL) {
     error("Argument name conflict: %s\n", name);
   }
   add_local_symbol(name, ID_ARG, get_array_size());
-  Node *id = new_node_ident(GET_TOKEN(pos).val, GET_TOKEN(pos).input,
-                              GET_TOKEN(pos).len);
+  Node *id = new_node_ident(GET_TOKEN(tokens, pos).val, GET_TOKEN(tokens, pos).input,
+                              GET_TOKEN(tokens, pos).len);
   pos++;
   return id;
 }
 
 Node *assign_dash() {
   Node *lhs = expression(ASSIGN_PRIORITY);
-  if (GET_TOKEN(pos).ty == '=') {
+  if (GET_TOKEN(tokens, pos).ty == '=') {
     pos++;
     return new_node('=', lhs, assign_dash());
   }
@@ -325,13 +328,13 @@ Node *assign_dash() {
 
 Node *assign() {
   Node *lhs = assign_dash();
-  if (GET_TOKEN(pos).ty == '(') {
-    while (GET_TOKEN(pos).ty != ')') {
+  if (GET_TOKEN(tokens, pos).ty == '(') {
+    while (GET_TOKEN(tokens, pos).ty != ')') {
       ++pos;
     }
     return lhs;
   }
-  while (GET_TOKEN(pos).ty == ';') {
+  while (GET_TOKEN(tokens, pos).ty == ';') {
     pos++;
   }
   return lhs;
@@ -347,21 +350,21 @@ void code_block(Vector *code);
 
 Node *if_node() {
   pos++;
-  if (GET_TOKEN(pos++).ty != '(') {
+  if (GET_TOKEN(tokens, pos++).ty != '(') {
     error("Left paraenthesis '(' missing (if): \"%s\"\n",
-          GET_TOKEN(pos - 1).input);
+          GET_TOKEN(tokens, pos - 1).input);
   }
   Node *cond = expression(ASSIGN_PRIORITY);
-  if (GET_TOKEN(pos++).ty != ')') {
+  if (GET_TOKEN(tokens, pos++).ty != ')') {
     error("Right paraenthesis ')' missing (if): \"%s\"\n",
-          GET_TOKEN(pos - 1).input);
+          GET_TOKEN(tokens, pos - 1).input);
   }
   Node *ifnd = new_node(ND_IF, cond, NULL);
   ifnd->block = new_vector();
   code_block(ifnd->block);
-  if (GET_TOKEN(pos).ty == TK_ELSE) {
+  if (GET_TOKEN(tokens, pos).ty == TK_ELSE) {
     pos++;
-    if (GET_TOKEN(pos).ty == TK_IF) {
+    if (GET_TOKEN(tokens, pos).ty == TK_IF) {
       ifnd->rhs = if_node();
     } else {
       ifnd->rhs = new_node(ND_BLOCK, NULL, NULL);
@@ -377,14 +380,14 @@ Node *if_node() {
 
 Node *while_node() {
   pos++;
-  if (GET_TOKEN(pos++).ty != '(') {
+  if (GET_TOKEN(tokens, pos++).ty != '(') {
     error("Left paraenthesis '(' missing (while): \"%s\"\n",
-          GET_TOKEN(pos - 1).input);
+          GET_TOKEN(tokens, pos - 1).input);
   }
   Node *cond = expression(ASSIGN_PRIORITY);
-  if (GET_TOKEN(pos++).ty != ')') {
+  if (GET_TOKEN(tokens, pos++).ty != ')') {
     error("Right paraenthesis ')' missing (while): \"%s\"\n",
-          GET_TOKEN(pos - 1).input);
+          GET_TOKEN(tokens, pos - 1).input);
   }
   Node *while_nd = new_node(ND_WHILE, cond, NULL);
   while_nd->block = new_vector();
@@ -396,25 +399,25 @@ Node *while_node() {
 void for_node(Vector *code) {
   // TODO: allow multiple statement using ','.
   pos++;
-  if (GET_TOKEN(pos++).ty != '(') {
+  if (GET_TOKEN(tokens, pos++).ty != '(') {
     error("Left paraenthesis '(' missing (for): \"%s\"\n",
-          GET_TOKEN(pos - 1).input);
+          GET_TOKEN(tokens, pos - 1).input);
   }
   Node *init = expression(ASSIGN_PRIORITY);
   vec_push(code, init);
-  if (GET_TOKEN(pos++).ty != ';') {
+  if (GET_TOKEN(tokens, pos++).ty != ';') {
     error("1st Semicolon ';' missing (for): \"%s\"\n",
-          GET_TOKEN(pos - 1).input);
+          GET_TOKEN(tokens, pos - 1).input);
   }
   Node *cond = expression(ASSIGN_PRIORITY);
-  if (GET_TOKEN(pos++).ty != ';') {
+  if (GET_TOKEN(tokens, pos++).ty != ';') {
     error("2nd Semicolon ';' missing (for): \"%s\"\n",
-          GET_TOKEN(pos - 1).input);
+          GET_TOKEN(tokens, pos - 1).input);
   }
   Node *increment = expression(ASSIGN_PRIORITY);
-  if (GET_TOKEN(pos++).ty != ')') {
+  if (GET_TOKEN(tokens, pos++).ty != ')') {
     error("Right paraenthesis '(' missing (for): \"%s\"\n",
-          GET_TOKEN(pos - 1).input);
+          GET_TOKEN(tokens, pos - 1).input);
   }
   Node *for_nd = new_node(ND_WHILE, cond, NULL);
   vec_push(code, for_nd);
@@ -426,39 +429,39 @@ void for_node(Vector *code) {
 }
 
 void code_block(Vector *code) {
-  if (GET_TOKEN(pos++).ty != '{') {
-    error("Left brace '{' missing (code_block): \"%s\"", GET_TOKEN(pos - 1).input);
+  if (GET_TOKEN(tokens, pos++).ty != '{') {
+    error("Left brace '{' missing (code_block): \"%s\"", GET_TOKEN(tokens, pos - 1).input);
   }
-  while (GET_TOKEN(pos).ty != '}') {
-    if (GET_TOKEN(pos).ty == TK_IF) {
+  while (GET_TOKEN(tokens, pos).ty != '}') {
+    if (GET_TOKEN(tokens, pos).ty == TK_IF) {
       vec_push(code, if_node());
-    } else if (GET_TOKEN(pos).ty == TK_WHILE) {
+    } else if (GET_TOKEN(tokens, pos).ty == TK_WHILE) {
       vec_push(code, while_node());
-    } else if (GET_TOKEN(pos).ty == TK_FOR) {
+    } else if (GET_TOKEN(tokens, pos).ty == TK_FOR) {
       for_node(code);
     } else {
       vec_push(code, assign());
     }
   }
-  if (GET_TOKEN(pos++).ty != '}') {
-    error("Right brace '}' missing (code_block): \"%s\"", GET_TOKEN(pos - 1).input);
+  if (GET_TOKEN(tokens, pos++).ty != '}') {
+    error("Right brace '}' missing (code_block): \"%s\"", GET_TOKEN(tokens, pos - 1).input);
   }
 }
 
 void identifier_node(Vector *code) {
-  Node *id = new_node_ident(GET_TOKEN(pos).val, GET_TOKEN(pos).input,
-                            GET_TOKEN(pos).len);
+  Node *id = new_node_ident(GET_TOKEN(tokens, pos).val, GET_TOKEN(tokens, pos).input,
+                            GET_TOKEN(tokens, pos).len);
   if (get_global_symbol(id->name) != NULL) {
     error("Global name conflict. \"%s\"", id->name);
   }
   pos++;
-  if (GET_TOKEN(pos).ty != '(') {
+  if (GET_TOKEN(tokens, pos).ty != '(') {
     // global variable.
     vec_push(code, id);
     int num = get_array_size();
     add_global_symbol(id->name, ID_VAR, num);
     // TODO: add initialization.
-    while (GET_TOKEN(pos).ty == ';') {
+    while (GET_TOKEN(tokens, pos).ty == ';') {
       pos++;
     }
     return;
@@ -468,13 +471,13 @@ void identifier_node(Vector *code) {
   add_global_symbol(id->name, ID_FUNC, 0);
   Node *arg = NULL;
   pos++;
-  if (GET_TOKEN(pos).ty != ')') {
+  if (GET_TOKEN(tokens, pos).ty != ')') {
     arg = argument();
   }
-  if (GET_TOKEN(pos++).ty != ')') {
+  if (GET_TOKEN(tokens, pos++).ty != ')') {
     // TODO: add support of nmultiple arguments.
     error("Right parenthesis ')' missing (function): \"%s\"",
-          GET_TOKEN(pos - 1).input);
+          GET_TOKEN(tokens, pos - 1).input);
   }
   Node *f = new_node(ND_FUNCDEF, id, arg);
   f->block = new_vector();
@@ -485,17 +488,18 @@ void identifier_node(Vector *code) {
 }
 
 void function(Vector *code) {
-  if (GET_TOKEN(pos).ty == TK_IDENT) {
+  if (GET_TOKEN(tokens, pos).ty == TK_IDENT) {
     // TODO: Move this out to a new function.
     identifier_node(code);
     return;
   }
-  error("Unexpected token (function): \"%s\"", GET_TOKEN(pos).input);
+  error("Unexpected token (function): \"%s\"", GET_TOKEN(tokens, pos).input);
 }
 
-Vector *parse() {
+Vector *parse(Vector *tokens_input) {
+  tokens = tokens_input;
   Vector *code = new_vector();
-  while (GET_TOKEN(pos).ty != TK_EOF) {
+  while (GET_TOKEN(tokens, pos).ty != TK_EOF) {
     current_local_symbols = new_map();
     local_symbol_counter = 0;
     vec_push(local_symbols, current_local_symbols);

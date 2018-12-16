@@ -84,12 +84,9 @@ enum {
   ND_CHAR,      // for char
 };
 
-// Macro for getting the next token.
-#define GET_TOKEN(i) (*((Token *)tokens->data[i]))
-
 Vector *tokenize(char *p);
 
-Vector *parse();
+Vector *parse(Vector *tokens_input);
 
 void gen_program();
 
