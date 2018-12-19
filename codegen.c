@@ -7,14 +7,17 @@ extern Map *global_symbols;
 extern Vector *local_symbols;
 static Map *current_local_symbols;
 static int label_counter = 0;
+static Node *func_ident;
 
 Node *get_node_p(Vector *code, int i) {
   return (Node *)code->data[i];
 }
 
 void gen_block(Vector *block_code) {
-    for (int i = 0; get_node_p(block_code, i); i++)
-      gen_node(get_node_p(block_code, i));
+  for (int i = 0; get_node_p(block_code, i); i++) {
+    printf("  push rax\n");
+    gen_node(get_node_p(block_code, i));
+  }
 }
 
 void gen_lval(Node *node) {
@@ -180,6 +183,12 @@ void gen_node(Node *node) {
     return;
   }
 
+  if (node->ty == ND_RETURN) {
+    gen_node(node->lhs);
+    printf("  jmp %s_end\n", func_ident->name);
+    return;
+  }
+
   if (node->ty == ND_DECLARE) {
     gen_node(node->rhs);
     return;
@@ -302,9 +311,9 @@ void gen_program(Vector *program_code) {
   printf("  .text\n");
   printf(".global main\n");
   printf(".type main, @function\n");
-  printf("main:\n");
-  printf("  call func_main\n");
-  printf("  ret\n");
+  /* printf("main:\n"); */
+  /* printf("  call func_main\n"); */
+  /* printf("  ret\n"); */
 
   for (int j = 0; program_code->data[j]; j++) {
     current_local_symbols = (Map *)local_symbols->data[j];
@@ -328,12 +337,8 @@ void gen_program(Vector *program_code) {
       fprintf(stderr, "The first line of the function isn't function definition\n");
       exit(1);
     }
-    Node *func_ident = identifier->lhs;
-    if (strcmp(func_ident->name, "main") == 0) {
-      printf("func_main:\n");
-    } else {
-      printf("%s:\n", func_ident->name);
-    }
+    func_ident = identifier->lhs;
+    printf("%s:\n", func_ident->name);
     // Prologue.
     printf("  push rbx\n");
     printf("  push rbp\n");
@@ -358,8 +363,12 @@ void gen_program(Vector *program_code) {
     }
     // Generate codes from the top line to bottom
     Vector *block = identifier->block;
+    // dummy push to be popped by gen_block. (Then optimized later);
+    printf("  push rax\n");
+
     gen_block(block);
 
+    printf("%s_end:\n", func_ident->name);
     // The evaluated value is at the top of stack.
     // Need to pop this value so the stack is not overflown.
     printf("  pop rax\n");

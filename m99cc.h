@@ -82,11 +82,11 @@ enum {
   ND_GE,        // 268 Greater than or equal (>= / =>)
   ND_IF,        // 269 IF node.
   ND_WHILE,     // 270 While node.
-  // TODO implement For loop without using while.
-  ND_FOR,       // 271 For node
-  ND_DECLARE,   // 272 Declaration of variable/function
-  ND_DEFINITION,// 273 Defintion of variable/function
-  ND_DATATYPE,  // 274 Data type
+  ND_FOR,       // 271 While node.
+  ND_RETURN,    // 272 For node
+  ND_DECLARE,   // 273 Declaration of variable/function
+  ND_DEFINITION,// 274 Defintion of variable/function
+  ND_DATATYPE,  // 275 Data type
 };
 
 // Data type.

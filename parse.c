@@ -441,6 +441,16 @@ void for_node(Vector *code) {
   vec_push(for_nd->block, NULL);
 }
 
+Node *return_node() {
+  pos++;
+  Node *nd = expression(ASSIGN_PRIORITY);
+  Node *return_nd = new_node(ND_RETURN, nd, NULL);
+  while (GET_TOKEN(tokens, pos).ty == ';') {
+    pos++;
+  }
+  return return_nd;
+}
+
 void declaration_node(Vector *code);
 
 void code_block(Vector *code) {
@@ -454,6 +464,8 @@ void code_block(Vector *code) {
       vec_push(code, while_node());
     } else if (GET_TOKEN(tokens, pos).ty == TK_FOR) {
       for_node(code);
+    } else if (GET_TOKEN(tokens, pos).ty == TK_RETURN) {
+      vec_push(code, return_node());
     } else if ( get_data_type((GET_TOKEN(tokens, pos).ty)) != DT_INVALID) {
       // TODO: declaration_node inside function can not generate function. Check.
       declaration_node(code);

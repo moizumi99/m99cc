@@ -138,5 +138,9 @@ try 3 'int main(){int a; char b; b = 3; a = b; a;}'
 # replace char value with int and overflow
 try 7 'int main(){int a; char b; a = 7 + 256; b = a; b;}'
 
+# return
+try 2 'int main(){int a; a = 2; if (a==2) {return a;} return 0;}'
+try 4 'int main(){int a; a = 3; if (a==2) {return a;} return 4;}'
+
 
 echo OK
