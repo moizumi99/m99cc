@@ -25,7 +25,8 @@ int expect_token(Vector *tokens, int pos, int ty, int val, char *name) {
 }
 
 void test_tokenize(Vector *tokens) {
-  char *p = "a[4]; f(x) {2 <= 30 >= 2 == 4;} main() { f(0 != 1 * 2 / 3 - 5) if else while for;} void int char -3 [ & ] , ";
+  char *p = "a[4]; f(x) {2 <= 30 >= 2 == 4;} main() { f(0 != 1 * 2 / 3 - 5)"
+    " if else while for;} void int char -3 [ & ] , return 4;";
   tokens = tokenize(p);
   int cnt = 0;
   expect_token(tokens, cnt++, TK_IDENT, 0, "a");
@@ -39,9 +40,9 @@ void test_tokenize(Vector *tokens) {
   expect_token(tokens, cnt++, ')', 0, ")");
   expect_token(tokens, cnt++, '{', 0, "{");
   expect_token(tokens, cnt++, TK_NUM, 2, "2");
-  expect_token(tokens, cnt++, TK_LE, 0, "<=");
+  expect_token(tokens, cnt++, TK_GE, 0, "<=");
   expect_token(tokens, cnt++, TK_NUM, 30, "30");
-  expect_token(tokens, cnt++, TK_GE, 0, ">=");
+  expect_token(tokens, cnt++, TK_LE, 0, ">=");
   expect_token(tokens, cnt++, TK_NUM, 2, "2");
   expect_token(tokens, cnt++, TK_EQ, 0, "==");
   expect_token(tokens, cnt++, TK_NUM, 4, "4");
@@ -78,6 +79,9 @@ void test_tokenize(Vector *tokens) {
   expect_token(tokens, cnt++, '&', 0, "&");
   expect_token(tokens, cnt++, ']', 0, "]");
   expect_token(tokens, cnt++, ',', 0, ",");
+  expect_token(tokens, cnt++, TK_RETURN, 0, "return");
+  expect_token(tokens, cnt++, TK_NUM, 4, "4");
+  expect_token(tokens, cnt++, ';', 0, ";");
 }
 
 void dump_token(Vector *tokens) {

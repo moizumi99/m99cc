@@ -240,6 +240,8 @@ void gen_node(Node *node) {
   case ND_NE:
   case '<':
   case '>':
+  case ND_LE:
+  case ND_GE:
     printf("  cmp rdi, rax\n");
     if (node->ty == ND_EQ) {
       printf("  sete al\n");
@@ -249,6 +251,10 @@ void gen_node(Node *node) {
       printf("  setl al\n");
     } else if (node->ty == '<') {
       printf("  setg al\n");
+    } else if (node->ty == ND_LE) {
+      printf("  setle al\n");
+    } else if (node->ty == ND_GE) {
+      printf("  setge al\n");
     } else {
       error("%s\n", "Code shouldn't reach here (codegen.c compare).");
     }

@@ -49,9 +49,20 @@ Vector *tokenize(char *p) {
       continue;
     }
 
-    if ((*p == '<' || *p == '>') && *(p + 1) == '=') {
+    if (*p == '<' && *(p + 1) == '=') {
       add_token(tokens,i);
-      GET_ATOKEN(tokens, i).ty = (*p == '<') ? TK_LE : TK_GE;
+      GET_ATOKEN(tokens, i).ty = TK_GE;
+      GET_ATOKEN(tokens, i).input = p;
+      GET_ATOKEN(tokens, i).len = 2;
+      i++;
+      p+=2;
+      continue;
+    }
+
+
+    if (*p == '>' && *(p + 1) == '=') {
+      add_token(tokens,i);
+      GET_ATOKEN(tokens, i).ty = TK_LE;
       GET_ATOKEN(tokens, i).input = p;
       GET_ATOKEN(tokens, i).len = 2;
       i++;
@@ -102,6 +113,9 @@ Vector *tokenize(char *p) {
       } else if (strncmp(GET_ATOKEN(tokens, i).input, "char", 4) == 0) {
         GET_ATOKEN(tokens, i).len = 4;
         GET_ATOKEN(tokens, i).ty = TK_CHAR;
+      } else if (strncmp(GET_ATOKEN(tokens, i).input, "return", 6) == 0) {
+        GET_ATOKEN(tokens, i).len = 6;
+        GET_ATOKEN(tokens, i).ty = TK_RETURN;
       } else {
         GET_ATOKEN(tokens, i).ty = TK_IDENT;
       }

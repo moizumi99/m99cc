@@ -164,8 +164,8 @@ int operation_priority(int token_type) {
     return ADD_PRIORITY;
   case '<':
   case '>':
-  /* case TK_LE: */
-  /* case TK_GE: */
+  case TK_GE:
+  case TK_LE:
     return COMPARE_PRIORITY;
   case TK_EQ:
   case TK_NE:
@@ -191,6 +191,10 @@ int get_node_type(int token_type) {
     return ND_EQ;
   case TK_NE:
     return ND_NE;
+  case TK_LE:
+    return ND_LE;
+  case TK_GE:
+    return ND_GE;
   default:
     // For other operations (*/+- others, token_type -> node_type)
     return token_type;

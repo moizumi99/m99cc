@@ -36,10 +36,11 @@ enum {
   TK_ELSE,      // 263 else keyword
   TK_WHILE,     // 264 while keyword
   TK_FOR,       // 265 for keyword
-  TK_VOID,      // 266 for void
-  TK_INT,       // 267 for integer
-  TK_CHAR,      // 268 for char
-  TK_EOF,       // 269 End of input
+  TK_RETURN,    // 266 return keyword
+  TK_VOID,      // 267 for void
+  TK_INT,       // 268 for integer
+  TK_CHAR,      // 269 for char
+  TK_EOF,       // 270 End of input
 };
 
 enum {
@@ -77,13 +78,15 @@ enum {
   ND_MINUS,     // 264 Single term operator (-).
   ND_EQ,        // 265 Equal operation (==).
   ND_NE,        // 266 Not-equal operation (!=).
-  ND_IF,        // 267 IF node.
-  ND_WHILE,     // 268 While node.
+  ND_LE,        // 267 Less than or equal (<= / =<)
+  ND_GE,        // 268 Greater than or equal (>= / =>)
+  ND_IF,        // 269 IF node.
+  ND_WHILE,     // 270 While node.
   // TODO implement For loop without using while.
-  ND_FOR,       // 269 For node
-  ND_DECLARE,   // 270 Declaration of variable/function
-  ND_DEFINITION,// 271 Defintion of variable/function
-  ND_DATATYPE,  // 272 Data type
+  ND_FOR,       // 271 For node
+  ND_DECLARE,   // 272 Declaration of variable/function
+  ND_DEFINITION,// 273 Defintion of variable/function
+  ND_DATATYPE,  // 274 Data type
 };
 
 // Data type.

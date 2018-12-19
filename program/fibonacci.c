@@ -1,7 +1,7 @@
 int print(int a) {
   int b, c;
   b = 1;
-  while(a > b - 1) {
+  while(a >= b) {
     b = b * 10;
   }
   b = b / 10;
