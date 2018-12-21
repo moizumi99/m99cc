@@ -11,9 +11,27 @@ Now the large part of the code has been diverted from the original 9cc.
 
 Not much yet.
 
-Basic codes like below can be compiled to assembly code.
+Basic codes like below can be compiled to assembly code. (print() is defined separately. Full code is in program/fibonacci.c)
 
-'main(){a=b=1; if (a==2) {b = 3;} else if (a==1) {b = 4;} else {b = 5;} b;}'
+```c
+int main() {
+  int i;
+  int d, e, f;
+  d = 0;
+  e = 1;
+  f = 1;
+  for(i = 0; i < 11; i = i + 1) {
+    print(d);
+    f = d + e;
+    d = e;
+    e = f;
+  }
+  putchar(10);
+  0;
+}
+```
 
-This gives 4 as an answer.
+This code write fibonacci seriese to the console, like below
+
+> 0 1 1 2 3 5 8 13 21 34 55 
 
