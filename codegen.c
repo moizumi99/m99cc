@@ -15,7 +15,7 @@ Node *get_node_p(Vector *code, int i) {
 
 void gen_block(Vector *block_code) {
   for (int i = 0; get_node_p(block_code, i); i++) {
-    printf("  push rax\n");
+    printf("  pop rax\n");
     gen_node(get_node_p(block_code, i));
   }
 }
@@ -150,6 +150,7 @@ void gen_node(Node *node) {
     gen_node(node->lhs);
     printf("  pop rax;\n");
     printf("  cmp rax, 0\n");
+    printf("  push rax;\n");
     int else_label = label_counter++;
     printf("  je _else_%d\n", else_label);
     gen_block(node->block);
@@ -176,6 +177,7 @@ void gen_node(Node *node) {
     gen_node(node->lhs);
     printf("  pop rax;\n");
     printf("  cmp rax, 0\n");
+    printf("  push rax;\n");
     printf("  je _while_end_%d\n", while_end);
     gen_block(node->block);
     printf("  jmp _while_%d\n", while_label);

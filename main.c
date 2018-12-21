@@ -18,6 +18,8 @@ void dump_tree(Vector *code);
 int main(int argc, char **argv) {
   if (argc < 2) {
     fprintf(stderr, "Arguments number not right.\n");
+    fprintf(stderr, "Usage: %s [file] [-test] [-test_token]"
+            " [-test_parse] [-dump_tree] [-dump_symbols]\n", argv[0]);
     return 1;
   }
 
@@ -81,8 +83,10 @@ int main(int argc, char **argv) {
   program_code = parse(tokens);
 
   if (dump_symbols_enable) {
+    fprintf(stderr, "Global Symbols: \n");
     dump_symbols(global_symbols);
     for(int i = 0; local_symbols->data[i]; i++) {
+      fprintf(stderr, "Local Symbols [%d]: \n", i);
       dump_symbols((Map *)(local_symbols->data[i]));
     }
   }

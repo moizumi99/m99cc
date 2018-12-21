@@ -1,8 +1,8 @@
-#include <stdio.h>
+#include "m99cc.h"
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "m99cc.h"
 
 #define GET_TOKEN(T, I) (*((Token *)(T)->data[(I)]))
 
@@ -11,6 +11,11 @@ static Vector *tokens;
 extern Map *global_symbols;
 extern Vector *local_symbols;
 static Map *current_local_symbols;
+
+enum {
+  SC_GLOBAL, // Global scope.
+  SC_LOCAL   // Local scope.
+};
 
 // Error reporting function.
 void error(char *s, char *message) {
@@ -56,7 +61,7 @@ int get_array_size() {
   }
   if (GET_TOKEN(tokens, pos++).ty != ']') {
     fprintf(stderr, "Closing bracket ']' is missing (get_array_size): \"%s\"\n",
-            GET_TOKEN(tokens, pos-1).input );
+            GET_TOKEN(tokens, pos - 1).input);
     exit(1);
   }
   return num;
@@ -67,11 +72,11 @@ void add_global_symbol(char *name_perm, int type, int num, int dtype) {
   Symbol *new_symbol = malloc(sizeof(Symbol));
   int dsize = data_size(dtype);
   global_symbol_counter += (num == 0) ? dsize : num * dsize;
-  new_symbol->address = (void *) global_symbol_counter;
+  new_symbol->address = (void *)global_symbol_counter;
   new_symbol->type = type;
   new_symbol->num = num;
   new_symbol->dtype = dtype;
-  map_put(global_symbols, name_perm, (void *) new_symbol);
+  map_put(global_symbols, name_perm, (void *)new_symbol);
 }
 
 void *get_symbol_address(Map *symbols, char *name) {
@@ -99,11 +104,15 @@ int get_symbol_type(Map *symbols, char *name) {
 }
 
 int data_size(int dtype) {
-  switch(dtype) {
-  case DT_VOID: return 8;
-  case DT_INT: return 8;
-  case DT_CHAR: return 1;
-  default: return 8;
+  switch (dtype) {
+  case DT_VOID:
+    return 8;
+  case DT_INT:
+    return 8;
+  case DT_CHAR:
+    return 1;
+  default:
+    return 8;
   }
 }
 
@@ -117,11 +126,11 @@ void add_local_symbol(char *name_perm, int type, int num, int dtype) {
   Symbol *new_symbol = malloc(sizeof(Symbol));
   int dsize = data_size(dtype);
   local_symbol_counter += (num == 0) ? dsize : num * dsize;
-  new_symbol->address = (void *) local_symbol_counter;
+  new_symbol->address = (void *)local_symbol_counter;
   new_symbol->type = type;
   new_symbol->num = num;
   new_symbol->dtype = dtype;
-  map_put(current_local_symbols, name_perm, (void *) new_symbol);
+  map_put(current_local_symbols, name_perm, (void *)new_symbol);
 }
 
 char *create_name_perm(char *name, int len) {
@@ -154,7 +163,7 @@ Node *new_node_ident(int val, char *name, int len) {
 #define LOW_PRIORITY (0)
 
 int operation_priority(int token_type) {
-  switch(token_type) {
+  switch (token_type) {
   case '*':
   case '/':
   case '%':
@@ -170,7 +179,7 @@ int operation_priority(int token_type) {
   case TK_EQ:
   case TK_NE:
     return EQUAL_PRIORITY;
-  /* case TK_AND: */
+    /* case TK_AND: */
     /* return AND_PRIORITY; */
   /* case TK_OR: */
   /*   return OR_PRIORITY */
@@ -202,7 +211,7 @@ int get_node_type(int token_type) {
 }
 
 int get_data_type(int token_type) {
-  switch(token_type) {
+  switch (token_type) {
   case TK_VOID:
     return DT_VOID;
   case TK_CHAR:
@@ -270,7 +279,8 @@ Node *term() {
       pos++;
       Node *index = expression(ASSIGN_PRIORITY);
       if (GET_TOKEN(tokens, pos++).ty != ']') {
-        fprintf(stderr, "Closing bracket ']' missing. \"%s\"\n", GET_TOKEN(tokens, pos - 1).input);
+        fprintf(stderr, "Closing bracket ']' missing. \"%s\"\n",
+                GET_TOKEN(tokens, pos - 1).input);
         exit(1);
       }
       Node *offset = new_node('*', index, new_node_num(8));
@@ -295,7 +305,8 @@ Node *term() {
     return node;
   }
   // Single term operators
-  if (GET_TOKEN(tokens, pos).ty == '+' || GET_TOKEN(tokens, pos).ty == '-' || GET_TOKEN(tokens, pos).ty == '*' || GET_TOKEN(tokens, pos).ty == '&') {
+  if (GET_TOKEN(tokens, pos).ty == '+' || GET_TOKEN(tokens, pos).ty == '-' ||
+      GET_TOKEN(tokens, pos).ty == '*' || GET_TOKEN(tokens, pos).ty == '&') {
     int type = GET_TOKEN(tokens, pos).ty;
     pos++;
     Node *rhs = term();
@@ -311,21 +322,24 @@ Node *argument() {
   // TODO: make argument a list.
   int dtype = get_data_type(GET_TOKEN(tokens, pos++).ty);
   if (dtype == DT_INVALID) {
-    error("Invalid (not data type) token in argument declaration position \"%s\"",
-          GET_TOKEN(tokens, pos - 1).input);
+    error(
+        "Invalid (not data type) token in argument declaration position \"%s\"",
+        GET_TOKEN(tokens, pos - 1).input);
   }
   if (GET_TOKEN(tokens, pos).ty != TK_IDENT) {
     error("Invalid (not IDENT) token in argument declaration position \"%s\"",
           GET_TOKEN(tokens, pos).input);
   }
   // argument name?
-  char *name = create_name_perm(GET_TOKEN(tokens, pos).input, GET_TOKEN(tokens, pos).len);
+  char *name = create_name_perm(GET_TOKEN(tokens, pos).input,
+                                GET_TOKEN(tokens, pos).len);
   if (map_get(current_local_symbols, name) != NULL) {
     error("Argument name conflict: %s\n", name);
   }
   add_local_symbol(name, ID_ARG, get_array_size(), dtype);
-  Node *id = new_node_ident(GET_TOKEN(tokens, pos).val, GET_TOKEN(tokens, pos).input,
-                              GET_TOKEN(tokens, pos).len);
+  Node *id =
+      new_node_ident(GET_TOKEN(tokens, pos).val, GET_TOKEN(tokens, pos).input,
+                     GET_TOKEN(tokens, pos).len);
   pos++;
   return id;
 }
@@ -451,11 +465,12 @@ Node *return_node() {
   return return_nd;
 }
 
-void declaration_node(Vector *code);
+void declaration_node(Vector *code, int scope);
 
 void code_block(Vector *code) {
   if (GET_TOKEN(tokens, pos++).ty != '{') {
-    error("Left brace '{' missing (code_block): \"%s\"", GET_TOKEN(tokens, pos - 1).input);
+    error("Left brace '{' missing (code_block): \"%s\"",
+          GET_TOKEN(tokens, pos - 1).input);
   }
   while (GET_TOKEN(tokens, pos).ty != '}') {
     if (GET_TOKEN(tokens, pos).ty == TK_IF) {
@@ -466,38 +481,60 @@ void code_block(Vector *code) {
       for_node(code);
     } else if (GET_TOKEN(tokens, pos).ty == TK_RETURN) {
       vec_push(code, return_node());
-    } else if ( get_data_type((GET_TOKEN(tokens, pos).ty)) != DT_INVALID) {
-      // TODO: declaration_node inside function can not generate function. Check.
-      declaration_node(code);
+    } else if (get_data_type((GET_TOKEN(tokens, pos).ty)) != DT_INVALID) {
+      // TODO: declaration_node inside function can not generate function.
+      // Check.
+      declaration_node(code, SC_LOCAL);
     } else {
       vec_push(code, assign());
     }
   }
   if (GET_TOKEN(tokens, pos++).ty != '}') {
-    error("Right brace '}' missing (code_block): \"%s\"", GET_TOKEN(tokens, pos - 1).input);
+    error("Right brace '}' missing (code_block): \"%s\"",
+          GET_TOKEN(tokens, pos - 1).input);
   }
 }
 
-Node *identifier_node(int dtype) {
+int check_conflict(char *name, int scope) {
+  if (map_get(global_symbols, name) != NULL) {
+    error("Global name conflict. \"%s\"", name);
+    return -1;
+  }
+  if (scope == SC_LOCAL && map_get(current_local_symbols, name) != NULL) {
+    error("Local name conflict. \"%s\"", name);
+    return -1;
+  }
+  return 0;
+}
+
+Node *identifier_node(int dtype, int scope) {
   if (GET_TOKEN(tokens, pos).ty != TK_IDENT) {
     error("Unexpected token (function): \"%s\"", GET_TOKEN(tokens, pos).input);
   }
-  Node *id = new_node_ident(GET_TOKEN(tokens, pos).val, GET_TOKEN(tokens, pos).input,
-                            GET_TOKEN(tokens, pos).len);
-  if (map_get(global_symbols, id->name) != NULL) {
-    error("Global name conflict. \"%s\"", id->name);
-    return NULL;
-  }
+  Node *id =
+      new_node_ident(GET_TOKEN(tokens, pos).val, GET_TOKEN(tokens, pos).input,
+                     GET_TOKEN(tokens, pos).len);
   pos++;
-  // global variable.
+  check_conflict(id->name, scope);
+  // global or local variable.
   if (GET_TOKEN(tokens, pos).ty != '(') {
     int num = get_array_size();
-    add_global_symbol(id->name, ID_VAR, num, dtype);
+    if (scope == SC_GLOBAL) {
+      add_global_symbol(id->name, ID_VAR, num, dtype);
+    } else {
+      add_local_symbol(id->name, ID_VAR, num, dtype);
+    }
     // TODO: add initialization.
     return id;
   }
   // TODO: implement function declaration.
   // function definition..
+  if (scope != SC_GLOBAL) {
+    error("Function declaration is allowed only"
+          " in global scope. \"%s\"\n",
+          id->name);
+    return NULL;
+  }
   add_global_symbol(id->name, ID_FUNC, 0, dtype);
   Node *arg = NULL;
   pos++;
@@ -516,18 +553,19 @@ Node *identifier_node(int dtype) {
   return f;
 }
 
-Node *identifier_sequence(int dtype) {
-  Node *id = identifier_node(dtype);
+Node *identifier_sequence(int dtype, int scope) {
+  Node *id = identifier_node(dtype, scope);
   if (GET_TOKEN(tokens, pos).ty == ',') {
     pos++;
-    Node *ids = identifier_sequence(dtype);
+    Node *ids = identifier_sequence(dtype, scope);
     return new_node(ND_IDENTSEQ, id, ids);
   }
   if (GET_TOKEN(tokens, pos).ty == ';') {
     pos++;
     return id;
   }
-  // error("Invalid token (parse.c, identifier_sequence())): \"%s\"", GET_TOKEN(tokens, pos).input);
+  // error("Invalid token (parse.c, identifier_sequence())): \"%s\"",
+  // GET_TOKEN(tokens, pos).input);
   return id;
 }
 
@@ -542,14 +580,15 @@ Node *new_node_datatype(int data_type) {
   return node;
 }
 
-void declaration_node(Vector *code) {
+void declaration_node(Vector *code, int scope) {
   int data_type = get_data_type(GET_TOKEN(tokens, pos++).ty);
   if (data_type == DT_INVALID) {
-    error("Data type needed before declaration of function or variable. (\"%s\")",
-          GET_TOKEN(tokens, pos-1).input);
+    error(
+        "Data type needed before declaration of function or variable. (\"%s\")",
+        GET_TOKEN(tokens, pos - 1).input);
   }
   Node *node_dt = new_node_datatype(data_type);
-  Node *node_ids = identifier_sequence(data_type);
+  Node *node_ids = identifier_sequence(data_type, scope);
   Node *declaration = new_node(ND_DECLARE, node_dt, node_ids);
   vec_push(code, declaration);
   return;
@@ -562,10 +601,9 @@ Vector *parse(Vector *tokens_input) {
     current_local_symbols = new_map();
     local_symbol_counter = 0;
     vec_push(local_symbols, current_local_symbols);
-    declaration_node(code);
+    declaration_node(code, SC_GLOBAL);
   }
   vec_push(code, NULL);
   vec_push(local_symbols, NULL);
   return code;
 }
-
