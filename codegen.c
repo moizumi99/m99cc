@@ -308,7 +308,9 @@ void gen_program(Vector *program_code) {
       }
     }
   }
-
+  // String literals
+  
+  
   // Main function.
   printf("  .text\n");
   printf(".global main\n");

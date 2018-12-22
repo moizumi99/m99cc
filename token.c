@@ -65,6 +65,32 @@ char *char_literal(Vector *tokens, char *p, int i) {
   return p;
 }
 
+// Return literal length including double quatations.
+int get_length(char *p) {
+  int len = 1;
+  p++;
+  while(*p != '\"' && *p != EOF) {
+    p++;
+    len++;
+  }
+  return len + 1;
+}
+
+char *str_literal(Vector *tokens, char *p, int i) {
+  add_token(tokens,i);
+  GET_ATOKEN(tokens, i).ty = TK_STR;
+  GET_ATOKEN(tokens, i).input = p;
+  GET_ATOKEN(tokens, i).val = 0;
+  int len = get_length(p);
+  GET_ATOKEN(tokens, i).len = len;
+  i++;
+  if (*(p + len - 1) != '\"') {
+    fprintf(stderr, "String literal not closed with a double quote. %s\n", p);
+    exit(1);
+  }
+  return (p + len + 1);
+}
+
 // split chars pointed by p into tokens
 Vector *tokenize(char *p) {
   Vector *tokens = new_vector();
@@ -79,6 +105,12 @@ Vector *tokenize(char *p) {
 
     if (*p == '\'') {
       p = char_literal(tokens, p, i);
+      i++;
+      continue;
+    }
+
+    if (*p == '\"') {
+      p = str_literal(tokens, p, i);
       i++;
       continue;
     }

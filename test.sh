@@ -149,13 +149,16 @@ try 2 'int main(){char a; a = 2; return a;}'
 
 # char literal
 try 65 "int main(){return 'A';}"
-try 0 "int main(){return '\0';}";
+try 0 "int main(){return '\0';}"
 try 9 "int main(){return '\t';}"
 try 13 "int main(){return '\r';}"
 try 10 "int main(){return '\n';}"
-try 34 "int main(){return '\"';}";
-try 39 "int main(){return '\'';}";
-try 63 "int main(){return '\?';}";
-try 92 "int main(){return '\\\\';}";
+try 34 "int main(){return '\"';}"
+try 39 "int main(){return '\'';}"
+try 63 "int main(){return '\?';}"
+try 92 "int main(){return '\\\\';}"
+
+# putchar with char literal.
+try 0 "int main(){putchar('h'); putchar('e'); putchar('l'); putchar('l'); putchar('o'); putchar('\n'); return 0;}"
 
 echo OK

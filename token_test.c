@@ -26,7 +26,9 @@ int expect_token(Vector *tokens, int pos, int ty, int val, char *name) {
 
 void test_tokenize(Vector *tokens) {
   char *p = "a[4]; f(x) {2 <= 30 >= 2 == 4;} main() { f(0 != 1 * 2 / 3 - 5)"
-    " if else while for;} void int char -3 [ & ] , return 4;";
+    " if else while for;} void int char -3 [ & ] , return 4;"
+    "'a' '\\t' '\\r' '\\n' '\\\"' '\\\'' '\\\?' '\\\\' '\\0' "
+    "\"Hello, world\\n\"";
   tokens = tokenize(p);
   int cnt = 0;
   expect_token(tokens, cnt++, TK_IDENT, 0, "a");
@@ -82,6 +84,16 @@ void test_tokenize(Vector *tokens) {
   expect_token(tokens, cnt++, TK_RETURN, 0, "return");
   expect_token(tokens, cnt++, TK_NUM, 4, "4");
   expect_token(tokens, cnt++, ';', 0, ";");
+  expect_token(tokens, cnt++, TK_NUM, 'a', "a");
+  expect_token(tokens, cnt++, TK_NUM, '\t', "\\t");
+  expect_token(tokens, cnt++, TK_NUM, '\r', "\\r");
+  expect_token(tokens, cnt++, TK_NUM, '\n', "\\n");
+  expect_token(tokens, cnt++, TK_NUM, '\"', "\\\"");
+  expect_token(tokens, cnt++, TK_NUM, '\'', "\\\'");
+  expect_token(tokens, cnt++, TK_NUM, '\?', "\\\?");
+  expect_token(tokens, cnt++, TK_NUM, '\\', "\\\\");
+  expect_token(tokens, cnt++, TK_NUM, '\0', "\\0");
+  expect_token(tokens, cnt++, TK_STR, 0, "\"Hello, world\\n\"");
 }
 
 void dump_token(Vector *tokens) {
