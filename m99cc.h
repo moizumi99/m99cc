@@ -40,7 +40,8 @@ enum {
   TK_VOID,      // 267 for void
   TK_INT,       // 268 for integer
   TK_CHAR,      // 269 for char
-  TK_EOF,       // 270 End of input
+  TK_STR,       // 270 char string literal
+  TK_EOF,       // 271 End of input
 };
 
 enum {

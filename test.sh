@@ -130,7 +130,7 @@ try 4 'int main(){char a; int b; a = 4; b = a; b;}'
 try 3 'int main(){char a[1]; a[0] = 3; a[0];}'
 try 7 'int main(){char a[2]; a[0] = 5; a[1] = 2; a[0] + a[1];}'
 # global char
-try 2 'int a; int main(){a = 2; a;}'
+try 2 'char a; int main(){a = 2; a;}'
 # global char array
 try 3 'int a[1]; int main(){a[0] = 3; a[0];}'
 try 7 'char a[2]; int main(){a[0] = 5; a[1] = 2; a[0] + a[1];}'
@@ -147,5 +147,15 @@ try 2 'int main(){int a; a = 2; if (a==2) {return a;} return 0;}'
 try 4 'int main(){int a; a = 3; if (a==2) {return a;} return 4;}'
 try 2 'int main(){char a; a = 2; return a;}'
 
+# char literal
+try 65 "int main(){return 'A';}"
+try 0 "int main(){return '\0';}";
+try 9 "int main(){return '\t';}"
+try 13 "int main(){return '\r';}"
+try 10 "int main(){return '\n';}"
+try 34 "int main(){return '\"';}";
+try 39 "int main(){return '\'';}";
+try 63 "int main(){return '\?';}";
+try 92 "int main(){return '\\\\';}";
 
 echo OK

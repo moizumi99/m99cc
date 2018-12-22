@@ -17,6 +17,45 @@ int min(int a, int b) {
   return (a < b) ? a : b;
 }
 
+char *char_literal(Vector *tokens, char *p, int i) {
+  p++;
+  add_token(tokens,i);
+  GET_ATOKEN(tokens, i).ty = TK_NUM;
+  GET_ATOKEN(tokens, i).input = p;
+  char val = *p++;
+  if (val == '\\') {
+    switch(*p++) {
+    case 't':
+      val = '\t'; break;
+    case 'r':
+      val = '\r'; break;
+    case 'n':
+      val = '\n'; break;
+    case '\"':
+      val = '\"'; break;
+    case '\'':
+      val = '\''; break;
+    case '\?':
+      val = '\?'; break;
+    case '\\':
+      val = '\\'; break;
+    case '0':
+      val = '\0'; break;
+    default:
+      fprintf(stderr, "Unsupported escape sequence. %s", p);
+      exit(1);
+    }
+  }
+  GET_ATOKEN(tokens, i).val = val;
+  GET_ATOKEN(tokens, i).len = 1;
+  i++;
+  if (*p++ != '\'') {
+    fprintf(stderr, "Char literal not closed with a single quote. %s", p);
+    exit(1);
+  }
+  return p;
+}
+
 // split chars pointed by p into tokens
 Vector *tokenize(char *p) {
   Vector *tokens = new_vector();
@@ -26,6 +65,12 @@ Vector *tokenize(char *p) {
     // skip spaces
     if (isspace(*p)) {
       p++;
+      continue;
+    }
+
+    if (*p == '\'') {
+      p = char_literal(tokens, p, i);
+      i++;
       continue;
     }
 
