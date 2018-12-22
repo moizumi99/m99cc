@@ -96,45 +96,50 @@ enum {
   DT_VOID,      // 0 for void
   DT_INT,       // 1 for integer
   DT_CHAR,      // 2 for char
-  DT_INVALID,   // 3 for invalid
+  DT_PNT,       // 3 for pointer
+  DT_INVALID,   // 4 for invalid
 };
 
+typedef struct DataType{
+  int dtype;
+  struct DataType *pointer_type;
+} DataType;
+
+DataType *new_data_type(int dt);
+
+DataType *new_data_pointer(DataType *dt);
+
+// token.c
 Vector *tokenize(char *p);
 
+// parse.c
 Vector *parse(Vector *tokens_input);
-
-void gen_program();
-
 void gen_node(Node *node);
+
+// codegen.c
+void gen_program();
 
 void error(char *s, char *message);
 
 Vector *new_vector();
 
+// utils.c
 void vec_push(Vector *vec, void *elem);
-
 void *vec_pop(Vector *vec);
-
 Map *new_map();
-
 void map_put(Map *map, char *key, void *val);
-
 void *map_get(Map *map, char *key);
 
 void *get_symbol_address(Map *symbols, char *name);
-
 int get_symbol_size(Map *symbols, char *name);
-
 int get_symbol_type(Map *symbols, char *name);
-
 int data_size(int dtype);
 
 // Unit tests.
 void runtest();
-
 void runtest_tokenize();
 void dump_token();
-
 void runtest_parse();
+int runtest_data_type();
 
 #endif // M99CC-H

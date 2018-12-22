@@ -39,6 +39,10 @@ int main(int argc, char **argv) {
       runtest_parse();
       return 0;
     }
+    if (strcmp(argv[i], "-test_dtype") == 0) {
+      runtest_data_type();
+      return 0;
+    }
 
     if (strcmp(argv[i], "-dump_tree") == 0) {
       dump_tree_enbale = true;

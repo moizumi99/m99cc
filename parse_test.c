@@ -7,6 +7,7 @@ static Vector *tokens;
 extern Vector *local_symbols;
 extern Map *global_symbols;
 extern Vector *program_code;
+extern Vector *string_literals;
 
 Node *get_function_p(int i);
 
@@ -77,12 +78,13 @@ void dump_tree(Vector *code) {
 }
 
 void test_parse() {
-  char *p = "main(){a[2];a[0]=1;a[1]=2;a[0]+a[1];}";
+  char *p = "int main(){char a[2]; a[0]=1; a[1]=2; a[0]+a[1];}";
   tokenize(p);
   // dump_token();
 
   local_symbols = new_vector();
   global_symbols = new_map();
+  string_literals = new_vector();
   Vector *program_code = new_vector();
   gen_program(program_code);
   dump_tree(program_code);
