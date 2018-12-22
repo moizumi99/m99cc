@@ -17,11 +17,8 @@ int min(int a, int b) {
   return (a < b) ? a : b;
 }
 
-char *char_literal(Vector *tokens, char *p, int i) {
-  p++;
-  add_token(tokens,i);
-  GET_ATOKEN(tokens, i).ty = TK_NUM;
-  GET_ATOKEN(tokens, i).input = p;
+char get_one_char(char *p, int *ret_len) {
+  int  len = 1;
   char val = *p++;
   if (val == '\\') {
     switch(*p++) {
@@ -45,9 +42,21 @@ char *char_literal(Vector *tokens, char *p, int i) {
       fprintf(stderr, "Unsupported escape sequence. %s", p);
       exit(1);
     }
+    len++;
   }
-  GET_ATOKEN(tokens, i).val = val;
-  GET_ATOKEN(tokens, i).len = 1;
+  *ret_len = len;
+  return val;
+}
+
+char *char_literal(Vector *tokens, char *p, int i) {
+  p++;
+  add_token(tokens,i);
+  GET_ATOKEN(tokens, i).ty = TK_NUM;
+  GET_ATOKEN(tokens, i).input = p;
+  int len;
+  GET_ATOKEN(tokens, i).val = get_one_char(p, &len);
+  GET_ATOKEN(tokens, i).len = len;
+  p += len;
   i++;
   if (*p++ != '\'') {
     fprintf(stderr, "Char literal not closed with a single quote. %s", p);
