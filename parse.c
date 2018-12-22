@@ -7,6 +7,7 @@
 #define GET_TOKEN(T, I) (*((Token *)(T)->data[(I)]))
 
 static Vector *tokens;
+extern Vector *string_literals;
 
 extern Map *global_symbols;
 extern Vector *local_symbols;
@@ -24,7 +25,29 @@ void error(char *s, char *message) {
   exit(1);
 }
 
+char *create_string_in_heap(char *str, int len) {
+  char *str_mem = malloc(sizeof(char) * IDENT_LEN);
+  int copy_len = (len < IDENT_LEN - 1) ? len : IDENT_LEN - 1;
+  strncpy(str_mem, str, copy_len);
+  str_mem[len] = '\0';
+  return str_mem;
+}
+
 int pos;
+
+static int str_counter = 0;
+
+Node *new_node_str(char *name, int len) {
+  Node *node = malloc(sizeof(Node));
+  node->ty = ND_STR;
+  node->lhs = NULL;
+  node->rhs = NULL;
+  node->val = str_counter;
+  node->name = NULL; 
+  node->block = NULL;
+  vec_push(string_literals, create_string_in_heap(name, len));
+  return node;
+}
 
 Node *new_node(int op, Node *lhs, Node *rhs) {
   Node *node = malloc(sizeof(Node));
@@ -133,21 +156,13 @@ void add_local_symbol(char *name_perm, int type, int num, int dtype) {
   map_put(current_local_symbols, name_perm, (void *)new_symbol);
 }
 
-char *create_name_perm(char *name, int len) {
-  char *str = malloc(sizeof(char) * IDENT_LEN);
-  int copy_len = (len < IDENT_LEN - 1) ? len : IDENT_LEN - 1;
-  strncpy(str, name, copy_len);
-  str[len] = '\0';
-  return str;
-}
-
 Node *new_node_ident(int val, char *name, int len) {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_IDENT;
   node->lhs = NULL;
   node->rhs = NULL;
   node->val = val;
-  node->name = create_name_perm(name, len);
+  node->name = create_string_in_heap(name, len);
   node->block = NULL;
   return node;
 }
@@ -204,6 +219,8 @@ int get_node_type(int token_type) {
     return ND_LE;
   case TK_GE:
     return ND_GE;
+  case TK_STR:
+    return ND_STR;
   default:
     // For other operations (*/+- others, token_type -> node_type)
     return token_type;
@@ -248,6 +265,13 @@ Node *term() {
   // Simple number
   if (GET_TOKEN(tokens, pos).ty == TK_NUM) {
     return new_node_num(GET_TOKEN(tokens, pos++).val);
+  }
+
+  if (GET_TOKEN(tokens, pos).ty == TK_STR) {
+    char *str = GET_TOKEN(tokens, pos).input;
+    int len = GET_TOKEN(tokens, pos).len;
+    pos++;
+    return new_node_str(str, len);
   }
 
   // Variable or Function
@@ -331,7 +355,7 @@ Node *argument() {
           GET_TOKEN(tokens, pos).input);
   }
   // argument name?
-  char *name = create_name_perm(GET_TOKEN(tokens, pos).input,
+  char *name = create_string_in_heap(GET_TOKEN(tokens, pos).input,
                                 GET_TOKEN(tokens, pos).len);
   if (map_get(current_local_symbols, name) != NULL) {
     error("Argument name conflict: %s\n", name);

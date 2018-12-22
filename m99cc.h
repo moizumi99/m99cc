@@ -88,6 +88,7 @@ enum {
   ND_DECLARE,   // 273 Declaration of variable/function
   ND_DEFINITION,// 274 Defintion of variable/function
   ND_DATATYPE,  // 275 Data type
+  ND_STR,       // 276 String literal.
 };
 
 // Data type.

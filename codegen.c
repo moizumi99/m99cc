@@ -8,6 +8,7 @@ extern Vector *local_symbols;
 static Map *current_local_symbols;
 static int label_counter = 0;
 static Node *func_ident;
+extern Vector *string_literals;
 
 Node *get_node_p(Vector *code, int i) {
   return (Node *)code->data[i];
@@ -35,13 +36,15 @@ void gen_lval(Node *node) {
       fprintf(stderr, "Undefined variable used.");
       exit(1);
     }
-    //    printf("  sub rax, %d\n",
-    //           ('z' - node->name + 1) * 8);
     printf("  sub rax, %d\n", (int) address);
     printf("  push rax\n");
     return;
   } else if (node->ty == '*') {
     gen_node(node->rhs);
+    return;
+  } else if (node->ty == ND_STR) {
+    printf("  lea rax, STRLTR_%d[rip]\n", node->val);
+    printf("  push rax\n");
     return;
   }
   fprintf(stderr, "The node type %d can not be left size value", node->ty);
@@ -93,7 +96,7 @@ void gen_node(Node *node) {
         printf("  lea rax, %s[rip]\n", node->name);
       }
       printf("  push rax\n");
-    }else {
+    } else {
       gen_lval(node);
       if (get_symbol_size(current_local_symbols, node->name) == 0) {
         // regular variable. De-reference.
@@ -111,6 +114,11 @@ void gen_node(Node *node) {
       }
       // Don't de-reference if array address.
     }
+    return;
+  }
+
+  if (node->ty == ND_STR) {
+    gen_lval(node);
     return;
   }
 
@@ -309,8 +317,20 @@ void gen_program(Vector *program_code) {
     }
   }
   // String literals
-  
-  
+  if (string_literals->len > 0) {
+    printf(".Ltext0:\n");
+    printf("  .section .rodata\n");
+  }
+  for (int i = 0; i < string_literals->len; i++) {
+    printf("STRLTR_%d:\n", i);
+    printf("  .string ");
+    char *p = string_literals->data[i];
+    while(*p != '\0') {
+      putchar(*p);
+      p++;
+    }
+    putchar('\n');
+  }
   // Main function.
   printf("  .text\n");
   printf(".global main\n");

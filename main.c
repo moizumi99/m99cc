@@ -9,7 +9,7 @@
 // Put variables into vector, and make a list of variable for each code block.
 Map *global_symbols;
 Vector *local_symbols;
-// Map *current_local_symbols;
+Vector *string_literals;
 
 // for debugging.
 void dump_symbols(Map *);
@@ -57,6 +57,7 @@ int main(int argc, char **argv) {
   // program_code = new_vector();
   global_symbols = new_map();
   local_symbols = new_vector();
+  string_literals = new_vector();
 
   // open input
   if (srcfile == NULL) {
