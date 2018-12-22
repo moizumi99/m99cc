@@ -51,6 +51,6 @@ void dump_symbols(Map *symbol_table) {
     Symbol *sym = (Symbol *)symbol_table->vals->data[cnt];
     char *name = (char *)symbol_table->keys->data[cnt];
     fprintf(stderr, "name: %s, type: %d, data_type: %d, address: %d\n", name,
-            sym->type, sym->dtype, (int)sym->address);
+            sym->type, sym->data_type->dtype, (int)sym->address);
   }
 }

@@ -90,15 +90,15 @@ int get_array_size() {
   return num;
 }
 
-void add_global_symbol(char *name_perm, int type, int num, int dtype) {
+void add_global_symbol(char *name_perm, int type, int num, struct DataType *data_type) {
   static int global_symbol_counter = 0;
   Symbol *new_symbol = malloc(sizeof(Symbol));
-  int dsize = data_size(dtype);
+  int dsize = data_size(data_type);
   global_symbol_counter += (num == 0) ? dsize : num * dsize;
   new_symbol->address = (void *)global_symbol_counter;
   new_symbol->type = type;
   new_symbol->num = num;
-  new_symbol->dtype = dtype;
+  new_symbol->data_type = data_type;
   map_put(global_symbols, name_perm, (void *)new_symbol);
 }
 
@@ -120,20 +120,22 @@ int get_symbol_size(Map *symbols, char *name) {
 
 int get_symbol_type(Map *symbols, char *name) {
   Symbol *tmp_symbol = map_get(symbols, name);
-  if (tmp_symbol == NULL) {
+  if (tmp_symbol->data_type == NULL) {
     return DT_INVALID;
   }
-  return tmp_symbol->dtype;
+  return tmp_symbol->data_type->dtype;
 }
 
-int data_size(int dtype) {
-  switch (dtype) {
+int data_size(DataType *data_type) {
+  switch (data_type->dtype) {
   case DT_VOID:
     return 8;
   case DT_INT:
     return 8;
   case DT_CHAR:
     return 1;
+  case DT_PNT:
+    return 8;
   default:
     return 8;
   }
@@ -141,18 +143,18 @@ int data_size(int dtype) {
 
 int get_symbol_datasize(Map *symbols, char *name) {
   Symbol *tmp_symbol = map_get(symbols, name);
-  return data_size(tmp_symbol->dtype);
+  return data_size(tmp_symbol->data_type);
 }
 
 static int local_symbol_counter = 0;
-void add_local_symbol(char *name_perm, int type, int num, int dtype) {
+void add_local_symbol(char *name_perm, int type, int num, DataType *data_type) {
   Symbol *new_symbol = malloc(sizeof(Symbol));
-  int dsize = data_size(dtype);
+  int dsize = data_size(data_type);
   local_symbol_counter += (num == 0) ? dsize : num * dsize;
   new_symbol->address = (void *)local_symbol_counter;
   new_symbol->type = type;
   new_symbol->num = num;
-  new_symbol->dtype = dtype;
+  new_symbol->data_type = data_type;
   map_put(current_local_symbols, name_perm, (void *)new_symbol);
 }
 
@@ -360,7 +362,7 @@ Node *argument() {
   if (map_get(current_local_symbols, name) != NULL) {
     error("Argument name conflict: %s\n", name);
   }
-  add_local_symbol(name, ID_ARG, get_array_size(), dtype);
+  add_local_symbol(name, ID_ARG, get_array_size(), new_data_type(dtype));
   Node *id =
       new_node_ident(GET_TOKEN(tokens, pos).val, GET_TOKEN(tokens, pos).input,
                      GET_TOKEN(tokens, pos).len);
@@ -544,9 +546,9 @@ Node *identifier_node(int dtype, int scope) {
   if (GET_TOKEN(tokens, pos).ty != '(') {
     int num = get_array_size();
     if (scope == SC_GLOBAL) {
-      add_global_symbol(id->name, ID_VAR, num, dtype);
+      add_global_symbol(id->name, ID_VAR, num, new_data_type(dtype));
     } else {
-      add_local_symbol(id->name, ID_VAR, num, dtype);
+      add_local_symbol(id->name, ID_VAR, num, new_data_type(dtype));
     }
     // TODO: add initialization.
     return id;
@@ -559,7 +561,7 @@ Node *identifier_node(int dtype, int scope) {
           id->name);
     return NULL;
   }
-  add_global_symbol(id->name, ID_FUNC, 0, dtype);
+  add_global_symbol(id->name, ID_FUNC, 0, new_data_type(dtype));
   Node *arg = NULL;
   pos++;
   if (GET_TOKEN(tokens, pos).ty != ')') {

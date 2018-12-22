@@ -292,7 +292,7 @@ int accumulate_variable_size(Vector *symbols) {
   for (int i = 0; i < symbols->len; i++) {
     Symbol *s = (Symbol *)symbols->data[i];
     int variable_size = (s->num==0) ? 1 : s->num;
-    num += variable_size * data_size(s->dtype);
+    num += variable_size * data_size(s->data_type);
   }
   return num;
 }

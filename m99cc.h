@@ -54,7 +54,7 @@ typedef struct {
   int type;   // Symbol type (ID_VAR< ID_FUNC, ID_ARG)
   void *address; // address from the base.
   int num;    // 0: scalar, >=1: array
-  int dtype;  // Data type (void, int, char)
+  struct DataType *data_type;  // Data type (void, int, char)
 } Symbol;
 
 typedef struct Node {
@@ -133,7 +133,7 @@ void *map_get(Map *map, char *key);
 void *get_symbol_address(Map *symbols, char *name);
 int get_symbol_size(Map *symbols, char *name);
 int get_symbol_type(Map *symbols, char *name);
-int data_size(int dtype);
+int data_size(DataType *dtype);
 
 // Unit tests.
 void runtest();
