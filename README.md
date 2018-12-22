@@ -31,7 +31,7 @@ int main() {
 }
 ```
 
-This code write fibonacci seriese to the console, like below
+This code write fibonacci seriese to the console, like below.
 
 > 0 1 1 2 3 5 8 13 21 34 55 
 

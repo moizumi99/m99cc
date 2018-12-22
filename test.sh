@@ -123,6 +123,9 @@ try 3 'int a[2]; int main(){a[0]=1;a[1]=2;a[0]+a[1];}'
 try 2 'int main(){char a; a = 2; a;}'
 # char overflow
 try 1 'int main(){char a; a = 257; a;}'
+# mix char and int
+try 3 'int main(){char a; int b; b = 3; a = b; a;}'
+try 4 'int main(){char a; int b; a = 4; b = a; b;}'
 # local char array
 try 3 'int main(){char a[1]; a[0] = 3; a[0];}'
 try 7 'int main(){char a[2]; a[0] = 5; a[1] = 2; a[0] + a[1];}'
@@ -139,8 +142,10 @@ try 3 'int main(){int a; char b; b = 3; a = b; a;}'
 try 7 'int main(){int a; char b; a = 7 + 256; b = a; b;}'
 
 # return
+try 3 'int main(){return 3;}'
 try 2 'int main(){int a; a = 2; if (a==2) {return a;} return 0;}'
 try 4 'int main(){int a; a = 3; if (a==2) {return a;} return 4;}'
+try 2 'int main(){char a; a = 2; return a;}'
 
 
 echo OK
