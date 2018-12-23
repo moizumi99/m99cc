@@ -97,6 +97,8 @@ Vector *tokenize(char *p) {
 
   int i = 0;
   while (*p) {
+    int tk = -1;
+    int len = 0;
     // skip spaces
     if (isspace(*p)) {
       p++;
@@ -116,56 +118,48 @@ Vector *tokenize(char *p) {
     }
 
     if (*p == '=' && *(p + 1) == '=') {
-      add_token(tokens,i);
-      GET_ATOKEN(tokens, i).ty = TK_EQ;
-      GET_ATOKEN(tokens, i).input = p;
-      GET_ATOKEN(tokens, i).len = 2;
-      i++;
-      p+=2;
-      continue;
+      tk = TK_EQ;
+      len = 2;
+      goto ADDTOKEN;
     }
 
     if (*p == '!' && *(p + 1) == '=') {
-      add_token(tokens,i);
-      GET_ATOKEN(tokens, i).ty = TK_NE;
-      GET_ATOKEN(tokens, i).input = p;
-      GET_ATOKEN(tokens, i).len = 2;
-      i++;
-      p+=2;
-      continue;
+      tk = TK_NE;
+      len = 2;
+      goto ADDTOKEN;
     }
 
     if (*p == '<' && *(p + 1) == '=') {
-      add_token(tokens,i);
-      GET_ATOKEN(tokens, i).ty = TK_GE;
-      GET_ATOKEN(tokens, i).input = p;
-      GET_ATOKEN(tokens, i).len = 2;
-      i++;
-      p+=2;
-      continue;
+      tk = TK_GE;
+      len = 2;
+      goto ADDTOKEN;
     }
 
     if (*p == '>' && *(p + 1) == '=') {
-      add_token(tokens,i);
-      GET_ATOKEN(tokens, i).ty = TK_LE;
-      GET_ATOKEN(tokens, i).input = p;
-      GET_ATOKEN(tokens, i).len = 2;
-      i++;
-      p+=2;
-      continue;
+      tk = TK_LE;
+      len = 2;
+      goto ADDTOKEN;
+    }
+
+    if (*p == '&' && *(p + 1) == '&') {
+      tk = TK_AND;
+      len = 2;
+      goto ADDTOKEN;
+    }
+
+    if (*p == '|' && *(p + 1) == '|') {
+      tk = TK_OR;
+      len = 2;
+      goto ADDTOKEN;
     }
 
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' ||
         *p == '(' || *p == ')' || *p == '=' || *p == ';' ||
         *p == '{' || *p == '}' || *p == '<' || *p == '>' ||
         *p == '&' || *p == '[' || *p == ']' || *p == ',') {
-      add_token(tokens,i);
-      GET_ATOKEN(tokens, i).ty = *p;
-      GET_ATOKEN(tokens, i).input = p;
-      GET_ATOKEN(tokens, i).len = 1;
-      i++;
-      p++;
-      continue;
+      tk = *p;
+      len = 1;
+      goto ADDTOKEN;
     }
 
     if ('a' <= *p && *p <= 'z') {
@@ -217,6 +211,17 @@ Vector *tokenize(char *p) {
       GET_ATOKEN(tokens, i).len = (int) (new_p - p);
       p = new_p;
       i++;
+      continue;
+    }
+    
+  ADDTOKEN:
+    if (len > 0) {
+      add_token(tokens,i);
+      GET_ATOKEN(tokens, i).ty = tk;
+      GET_ATOKEN(tokens, i).input = p;
+      GET_ATOKEN(tokens, i).len = len;
+      i++;
+      p += len;
       continue;
     }
 

@@ -32,16 +32,18 @@ enum {
   TK_NE,        // 259 Not-equal (!=) sign
   TK_LE,        // 260 Less than or equal (<=) sign
   TK_GE,        // 261 Greater than or equal (>=) sign
-  TK_IF,        // 262 if clause
-  TK_ELSE,      // 263 else keyword
-  TK_WHILE,     // 264 while keyword
-  TK_FOR,       // 265 for keyword
-  TK_RETURN,    // 266 return keyword
-  TK_VOID,      // 267 for void
-  TK_INT,       // 268 for integer
-  TK_CHAR,      // 269 for char
-  TK_STR,       // 270 char string literal
-  TK_EOF,       // 271 End of input
+  TK_AND,       // 262 Logical and (&&) sign.
+  TK_OR,        // 263 Logical and (||) sign.
+  TK_IF,        // 264 if clause
+  TK_ELSE,      // 265 else keyword
+  TK_WHILE,     // 266 while keyword
+  TK_FOR,       // 267 for keyword
+  TK_RETURN,    // 268 return keyword
+  TK_VOID,      // 269 for void
+  TK_INT,       // 270 for integer
+  TK_CHAR,      // 271 for char
+  TK_STR,       // 272 char string literal
+  TK_EOF,       // 273 End of input
 };
 
 enum {

@@ -28,6 +28,7 @@ void test_tokenize(Vector *tokens) {
   char *p = "a[4]; f(x) {2 <= 30 >= 2 == 4;} main() { f(0 != 1 * 2 / 3 - 5)"
     " if else while for;} void int char -3 [ & ] , return 4;"
     "'a' '\\t' '\\r' '\\n' '\\\"' '\\\'' '\\\?' '\\\\' '\\0' "
+    "&& ||"
     "\"Hello, world\\n\"";
   tokens = tokenize(p);
   int cnt = 0;
@@ -93,6 +94,8 @@ void test_tokenize(Vector *tokens) {
   expect_token(tokens, cnt++, TK_NUM, '\?', "\\\?");
   expect_token(tokens, cnt++, TK_NUM, '\\', "\\\\");
   expect_token(tokens, cnt++, TK_NUM, '\0', "\\0");
+  expect_token(tokens, cnt++, TK_AND, 0, "&&");
+  expect_token(tokens, cnt++, TK_OR, 0, "||");
   expect_token(tokens, cnt++, TK_STR, 0, "\"Hello, world\\n\"");
 }
 
