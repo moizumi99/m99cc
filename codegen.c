@@ -108,25 +108,9 @@ void gen_node(Node *node) {
   }
 
   if (node->ty == ND_IDENT) {
-    if (get_symbol_address(global_symbols, node->name) != NULL) {
-      if (get_symbol_size(global_symbols, node->name) == 0) {
-        // regular variable. De-reference.
-        int dtype = get_symbol_type(global_symbols, node->name);
-        if (dtype == DT_INT) {
-          printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
-        } else if (dtype == DT_CHAR) {
-          printf("  mov al, BYTE PTR %s[rip]\n", node->name);
-        } else if (dtype == DT_PNT) {
-          printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
-        } else {
-          error("\"%s\" type is not INT or CHAR. (global load)", node->name);
-        }
-      } else {
-        // Array address. Don't de-reference.
-        printf("  lea rax, %s[rip]\n", node->name);
-      }
-      printf("  push rax\n");
-    } else {
+    Symbol *s = map_get(current_local_symbols, node->name);
+    if (s != NULL) {
+      // Local variable.
       gen_lval(node);
       if (get_symbol_size(current_local_symbols, node->name) == 0) {
         // regular variable. De-reference.
@@ -145,6 +129,31 @@ void gen_node(Node *node) {
         printf("  push rax\n");
       }
       // Don't de-reference if array address.
+    } else {
+      // Global variable or function call.
+      s = map_get(global_symbols, node->name);
+      if (s == NULL) {
+        fprintf(stderr, "The symbol %s was not found.", node->name);
+        exit(1);
+      }
+      // Function calll or global variable.
+      if (s->num == 0) {
+        // regular variable. De-reference.
+        int dtype = get_symbol_type(global_symbols, node->name);
+        if (dtype == DT_INT) {
+          printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
+        } else if (dtype == DT_CHAR) {
+          printf("  mov al, BYTE PTR %s[rip]\n", node->name);
+        } else if (dtype == DT_PNT) {
+          printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
+        } else {
+          error("\"%s\" type is not INT or CHAR. (global load)", node->name);
+        }
+      } else {
+        // Array address. Don't de-reference.
+        printf("  lea rax, %s[rip]\n", node->name);
+      }
+      printf("  push rax\n");
     }
     return;
   }
