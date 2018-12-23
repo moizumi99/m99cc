@@ -229,7 +229,7 @@ int get_node_type(int token_type) {
   }
 }
 
-int get_data_type(int token_type) {
+int get_data_type_from_token(int token_type) {
   switch (token_type) {
   case TK_VOID:
     return DT_VOID;
@@ -240,6 +240,19 @@ int get_data_type(int token_type) {
   default:
     return DT_INVALID;
   }
+}
+
+int get_data_type(int p, DataType **data_type) {
+  int dtype = get_data_type_from_token(GET_TOKEN(tokens, p++).ty);
+  DataType *dt = new_data_type(dtype);
+  if (dtype != DT_INVALID) {
+    while(GET_TOKEN(tokens, p).ty == '*') {
+      p++;
+      dt = new_data_pointer(dt);
+    }
+  }
+  *data_type = dt;
+  return p;
 }
 
 Node *term();
@@ -346,8 +359,9 @@ Node *term() {
 
 Node *argument() {
   // TODO: make argument a list.
-  int dtype = get_data_type(GET_TOKEN(tokens, pos++).ty);
-  if (dtype == DT_INVALID) {
+  DataType *data_type;
+  pos = get_data_type(pos, &data_type);
+  if (data_type->dtype == DT_INVALID) {
     error(
         "Invalid (not data type) token in argument declaration position \"%s\"",
         GET_TOKEN(tokens, pos - 1).input);
@@ -362,7 +376,7 @@ Node *argument() {
   if (map_get(current_local_symbols, name) != NULL) {
     error("Argument name conflict: %s\n", name);
   }
-  add_local_symbol(name, ID_ARG, get_array_size(), new_data_type(dtype));
+  add_local_symbol(name, ID_ARG, get_array_size(), data_type);
   Node *id =
       new_node_ident(GET_TOKEN(tokens, pos).val, GET_TOKEN(tokens, pos).input,
                      GET_TOKEN(tokens, pos).len);
@@ -507,12 +521,16 @@ void code_block(Vector *code) {
       for_node(code);
     } else if (GET_TOKEN(tokens, pos).ty == TK_RETURN) {
       vec_push(code, return_node());
-    } else if (get_data_type((GET_TOKEN(tokens, pos).ty)) != DT_INVALID) {
-      // TODO: declaration_node inside function can not generate function.
-      // Check.
-      declaration_node(code, SC_LOCAL);
     } else {
-      vec_push(code, assign());
+      DataType *data_type;
+      get_data_type(pos, &data_type);
+      if (data_type->dtype != DT_INVALID) {
+        // TODO: declaration_node inside function can not generate function.
+        // Check.
+        declaration_node(code, SC_LOCAL);
+      } else {
+        vec_push(code, assign());
+      }
     }
   }
   if (GET_TOKEN(tokens, pos++).ty != '}') {
@@ -533,7 +551,7 @@ int check_conflict(char *name, int scope) {
   return 0;
 }
 
-Node *identifier_node(int dtype, int scope) {
+Node *identifier_node(DataType *data_type, int scope) {
   if (GET_TOKEN(tokens, pos).ty != TK_IDENT) {
     error("Unexpected token (function): \"%s\"", GET_TOKEN(tokens, pos).input);
   }
@@ -546,9 +564,9 @@ Node *identifier_node(int dtype, int scope) {
   if (GET_TOKEN(tokens, pos).ty != '(') {
     int num = get_array_size();
     if (scope == SC_GLOBAL) {
-      add_global_symbol(id->name, ID_VAR, num, new_data_type(dtype));
+      add_global_symbol(id->name, ID_VAR, num, data_type);
     } else {
-      add_local_symbol(id->name, ID_VAR, num, new_data_type(dtype));
+      add_local_symbol(id->name, ID_VAR, num, data_type);
     }
     // TODO: add initialization.
     return id;
@@ -561,7 +579,7 @@ Node *identifier_node(int dtype, int scope) {
           id->name);
     return NULL;
   }
-  add_global_symbol(id->name, ID_FUNC, 0, new_data_type(dtype));
+  add_global_symbol(id->name, ID_FUNC, 0, data_type);
   Node *arg = NULL;
   pos++;
   if (GET_TOKEN(tokens, pos).ty != ')') {
@@ -579,11 +597,11 @@ Node *identifier_node(int dtype, int scope) {
   return f;
 }
 
-Node *identifier_sequence(int dtype, int scope) {
-  Node *id = identifier_node(dtype, scope);
+Node *identifier_sequence(DataType *data_type, int scope) {
+  Node *id = identifier_node(data_type, scope);
   if (GET_TOKEN(tokens, pos).ty == ',') {
     pos++;
-    Node *ids = identifier_sequence(dtype, scope);
+    Node *ids = identifier_sequence(data_type, scope);
     return new_node(ND_IDENTSEQ, id, ids);
   }
   if (GET_TOKEN(tokens, pos).ty == ';') {
@@ -595,25 +613,26 @@ Node *identifier_sequence(int dtype, int scope) {
   return id;
 }
 
-Node *new_node_datatype(int data_type) {
+Node *new_node_datatype() {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_DATATYPE;
   node->lhs = NULL;
   node->rhs = NULL;
-  node->val = data_type;
+  node->val = 0;
   node->name = NULL;
   node->block = NULL;
   return node;
 }
 
 void declaration_node(Vector *code, int scope) {
-  int data_type = get_data_type(GET_TOKEN(tokens, pos++).ty);
-  if (data_type == DT_INVALID) {
+  DataType *data_type;
+  pos = get_data_type(pos, &data_type);
+  if (data_type->dtype == DT_INVALID) {
     error(
         "Data type needed before declaration of function or variable. (\"%s\")",
         GET_TOKEN(tokens, pos - 1).input);
   }
-  Node *node_dt = new_node_datatype(data_type);
+  Node *node_dt = new_node_datatype();
   Node *node_ids = identifier_sequence(data_type, scope);
   Node *declaration = new_node(ND_DECLARE, node_dt, node_ids);
   vec_push(code, declaration);

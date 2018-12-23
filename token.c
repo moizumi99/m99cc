@@ -145,7 +145,6 @@ Vector *tokenize(char *p) {
       continue;
     }
 
-
     if (*p == '>' && *(p + 1) == '=') {
       add_token(tokens,i);
       GET_ATOKEN(tokens, i).ty = TK_LE;
