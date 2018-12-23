@@ -191,7 +191,7 @@ Vector *tokenize(char *p) {
       } else {
         len = 0;
         char *pn = p;
-        while(('a' <= *pn && *pn <= 'z') || ('0' <= *pn && *pn <= '9')) {
+        while(('a' <= *pn && *pn <= 'z') || ('0' <= *pn && *pn <= '9') || ('_' == *pn)) {
           len++;
           pn++;
         }
