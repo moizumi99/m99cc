@@ -164,6 +164,8 @@ try 0 "int main(){putchar('h'); putchar('e'); putchar('l'); putchar('l'); putcha
 # pointer
 try 2 "int main(){int *a; *a=2; return *a;}"
 try 72 "int main(){char *a; a = \"HELLO\"; a[0];}"
+try 69 "int main(){char *a; a = \"HELLO\"; a[1];}"
+try 0 "int main(){char *a; a = \"HELLO\"; a[5];}"
 run 'Hello, world' program/hello_literal.c
 
 # && and ||

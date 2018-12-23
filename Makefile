@@ -7,12 +7,14 @@ m99cc: $(OBJS)
 
 $(OBJS): m99cc.h $(SRCS)
 
-test: m99cc
+.PHONY: test
+test: m99cc test.sh
 	./m99cc -test
 	./m99cc -test_token
-	./m99cc -test_parse
+	./m99cc -test_parse > /dev/null
 	./m99cc -test_dtype
 	./test.sh
 
+.PHONY: clean
 clean:
 	rm -f m99cc *.o *~ tmp*
