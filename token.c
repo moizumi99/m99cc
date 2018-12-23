@@ -163,43 +163,40 @@ Vector *tokenize(char *p) {
     }
 
     if ('a' <= *p && *p <= 'z') {
-      add_token(tokens,i);
-      int len = 0;
-      GET_ATOKEN(tokens, i).input = p;
-      while(('a' <= *p && *p <= 'z') || ('0' <= *p && *p <= '9')) {
-        len++;
-        p++;
-      }
-      GET_ATOKEN(tokens, i).len = len;
-      if (strncmp(GET_ATOKEN(tokens, i).input, "if", 2) == 0) {
-        GET_ATOKEN(tokens, i).len = 2;
-        GET_ATOKEN(tokens, i).ty = TK_IF;
-      } else if (strncmp(GET_ATOKEN(tokens, i).input, "else", 4) == 0) {
-        GET_ATOKEN(tokens, i).len = 4;
-        GET_ATOKEN(tokens, i).ty = TK_ELSE;
-      } else if (strncmp(GET_ATOKEN(tokens, i).input, "while", 5) == 0) {
-        GET_ATOKEN(tokens, i).len = 5;
-        GET_ATOKEN(tokens, i).ty = TK_WHILE;
-      } else if (strncmp(GET_ATOKEN(tokens, i).input, "for", 3) == 0) {
-        GET_ATOKEN(tokens, i).len = 3;
-        GET_ATOKEN(tokens, i).ty = TK_FOR;
-      } else if (strncmp(GET_ATOKEN(tokens, i).input, "void", 4) == 0) {
-        GET_ATOKEN(tokens, i).len = 4;
-        GET_ATOKEN(tokens, i).ty = TK_VOID;
-      } else if (strncmp(GET_ATOKEN(tokens, i).input, "int", 3) == 0) {
-        GET_ATOKEN(tokens, i).len = 3;
-        GET_ATOKEN(tokens, i).ty = TK_INT;
-      } else if (strncmp(GET_ATOKEN(tokens, i).input, "char", 4) == 0) {
-        GET_ATOKEN(tokens, i).len = 4;
-        GET_ATOKEN(tokens, i).ty = TK_CHAR;
-      } else if (strncmp(GET_ATOKEN(tokens, i).input, "return", 6) == 0) {
-        GET_ATOKEN(tokens, i).len = 6;
-        GET_ATOKEN(tokens, i).ty = TK_RETURN;
+      if (strncmp(p, "if", 2) == 0) {
+        tk = TK_IF;
+        len = 2;
+      } else if (strncmp(p, "else", 4) == 0) {
+        tk = TK_ELSE;
+        len = 4;
+      } else if (strncmp(p, "while", 5) == 0) {
+        tk = TK_WHILE;
+        len = 5;
+      } else if (strncmp(p, "for", 3) == 0) {
+        tk = TK_FOR;
+        len = 3;
+      } else if (strncmp(p, "void", 4) == 0) {
+        tk = TK_VOID;
+        len = 4;
+      } else if (strncmp(p, "int", 3) == 0) {
+        tk = TK_INT;
+        len = 3;
+      } else if (strncmp(p, "char", 4) == 0) {
+        tk = TK_CHAR;
+        len = 4;
+      } else if (strncmp(p, "return", 6) == 0) {
+        tk = TK_RETURN;
+        len = 6;
       } else {
-        GET_ATOKEN(tokens, i).ty = TK_IDENT;
+        len = 0;
+        char *pn = p;
+        while(('a' <= *pn && *pn <= 'z') || ('0' <= *pn && *pn <= '9')) {
+          len++;
+          pn++;
+        }
+        tk = TK_IDENT;
       }
-      i++;
-      continue;
+      goto ADDTOKEN;
     }
 
     if (isdigit(*p)) {
