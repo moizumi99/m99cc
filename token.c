@@ -99,6 +99,7 @@ Vector *tokenize(char *p) {
   while (*p) {
     int tk = -1;
     int len = 0;
+    int val = 0;
     // skip spaces
     if (isspace(*p)) {
       p++;
@@ -200,23 +201,20 @@ Vector *tokenize(char *p) {
     }
 
     if (isdigit(*p)) {
-      add_token(tokens,i);
-      GET_ATOKEN(tokens, i).ty = TK_NUM;
-      GET_ATOKEN(tokens, i).input = p;
+      tk = TK_NUM;
       char *new_p;
-      GET_ATOKEN(tokens, i).val = strtol(p, &new_p, 10);
-      GET_ATOKEN(tokens, i).len = (int) (new_p - p);
-      p = new_p;
-      i++;
-      continue;
+      val = strtol(p, &new_p, 10);
+      len = (int) (new_p - p);
+      goto ADDTOKEN;
     }
-    
+
   ADDTOKEN:
     if (len > 0) {
       add_token(tokens,i);
       GET_ATOKEN(tokens, i).ty = tk;
       GET_ATOKEN(tokens, i).input = p;
       GET_ATOKEN(tokens, i).len = len;
+      GET_ATOKEN(tokens, i).val = val;
       i++;
       p += len;
       continue;
