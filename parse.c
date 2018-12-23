@@ -102,22 +102,6 @@ void add_global_symbol(char *name_perm, int type, int num, struct DataType *data
   map_put(global_symbols, name_perm, (void *)new_symbol);
 }
 
-void *get_symbol_address(Map *symbols, char *name) {
-  Symbol *tmp_symbol = map_get(symbols, name);
-  if (tmp_symbol == NULL) {
-    return NULL;
-  }
-  return tmp_symbol->address;
-}
-
-int get_symbol_size(Map *symbols, char *name) {
-  Symbol *tmp_symbol = map_get(symbols, name);
-  if (tmp_symbol == NULL) {
-    return -1;
-  }
-  return tmp_symbol->num;
-}
-
 int get_symbol_type(Map *symbols, char *name) {
   Symbol *tmp_symbol = map_get(symbols, name);
   if (tmp_symbol->data_type == NULL) {

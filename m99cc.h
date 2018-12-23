@@ -130,8 +130,8 @@ Map *new_map();
 void map_put(Map *map, char *key, void *val);
 void *map_get(Map *map, char *key);
 
-void *get_symbol_address(Map *symbols, char *name);
-int get_symbol_size(Map *symbols, char *name);
+/* void *get_symbol_address(Map *symbols, char *name); */
+/* int get_symbol_size(Map *symbols, char *name); */
 int get_symbol_type(Map *symbols, char *name);
 int data_size(DataType *dtype);
 

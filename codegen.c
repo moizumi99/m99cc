@@ -10,6 +10,32 @@ static int label_counter = 0;
 static Node *func_ident;
 extern Vector *string_literals;
 
+// Following are helper function to search for symbol attributes.
+Symbol *get_symbol(Node *node) {
+  Symbol *s = map_get(current_local_symbols, node->name);
+  if (s == NULL) {
+    s = map_get(global_symbols, node->name);
+  }
+  return s;
+}
+
+int get_symbol_size(Map *symbols, char *name) {
+  Symbol *tmp_symbol = map_get(symbols, name);
+  if (tmp_symbol == NULL) {
+    return -1;
+  }
+  return tmp_symbol->num;
+}
+
+void *get_symbol_address(Map *symbols, char *name) {
+  Symbol *tmp_symbol = map_get(symbols, name);
+  if (tmp_symbol == NULL) {
+    return NULL;
+  }
+  return tmp_symbol->address;
+}
+
+// Code generation from nodes and helper functions.
 Node *get_node_p(Vector *code, int i) {
   return (Node *)code->data[i];
 }
@@ -29,13 +55,13 @@ void gen_lval(Node *node) {
       printf("  push rax\n");
       return;
     }
-    printf("  mov rax, rbp\n");
     void *address = get_symbol_address(current_local_symbols, node->name);
     // If new variable, create a room.
     if (address == NULL) {
       fprintf(stderr, "Undefined variable used.");
       exit(1);
     }
+    printf("  mov rax, rbp\n");
     printf("  sub rax, %d\n", (int) address);
     printf("  push rax\n");
     return;
@@ -67,6 +93,8 @@ void gen_syscall(Node *nd) {
     error("%s is not supported yet.\n", nd->name);
   }
 }
+
+
 
 void gen_node(Node *node) {
   if (node->ty == ND_NUM) {
