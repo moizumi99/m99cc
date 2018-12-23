@@ -35,6 +35,42 @@ void *get_symbol_address(Map *symbols, char *name) {
   return tmp_symbol->address;
 }
 
+int get_node_reference_type(Node *node) {
+  if (node == NULL) {
+    return DT_INVALID;
+  } else if (node->ty == ND_IDENT) {
+    Symbol *s = get_symbol(node);
+    if (s == NULL) {
+      fprintf(stderr, "Symbol %s not found\n", node->name);
+      exit(1);
+    }
+    int dtype = s->data_type->dtype;
+    if (dtype != DT_PNT) {
+      // not a pointer. Can't de-reference.
+      return DT_INVALID;
+    }
+    return s->data_type->pointer_type->dtype;
+  } else if (node->ty == ND_STR) {
+    return DT_CHAR;
+  }
+  int left_rtype = get_node_reference_type(node->lhs);
+  int right_rtype = get_node_reference_type(node->rhs);
+  if (left_rtype == right_rtype) {
+    return left_rtype;
+  }
+  if (left_rtype != DT_INVALID && right_rtype == DT_INVALID) {
+    return left_rtype;
+  }
+  if (left_rtype == DT_INVALID && right_rtype != DT_INVALID) {
+    return right_rtype;
+  }
+  fprintf(stderr,
+          "Reference data type of left hand value (%s) and right hand value (%s) don't match.",
+          node->lhs->name, node->rhs->name);
+  return DT_INVALID;
+}
+
+
 // Code generation from nodes and helper functions.
 Node *get_node_p(Vector *code, int i) {
   return (Node *)code->data[i];
@@ -66,7 +102,7 @@ void gen_lval(Node *node) {
     printf("  push rax\n");
     return;
   } else if (node->ty == '*') {
-    gen_node(node->rhs);
+    gen_node(node->lhs);
     return;
   } else if (node->ty == ND_STR) {
     printf("  lea rax, STRLTR_%d[rip]\n", node->val);
@@ -245,27 +281,33 @@ void gen_node(Node *node) {
     return;
   }
 
-  if (node->lhs == NULL) {
+  if (node->rhs == NULL) {
     // Single term operation
     switch (node->ty) {
     case '+':
-      gen_node(node->rhs);
+      gen_node(node->lhs);
       break;
     case '-':
-      gen_node(node->rhs);
+      gen_node(node->lhs);
       printf("  pop rax\n");
       printf("  neg rax\n");
       printf("  push rax\n");
       break;
     case '&':
       // Reference.
-      gen_lval(node->rhs);
+      gen_lval(node->lhs);
       break;
     case '*':
       // De-reference.
-      gen_node(node->rhs);
+      gen_node(node->lhs);
+      int dtype = get_node_reference_type(node->lhs);
       printf("  pop rax\n");
-      printf("  mov rax, [rax]\n");
+      if (dtype == DT_CHAR) {
+        printf("  mov al, BYTE PTR [rax]\n");
+        printf("  and rax, 0xff\n");
+      } else {
+        printf("  mov rax, QWORD PTR [rax]\n");
+      }
       printf("  push rax\n");
       break;
     default:

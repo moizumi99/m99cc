@@ -195,7 +195,7 @@ int operation_priority(int token_type) {
   }
 }
 
-int get_node_type(int token_type) {
+int get_node_type_from_token(int token_type) {
   switch (token_type) {
   case TK_NUM:
     return ND_NUM;
@@ -261,7 +261,7 @@ Node *expression(int priority) {
   int token_type = GET_TOKEN(tokens, pos).ty;
   if (operation_priority(token_type) == priority) {
     pos++;
-    int node_type = get_node_type(token_type);
+    int node_type = get_node_type_from_token(token_type);
     return new_node(node_type, lhs, expression(priority));
   }
   return lhs;
@@ -329,7 +329,7 @@ Node *term() {
       }
       int step = data_size(data_type->pointer_type);
       Node *offset = new_node('*', index, new_node_num(step));
-      node = new_node('*', NULL, new_node('+', id, offset));
+      node = new_node('*', new_node('+', id, offset), NULL);
     }
     return node;
   }
@@ -350,8 +350,8 @@ Node *term() {
       GET_TOKEN(tokens, pos).ty == '*' || GET_TOKEN(tokens, pos).ty == '&') {
     int type = GET_TOKEN(tokens, pos).ty;
     pos++;
-    Node *rhs = term();
-    return new_node(type, NULL, rhs);
+    Node *lhs = term();
+    return new_node(type, lhs, NULL);
   }
   // Code should not reach here.
   error("Unexpected token (parse.c term): \"%s\"",
