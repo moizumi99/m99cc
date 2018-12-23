@@ -88,6 +88,8 @@ void gen_node(Node *node) {
           printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
         } else if (dtype == DT_CHAR) {
           printf("  mov al, BYTE PTR %s[rip]\n", node->name);
+        } else if (dtype == DT_PNT) {
+          printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
         } else {
           error("\"%s\" type is not INT or CHAR. (global load)", node->name);
         }
@@ -106,6 +108,8 @@ void gen_node(Node *node) {
           printf("  mov rax, [rax]\n");
         } else if (dtype == DT_CHAR) {
           printf("  mov al, [rax]\n");
+        } else if (dtype == DT_PNT) {
+          printf("  mov rax, [rax]\n");
         } else {
           fprintf(stderr, "Data type: %d\n", dtype);
           error("\"%s\" type is not INT or CHAR. (local load)", node->name);

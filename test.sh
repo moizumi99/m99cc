@@ -161,4 +161,7 @@ try 92 "int main(){return '\\\\';}"
 # putchar with char literal.
 try 0 "int main(){putchar('h'); putchar('e'); putchar('l'); putchar('l'); putchar('o'); putchar('\n'); return 0;}"
 
+# pointer
+try 2 "int main(){int *a; *a=2; return *a;}"
+
 echo OK
