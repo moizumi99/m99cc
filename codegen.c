@@ -320,6 +320,12 @@ void gen_node(Node *node) {
     }
     printf("  movzb rax, al\n");
     break;
+  case ND_AND:
+    printf("  and rax, rdi\n");
+    break;
+  case ND_OR:
+    printf("  or rax, rdi\n");
+    break;
   case ND_IDENTSEQ:
   default:
     // do nothing.

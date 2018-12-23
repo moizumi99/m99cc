@@ -184,10 +184,10 @@ int operation_priority(int token_type) {
   case TK_EQ:
   case TK_NE:
     return EQUAL_PRIORITY;
-    /* case TK_AND: */
-    /* return AND_PRIORITY; */
-  /* case TK_OR: */
-  /*   return OR_PRIORITY */
+  case TK_AND:
+    return AND_PRIORITY;
+  case TK_OR:
+    return OR_PRIORITY;
   case '=':
     return ASSIGN_PRIORITY;
   default:
@@ -209,6 +209,10 @@ int get_node_type(int token_type) {
     return ND_LE;
   case TK_GE:
     return ND_GE;
+  case TK_AND:
+    return ND_AND;
+  case TK_OR:
+    return ND_OR;
   case TK_STR:
     return ND_STR;
   default:

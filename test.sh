@@ -166,4 +166,14 @@ try 2 "int main(){int *a; *a=2; return *a;}"
 try 72 "int main(){char *a; a = \"HELLO\"; a[0];}"
 run 'Hello, world' program/hello_literal.c
 
+# && and ||
+try 1 "int main(){(1 == 1) && (2 == 2);}"
+try 0 "int main(){(1 == 1) && (2 == 0);}"
+try 0 "int main(){(1 == 0) && (2 == 2);}"
+try 0 "int main(){(1 == 0) && (2 == 4);}"
+try 1 "int main(){(1 == 1) || (2 == 2);}"
+try 1 "int main(){(1 == 1) || (2 == 0);}"
+try 1 "int main(){(1 == 3) || (2 == 2);}"
+try 0 "int main(){(1 == 3) || (2 == 0);}"
+
 echo OK
