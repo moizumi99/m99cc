@@ -126,8 +126,8 @@ int get_symbol_type(Map *symbols, char *name) {
   return tmp_symbol->data_type->dtype;
 }
 
-int data_size(DataType *data_type) {
-  switch (data_type->dtype) {
+int data_size_from_dtype(int dtype) {
+  switch (dtype) {
   case DT_VOID:
     return 8;
   case DT_INT:
@@ -139,6 +139,10 @@ int data_size(DataType *data_type) {
   default:
     return 8;
   }
+}
+
+int data_size(DataType *data_type) {
+  return data_size_from_dtype(data_type->dtype);
 }
 
 int get_symbol_datasize(Map *symbols, char *name) {
@@ -315,6 +319,14 @@ Node *term() {
     // is it array?
     Node *node = id;
     if (GET_TOKEN(tokens, pos).ty == '[') {
+      Symbol *s = map_get(current_local_symbols, id->name);
+      if (s == NULL) {
+        s = map_get(global_symbols, id->name);
+      }
+      if (s == NULL) {
+        error("A symbold (\"%s\" is used without declaration.", id->name);
+      }
+      DataType *data_type = s->data_type;
       pos++;
       Node *index = expression(ASSIGN_PRIORITY);
       if (GET_TOKEN(tokens, pos++).ty != ']') {
@@ -322,12 +334,14 @@ Node *term() {
                 GET_TOKEN(tokens, pos - 1).input);
         exit(1);
       }
-      Node *offset = new_node('*', index, new_node_num(8));
+      if (data_type->dtype != DT_PNT) {
+        fprintf(stderr, "Array type is declared as regular type not pointer. %s\n",
+                id->name);
+        exit(1);
+      }
+      int step = data_size(data_type->pointer_type);
+      Node *offset = new_node('*', index, new_node_num(step));
       node = new_node('*', NULL, new_node('+', id, offset));
-    }
-    if (map_get(global_symbols, id->name) == NULL &&
-        map_get(current_local_symbols, id->name) == NULL) {
-      error("A symbold (\"%s\" is used without declaration.", id->name);
     }
     return node;
   }
@@ -376,7 +390,11 @@ Node *argument() {
   if (map_get(current_local_symbols, name) != NULL) {
     error("Argument name conflict: %s\n", name);
   }
-  add_local_symbol(name, ID_ARG, get_array_size(), data_type);
+  int array_size = get_array_size();
+  if (array_size >= 0) {
+    data_type = new_data_pointer(data_type);
+  }
+  add_local_symbol(name, ID_ARG, array_size, data_type);
   Node *id =
       new_node_ident(GET_TOKEN(tokens, pos).val, GET_TOKEN(tokens, pos).input,
                      GET_TOKEN(tokens, pos).len);
@@ -563,6 +581,9 @@ Node *identifier_node(DataType *data_type, int scope) {
   // global or local variable.
   if (GET_TOKEN(tokens, pos).ty != '(') {
     int num = get_array_size();
+    if (num > 0) {
+      data_type = new_data_pointer(data_type);
+    }
     if (scope == SC_GLOBAL) {
       add_global_symbol(id->name, ID_VAR, num, data_type);
     } else {

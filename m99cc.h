@@ -51,7 +51,7 @@ enum {
 };  // Symbol table ID
 
 typedef struct {
-  int type;   // Symbol type (ID_VAR< ID_FUNC, ID_ARG)
+  int type;   // Symbol type (ID_VAR, ID_FUNC, ID_ARG)
   void *address; // address from the base.
   int num;    // 0: scalar, >=1: array
   struct DataType *data_type;  // Data type (void, int, char)
