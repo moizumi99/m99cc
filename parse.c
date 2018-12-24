@@ -379,9 +379,6 @@ Node *argument() {
     error("Argument name conflict: %s\n", name);
   }
   int array_size = get_array_size();
-  if (array_size >= 0) {
-    data_type = new_data_pointer(data_type);
-  }
   add_local_symbol(name, ID_ARG, array_size, data_type);
   Node *id =
       new_node_ident(GET_TOKEN(tokens, pos).val, GET_TOKEN(tokens, pos).input,

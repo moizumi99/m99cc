@@ -44,13 +44,25 @@ void *map_get(Map *map, char *key) {
 
 // fof debugging
 
+void print_data_type(DataType *data_type) {
+  fprintf(stderr, "%d", data_type->dtype);
+  if (data_type->dtype == DT_PNT) {
+    fprintf(stderr, "->");
+    print_data_type(data_type->pointer_type);
+  } else {
+    fprintf(stderr, "\n");
+  }
+}
+
 void dump_symbols(Map *symbol_table) {
   int symbol_number = symbol_table->keys->len;
   fprintf(stderr, "Total %d symbols present.\n", symbol_number);
   for (int cnt = 0; cnt < symbol_number; cnt++) {
     Symbol *sym = (Symbol *)symbol_table->vals->data[cnt];
     char *name = (char *)symbol_table->keys->data[cnt];
-    fprintf(stderr, "name: %s, type: %d, data_type: %d, address: %d\n", name,
-            sym->type, sym->data_type->dtype, (int)sym->address);
+    fprintf(stderr, "name: %s, type: %d, address: %d", name,
+            sym->type, (int)sym->address);
+    fprintf(stderr, "data_type: ");
+    print_data_type(sym->data_type);
   }
 }
