@@ -178,4 +178,9 @@ try 1 "int main(){(1 == 1) || (2 == 0);}"
 try 1 "int main(){(1 == 3) || (2 == 2);}"
 try 0 "int main(){(1 == 3) || (2 == 0);}"
 
+# ++ and --
+try 1 "int main(){int i; i = 0; ++i;}"
+try 2 "int main(){int i; i = 3; --i;}"
+try 4 "int main(){int i, j; i = 3; j = ++i;}"
+
 echo OK

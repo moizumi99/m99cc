@@ -23,8 +23,8 @@ char *get_type(int ty) {
   case ND_FUNCDEF: return "ND_FUNCDEF";
   case ND_BLOCK: return "ND_BLOCK";
   case ND_ROOT: return "ND_ROOT";
-  case ND_PLUS: return "ND_PLUS";
-  case ND_MINUS: return "ND_MINUS";
+  case ND_INC: return "ND_INC";
+  case ND_DEC: return "ND_DEC";
   case ND_EQ: return "ND_EQ";
   case ND_NE: return "ND_NE";
   case ND_IF: return "ND_IF";
@@ -78,7 +78,7 @@ void dump_tree(Vector *code) {
 }
 
 void test_parse() {
-  char *p = "int main(){char a[2]; a[0]=1; a[1]=2; a[0]+a[1];}";
+  char *p = "int main(){char a[2]; a[0]=1; a[1]=2; a[0]+a[1]; a++;}";
   tokenize(p);
   // dump_token();
 

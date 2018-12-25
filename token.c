@@ -118,6 +118,16 @@ Vector *tokenize(char *p) {
       continue;
     }
 
+    if (*p == '+' && *(p + 1) == '+') {
+      tk = TK_INC;
+      len = 2;
+      goto ADDTOKEN;
+    }
+    if (*p == '-' && *(p + 1) == '-') {
+      tk = TK_DEC;
+      len = 2;
+      goto ADDTOKEN;
+    }
     if (*p == '=' && *(p + 1) == '=') {
       tk = TK_EQ;
       len = 2;
@@ -135,13 +145,21 @@ Vector *tokenize(char *p) {
       len = 2;
       goto ADDTOKEN;
     }
-
     if (*p == '>' && *(p + 1) == '=') {
       tk = TK_LE;
       len = 2;
       goto ADDTOKEN;
     }
-
+    if (*p == '+' && *(p + 1) == '=') {
+      tk = TK_PE;
+      len = 2;
+      goto ADDTOKEN;
+    }
+    if (*p == '-' && *(p + 1) == '=') {
+      tk = TK_ME;
+      len = 2;
+      goto ADDTOKEN;
+    }
     if (*p == '&' && *(p + 1) == '&') {
       tk = TK_AND;
       len = 2;

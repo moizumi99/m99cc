@@ -130,8 +130,6 @@ void gen_syscall(Node *nd) {
   }
 }
 
-
-
 void gen_node(Node *node) {
   if (node->ty == ND_NUM) {
     printf("  push %d\n", node->val);
@@ -284,6 +282,19 @@ void gen_node(Node *node) {
   if (node->rhs == NULL) {
     // Single term operation
     switch (node->ty) {
+    case ND_INC:
+    case ND_DEC:
+      gen_lval(node->lhs);
+      printf("  pop rax\n");
+      printf("  mov rdi, [rax]\n");
+      if (node->ty == ND_INC) {
+        printf("  add rdi, 1\n");
+      } else {
+        printf("  sub rdi, 1\n");
+      }
+      printf("  mov [rax], rdi\n");
+      printf("  push rdi\n");
+      break;
     case '+':
       gen_node(node->lhs);
       break;

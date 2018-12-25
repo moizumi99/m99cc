@@ -28,22 +28,26 @@ typedef struct {
 enum {
   TK_NUM = 256, // 256 Integer token
   TK_IDENT,     // 257 Identifier
-  TK_EQ,        // 258 Equal (==) sign
-  TK_NE,        // 259 Not-equal (!=) sign
-  TK_LE,        // 260 Less than or equal (<=) sign
-  TK_GE,        // 261 Greater than or equal (>=) sign
-  TK_AND,       // 262 Logical and (&&) sign.
-  TK_OR,        // 263 Logical and (||) sign.
-  TK_IF,        // 264 if clause
-  TK_ELSE,      // 265 else keyword
-  TK_WHILE,     // 266 while keyword
-  TK_FOR,       // 267 for keyword
-  TK_RETURN,    // 268 return keyword
-  TK_VOID,      // 269 for void
-  TK_INT,       // 270 for integer
-  TK_CHAR,      // 271 for char
-  TK_STR,       // 272 char string literal
-  TK_EOF,       // 273 End of input
+  TK_INC,       // 258 Increment
+  TK_DEC,       // 259 Decrement
+  TK_EQ,        // 260 Equal (==) sign
+  TK_NE,        // 261 Not-equal (!=) sign
+  TK_LE,        // 262 Less than or equal (<=) sign
+  TK_GE,        // 263 Greater than or equal (>=) sign
+  TK_PE,        // 264 Plus then substitute (+=).
+  TK_ME,        // 265 Minus then substitute (-=).
+  TK_AND,       // 266 Logical and (&&) sign.
+  TK_OR,        // 267 Logical and (||) sign.
+  TK_IF,        // 268 if clause
+  TK_ELSE,      // 269 else keyword
+  TK_WHILE,     // 270 while keyword
+  TK_FOR,       // 271 for keyword
+  TK_RETURN,    // 272 return keyword
+  TK_VOID,      // 273 for void
+  TK_INT,       // 274 for integer
+  TK_CHAR,      // 275 for char
+  TK_STR,       // 276 char string literal
+  TK_EOF,       // 277 End of input
 };
 
 enum {
@@ -77,22 +81,22 @@ enum {
   ND_FUNCDEF,   // 260 Function definition.
   ND_BLOCK,     // 261 Block code.
   ND_ROOT,      // 262 The root of the entire program
-  ND_PLUS,      // 263 Single term operator (+).
-  ND_MINUS,     // 264 Single term operator (-).
-  ND_EQ,        // 265 Equal operation (==).
-  ND_NE,        // 266 Not-equal operation (!=).
-  ND_LE,        // 267 Less than or equal (<= / =<)
-  ND_GE,        // 268 Greater than or equal (>= / =>)
-  ND_AND,       // 269 Logical AND (&&).
-  ND_OR,        // 270 Logical OR (&&).
-  ND_IF,        // 271 IF node.
-  ND_WHILE,     // 272 While node.
-  ND_FOR,       // 273 While node.
-  ND_RETURN,    // 274 For node
-  ND_DECLARE,   // 275 Declaration of variable/function
-  ND_DEFINITION,// 276 Defintion of variable/function
-  ND_DATATYPE,  // 277 Data type
-  ND_STR,       // 278 String literal.
+  ND_INC,       // 265 Single term operator (++).
+  ND_DEC,       // 266 Single term operator (--).
+  ND_EQ,        // 267 Equal operation (==).
+  ND_NE,        // 268 Not-equal operation (!=).
+  ND_LE,        // 269 Less than or equal (<= / =<)
+  ND_GE,        // 270 Greater than or equal (>= / =>)
+  ND_AND,       // 271 Logical AND (&&).
+  ND_OR,        // 272 Logical OR (&&).
+  ND_IF,        // 273 IF node.
+  ND_WHILE,     // 274 While node.
+  ND_FOR,       // 275 While node.
+  ND_RETURN,    // 276 For node
+  ND_DECLARE,   // 277 Declaration of variable/function
+  ND_DEFINITION,// 278 Defintion of variable/function
+  ND_DATATYPE,  // 279 Data type
+  ND_STR,       // 280 String literal.
 };
 
 // Data type.

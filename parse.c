@@ -215,6 +215,10 @@ int get_node_type_from_token(int token_type) {
     return ND_OR;
   case TK_STR:
     return ND_STR;
+  case TK_INC:
+    return ND_INC;
+  case TK_DEC:
+    return ND_DEC;
   default:
     // For other operations (*/+- others, token_type -> node_type)
     return token_type;
@@ -347,11 +351,12 @@ Node *term() {
   }
   // Single term operators
   if (GET_TOKEN(tokens, pos).ty == '+' || GET_TOKEN(tokens, pos).ty == '-' ||
-      GET_TOKEN(tokens, pos).ty == '*' || GET_TOKEN(tokens, pos).ty == '&') {
+      GET_TOKEN(tokens, pos).ty == '*' || GET_TOKEN(tokens, pos).ty == '&' ||
+      GET_TOKEN(tokens, pos).ty == TK_INC || GET_TOKEN(tokens, pos).ty == TK_DEC) {
     int type = GET_TOKEN(tokens, pos).ty;
     pos++;
     Node *lhs = term();
-    return new_node(type, lhs, NULL);
+    return new_node(get_node_type_from_token(type), lhs, NULL);
   }
   // Code should not reach here.
   error("Unexpected token (parse.c term): \"%s\"",
