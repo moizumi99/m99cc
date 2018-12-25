@@ -218,14 +218,25 @@ void gen_node(Node *node) {
     return;
   }
 
-  if (node->ty == '=') {
+  if (node->ty == '=' || node->ty == ND_PE || node->ty == ND_ME) {
     gen_lval(node->lhs);
     gen_node(node->rhs);
-
     printf("  pop rdi\n");
     printf("  pop rax\n");
-    printf("  mov [rax], rdi\n");
-    printf("  push rdi\n");
+    if (node->ty == '=') {
+      printf("  mov [rax], rdi\n");
+      printf("  push rdi\n");
+    } else if (node->ty == ND_PE) {
+      printf("  mov rbx, [rax]\n");
+      printf("  add rdi, rbx\n");
+      printf("  mov [rax], rdi\n");
+      printf("  push rdi\n");
+    } else if (node->ty == ND_ME) {
+      printf("  mov rbx, [rax]\n");
+      printf("  sub rbx, rdi\n");
+      printf("  mov [rax], rbx\n");
+      printf("  push rbx\n");
+    }
     return;
   }
 

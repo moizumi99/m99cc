@@ -43,7 +43,7 @@ Node *new_node_str(char *name, int len) {
   node->lhs = NULL;
   node->rhs = NULL;
   node->val = str_counter;
-  node->name = NULL; 
+  node->name = NULL;
   node->block = NULL;
   vec_push(string_literals, create_string_in_heap(name, len));
   return node;
@@ -90,7 +90,8 @@ int get_array_size() {
   return num;
 }
 
-void add_global_symbol(char *name_perm, int type, int num, struct DataType *data_type) {
+void add_global_symbol(char *name_perm, int type, int num,
+                       struct DataType *data_type) {
   static int global_symbol_counter = 0;
   Symbol *new_symbol = malloc(sizeof(Symbol));
   int dsize = data_size(data_type);
@@ -219,6 +220,10 @@ int get_node_type_from_token(int token_type) {
     return ND_INC;
   case TK_DEC:
     return ND_DEC;
+  case TK_PE:
+    return ND_PE;
+  case TK_ME:
+    return ND_ME;
   default:
     // For other operations (*/+- others, token_type -> node_type)
     return token_type;
@@ -242,7 +247,7 @@ int get_data_type(int p, DataType **data_type) {
   int dtype = get_data_type_from_token(GET_TOKEN(tokens, p++).ty);
   DataType *dt = new_data_type(dtype);
   if (dtype != DT_INVALID) {
-    while(GET_TOKEN(tokens, p).ty == '*') {
+    while (GET_TOKEN(tokens, p).ty == '*') {
       p++;
       dt = new_data_pointer(dt);
     }
@@ -327,7 +332,8 @@ Node *term() {
         exit(1);
       }
       if (data_type->dtype != DT_PNT) {
-        fprintf(stderr, "Array type is declared as regular type not pointer. %s\n",
+        fprintf(stderr,
+                "Array type is declared as regular type not pointer. %s\n",
                 id->name);
         exit(1);
       }
@@ -352,7 +358,8 @@ Node *term() {
   // Single term operators
   if (GET_TOKEN(tokens, pos).ty == '+' || GET_TOKEN(tokens, pos).ty == '-' ||
       GET_TOKEN(tokens, pos).ty == '*' || GET_TOKEN(tokens, pos).ty == '&' ||
-      GET_TOKEN(tokens, pos).ty == TK_INC || GET_TOKEN(tokens, pos).ty == TK_DEC) {
+      GET_TOKEN(tokens, pos).ty == TK_INC ||
+      GET_TOKEN(tokens, pos).ty == TK_DEC) {
     int type = GET_TOKEN(tokens, pos).ty;
     pos++;
     Node *lhs = term();
@@ -379,7 +386,7 @@ Node *argument() {
   }
   // argument name?
   char *name = create_string_in_heap(GET_TOKEN(tokens, pos).input,
-                                GET_TOKEN(tokens, pos).len);
+                                     GET_TOKEN(tokens, pos).len);
   if (map_get(current_local_symbols, name) != NULL) {
     error("Argument name conflict: %s\n", name);
   }
@@ -394,9 +401,10 @@ Node *argument() {
 
 Node *assign_dash() {
   Node *lhs = expression(ASSIGN_PRIORITY);
-  if (GET_TOKEN(tokens, pos).ty == '=') {
+  int token_type = GET_TOKEN(tokens, pos).ty;
+  if (token_type == '=' || token_type == TK_PE || token_type == TK_ME) {
     pos++;
-    return new_node('=', lhs, assign_dash());
+    return new_node(get_node_type_from_token(token_type), lhs, assign_dash());
   }
   return lhs;
 }

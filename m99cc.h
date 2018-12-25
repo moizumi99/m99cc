@@ -87,16 +87,18 @@ enum {
   ND_NE,        // 268 Not-equal operation (!=).
   ND_LE,        // 269 Less than or equal (<= / =<)
   ND_GE,        // 270 Greater than or equal (>= / =>)
-  ND_AND,       // 271 Logical AND (&&).
-  ND_OR,        // 272 Logical OR (&&).
-  ND_IF,        // 273 IF node.
-  ND_WHILE,     // 274 While node.
-  ND_FOR,       // 275 While node.
-  ND_RETURN,    // 276 For node
-  ND_DECLARE,   // 277 Declaration of variable/function
-  ND_DEFINITION,// 278 Defintion of variable/function
-  ND_DATATYPE,  // 279 Data type
-  ND_STR,       // 280 String literal.
+  ND_PE,        // 271 Add and substitute (+=).
+  ND_ME,        // 272 Subtract and substitute (-=).
+  ND_AND,       // 273 Logical AND (&&).
+  ND_OR,        // 274 Logical OR (&&).
+  ND_IF,        // 275 IF node.
+  ND_WHILE,     // 276 While node.
+  ND_FOR,       // 277 While node.
+  ND_RETURN,    // 278 For node
+  ND_DECLARE,   // 279 Declaration of variable/function
+  ND_DEFINITION,// 280 Defintion of variable/function
+  ND_DATATYPE,  // 281 Data type
+  ND_STR,       // 282 String literal.
 };
 
 // Data type.

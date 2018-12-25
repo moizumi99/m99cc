@@ -103,8 +103,7 @@ try 55 'int main(){int a, b; b=0; for(a=1; a<11; a = a+1) {b = b + a;} b;}'
 
 # putchar test
 try 2 'int main(){putchar(97); putchar(13); putchar(10); 2;}'
-run 'hello, world!' program/hello.c
-run 'Fibonacci seriese: 0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 ' program/fibonacci.c
+
 # global function.
 try 10 'int a; int main(){a=10;}'
 try 10 'int a; int f(){a;} int main(){a=10;f();}'
@@ -166,7 +165,6 @@ try 2 "int main(){int *a; *a=2; return *a;}"
 try 72 "int main(){char *a; a = \"HELLO\"; a[0];}"
 try 69 "int main(){char *a; a = \"HELLO\"; a[1];}"
 try 0 "int main(){char *a; a = \"HELLO\"; a[5];}"
-run 'Hello, world' program/hello_literal.c
 
 # && and ||
 try 1 "int main(){(1 == 1) && (2 == 2);}"
@@ -182,5 +180,16 @@ try 0 "int main(){(1 == 3) || (2 == 0);}"
 try 1 "int main(){int i; i = 0; ++i;}"
 try 2 "int main(){int i; i = 3; --i;}"
 try 4 "int main(){int i, j; i = 3; j = ++i;}"
+
+# += and -=
+try 5 "int main(){int i; i = 3; i += 2; return i;}"
+try 14 "int main(){int i; i = 20; i -= 6; return i;}"
+
+# program with pointer
+run 'Hello, world' program/hello_literal.c
+
+# putchar program test
+run 'hello, world!' program/hello.c
+run 'Fibonacci seriese: 0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 ' program/fibonacci.c
 
 echo OK
