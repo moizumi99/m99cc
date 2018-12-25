@@ -88,7 +88,7 @@ char *str_literal(Vector *tokens, char *p, int i) {
     fprintf(stderr, "String literal not closed with a double quote. %s\n", p);
     exit(1);
   }
-  return (p + len + 1);
+  return (p + len);
 }
 
 // split chars pointed by p into tokens

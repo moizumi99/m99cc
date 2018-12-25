@@ -19,10 +19,12 @@ int main(int argc, char **argv) {
   if (argc < 2) {
     fprintf(stderr, "Arguments number not right.\n");
     fprintf(stderr, "Usage: %s [file] [-test] [-test_token]"
-            " [-test_parse] [-dump_tree] [-dump_symbols]\n", argv[0]);
+            " [-test_parse] [-dump_tree] "
+            "[-dump_symbols][-dump_tokens]\n", argv[0]);
     return 1;
   }
 
+  bool dump_tokens_enbale = false;
   bool dump_tree_enbale = false;
   bool dump_symbols_enable = false;
   FILE *srcfile;
@@ -43,7 +45,10 @@ int main(int argc, char **argv) {
       runtest_data_type();
       return 0;
     }
-
+    if (strcmp(argv[i], "-dump_tokens") == 0) {
+      dump_tokens_enbale = true;
+      continue;
+    }
     if (strcmp(argv[i], "-dump_tree") == 0) {
       dump_tree_enbale = true;
       continue;
@@ -84,6 +89,9 @@ int main(int argc, char **argv) {
   Vector *tokens;
 
   tokens = tokenize(src);
+  if (dump_tokens_enbale) {
+    dump_token();
+  }
   // Parse
   program_code = parse(tokens);
 

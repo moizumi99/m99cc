@@ -1,35 +1,38 @@
-int print(int a) {
+void print(int a) {
   int b, c;
   b = 1;
-  while(a >= b) {
+  while(a >= 10 * b) {
     b = b * 10;
   }
-  b = b / 10;
-  if (a == 0) {
-    putchar(48);
-  }
   while(b > 0) {
-    c = a / b;
-    putchar(c + 48);
+    putchar((c = a/ b) + 48);
     a = a - c * b;
     b = b / 10;
   }
-  putchar(32);
+}
+
+void print_string(char *a) {
+  while(*a) {
+    putchar(*a);
+    a = a + 1;
+  }
+}
+
+int fib(int a) {
+  if (a <= 1) {
+    return a;
+  }
+  return fib(a-1) + fib(a-2);
 }
 
 int main() {
   int i;
-  int d, e, f;
-  d = 0;
-  e = 1;
-  f = 1;
-  for(i = 0; i < 11; i = i + 1) {
-    print(d);
-    f = d + e;
-    d = e;
-    e = f;
+  print_string("Fibonacci seriese: ");
+  for(i = 0; i < 20; i = i + 1) {
+    print(fib(i));
+    putchar(32);
   }
   putchar(10);
-  0;
+  return 0;
 }
 
