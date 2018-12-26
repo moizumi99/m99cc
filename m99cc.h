@@ -99,6 +99,7 @@ enum {
   ND_DEFINITION,// 280 Defintion of variable/function
   ND_DATATYPE,  // 281 Data type
   ND_STR,       // 282 String literal.
+  ND_DEREF,     // 292 De-reference (*) operator.
 };
 
 // Data type.
@@ -142,7 +143,7 @@ void *map_get(Map *map, char *key);
 
 /* void *get_symbol_address(Map *symbols, char *name); */
 /* int get_symbol_size(Map *symbols, char *name); */
-int get_symbol_type(Map *symbols, char *name);
+/* int get_symbol_type(char *name); */
 int data_size(DataType *dtype);
 
 // Unit tests.

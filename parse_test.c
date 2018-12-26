@@ -33,6 +33,7 @@ char *get_type(int ty) {
   case ND_DECLARE: return "ND_DECLARE";
   case ND_DEFINITION: return "ND_DEFINITION";
   case ND_DATATYPE: return "ND_DATATYPE";
+  case ND_DEREF: return "ND_DEREF";
   default:
     if (ty < 256) {
       num[0] = (char) ty;
@@ -48,7 +49,9 @@ void dump_node(Node *nd) {
     return;
   }
   fprintf(stderr, "(");
-  dump_node(nd->lhs);
+  if (nd->rhs != NULL) {
+    dump_node(nd->lhs);
+  }
   fprintf(stderr, "%s", get_type(nd->ty));
   if (nd->ty >= 256) {
     if (nd->name) {
@@ -57,7 +60,11 @@ void dump_node(Node *nd) {
       fprintf(stderr, ":%d", nd->val);
     }
   }
-  dump_node(nd->rhs);
+  if (nd->rhs == NULL) {
+    dump_node(nd->lhs);
+  } else {
+    dump_node(nd->rhs);
+  }
   fprintf(stderr, ")");
   if (nd->block) {
     fprintf(stderr, "{\n");

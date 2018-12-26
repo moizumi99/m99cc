@@ -11,14 +11,6 @@ static Node *func_ident;
 extern Vector *string_literals;
 
 // Following are helper function to search for symbol attributes.
-Symbol *get_symbol(Node *node) {
-  Symbol *s = map_get(current_local_symbols, node->name);
-  if (s == NULL) {
-    s = map_get(global_symbols, node->name);
-  }
-  return s;
-}
-
 int get_symbol_size(Map *symbols, char *name) {
   Symbol *tmp_symbol = map_get(symbols, name);
   if (tmp_symbol == NULL) {
@@ -35,11 +27,19 @@ void *get_symbol_address(Map *symbols, char *name) {
   return tmp_symbol->address;
 }
 
+int get_data_step_from_node(Node *node);
+
+Symbol *get_symbol(Map *global_symbol_table, Map *local_symbol_table, Node *node);
+
 int get_node_reference_type(Node *node) {
   if (node == NULL) {
     return DT_INVALID;
-  } else if (node->ty == ND_IDENT) {
-    Symbol *s = get_symbol(node);
+  }
+  if (node->ty == ND_NUM) {
+    return DT_INVALID;
+  }
+  if (node->ty == ND_IDENT) {
+    Symbol *s = get_symbol(global_symbols, current_local_symbols, node);
     if (s == NULL) {
       fprintf(stderr, "Symbol %s not found\n", node->name);
       exit(1);
@@ -50,7 +50,8 @@ int get_node_reference_type(Node *node) {
       return DT_INVALID;
     }
     return s->data_type->pointer_type->dtype;
-  } else if (node->ty == ND_STR) {
+  }
+  if (node->ty == ND_STR) {
     return DT_CHAR;
   }
   int left_rtype = get_node_reference_type(node->lhs);
@@ -101,7 +102,7 @@ void gen_lval(Node *node) {
     printf("  sub rax, %d\n", (int) address);
     printf("  push rax\n");
     return;
-  } else if (node->ty == '*') {
+  } else if (node->ty == ND_DEREF) {
     gen_node(node->lhs);
     return;
   } else if (node->ty == ND_STR) {
@@ -149,7 +150,7 @@ void gen_node(Node *node) {
       if (get_symbol_size(current_local_symbols, node->name) == 0) {
         // regular variable. De-reference.
         printf("  pop rax\n");
-        int dtype = get_symbol_type(current_local_symbols, node->name);
+        int dtype = s->data_type->dtype;
         if (dtype == DT_INT) {
           printf("  mov rax, [rax]\n");
         } else if (dtype == DT_CHAR) {
@@ -173,7 +174,7 @@ void gen_node(Node *node) {
       // Function calll or global variable.
       if (s->num == 0) {
         // regular variable. De-reference.
-        int dtype = get_symbol_type(global_symbols, node->name);
+        int dtype = s->data_type->dtype;
         if (dtype == DT_INT) {
           printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
         } else if (dtype == DT_CHAR) {
@@ -298,10 +299,11 @@ void gen_node(Node *node) {
       gen_lval(node->lhs);
       printf("  pop rax\n");
       printf("  mov rdi, [rax]\n");
+      int step = get_data_step_from_node(node->lhs);
       if (node->ty == ND_INC) {
-        printf("  add rdi, 1\n");
+        printf("  add rdi, %d\n", step);
       } else {
-        printf("  sub rdi, 1\n");
+        printf("  sub rdi, %d\n", step);
       }
       printf("  mov [rax], rdi\n");
       printf("  push rdi\n");
@@ -319,7 +321,7 @@ void gen_node(Node *node) {
       // Reference.
       gen_lval(node->lhs);
       break;
-    case '*':
+    case ND_DEREF:
       // De-reference.
       gen_node(node->lhs);
       int dtype = get_node_reference_type(node->lhs);

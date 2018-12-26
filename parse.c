@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define GET_TOKEN(T, I) (*((Token *)(T)->data[(I)]))
 
@@ -103,17 +104,29 @@ void add_global_symbol(char *name_perm, int type, int num,
   map_put(global_symbols, name_perm, (void *)new_symbol);
 }
 
-int get_symbol_type(Map *symbols, char *name) {
-  Symbol *tmp_symbol = map_get(symbols, name);
-  if (tmp_symbol->data_type == NULL) {
-    return DT_INVALID;
+/* int get_symbol_type(char *name) { */
+/*   Symbol *tmp_symbol = map_get(current_local_symbols, name); */
+/*   if (tmp_symbol == NULL) { */
+/*     tmp_symbol = map_get(global_symbols, name); */
+/*   } */
+/*   if (tmp_symbol->data_type == NULL) { */
+/*     return DT_INVALID; */
+/*   } */
+/*   return tmp_symbol->data_type->dtype; */
+/* } */
+
+Symbol *get_symbol(Map *global_symbol_table, Map *local_symbol_table, Node *node) {
+  Symbol *s = map_get(local_symbol_table, node->name);
+  if (s == NULL) {
+    s = map_get(global_symbol_table, node->name);
   }
-  return tmp_symbol->data_type->dtype;
+  return s;
 }
 
 int data_size_from_dtype(int dtype) {
   switch (dtype) {
   case DT_VOID:
+    // shouldn't this be zero?
     return 8;
   case DT_INT:
     return 8;
@@ -128,11 +141,6 @@ int data_size_from_dtype(int dtype) {
 
 int data_size(DataType *data_type) {
   return data_size_from_dtype(data_type->dtype);
-}
-
-int get_symbol_datasize(Map *symbols, char *name) {
-  Symbol *tmp_symbol = map_get(symbols, name);
-  return data_size(tmp_symbol->data_type);
 }
 
 static int local_symbol_counter = 0;
@@ -230,6 +238,13 @@ int get_node_type_from_token(int token_type) {
   }
 }
 
+int get_node_type_from_token_single(int token_type) {
+  if (token_type == '*') {
+    return ND_DEREF;
+  }
+  return get_node_type_from_token(token_type);
+}
+
 int get_data_type_from_token(int token_type) {
   switch (token_type) {
   case TK_VOID:
@@ -256,6 +271,87 @@ int get_data_type(int p, DataType **data_type) {
   return p;
 }
 
+bool data_type_equal(DataType *dt1, DataType *dt2) {
+  if (dt1 == NULL || dt2 == NULL) {
+    return false;
+  }
+  if (dt1->dtype == DT_PNT && dt2->dtype == DT_PNT) {
+    return data_type_equal(dt1->pointer_type, dt2->pointer_type);
+  }
+  if (dt1->dtype != dt2->dtype) {
+    return false;
+  }
+  return true;
+}
+
+DataType *get_node_data_type(Node *node) {
+  if (node == NULL) {
+    return NULL;
+  }
+  if (node->ty == ND_IDENT) {
+    Symbol *s = get_symbol(global_symbols, current_local_symbols, node);
+    if (s == NULL) {
+      fprintf(stderr, "Symbol %s not found\n", node->name);
+      exit(1);
+    }
+    return s->data_type;
+  }
+  if (node->ty == ND_NUM) {
+    return new_data_type(DT_INT);
+  }
+  if (node->ty == ND_STR) {
+    return new_data_pointer(new_data_type(DT_CHAR));
+  }
+  if (node->rhs == NULL) {
+    DataType *dt = get_node_data_type(node->lhs);
+    if (node->ty == '*') {
+      return dt->pointer_type;
+    }
+    if (node->ty == '&') {
+      return new_data_pointer(dt);
+    }
+    return dt;
+  }
+  DataType *left_data_type = get_node_data_type(node->lhs);
+  DataType *right_data_type = get_node_data_type(node->rhs);
+  if (data_type_equal(left_data_type, right_data_type)) {
+    return left_data_type;
+  }
+  if (left_data_type->dtype == DT_PNT && right_data_type->dtype != DT_PNT) {
+    if (right_data_type->dtype == DT_INVALID || right_data_type->dtype == DT_VOID) {
+      goto ERROR;
+    }
+    return left_data_type;
+  }
+  if (left_data_type->dtype != DT_PNT && right_data_type->dtype == DT_PNT) {
+    if (left_data_type->dtype == DT_INVALID || left_data_type->dtype == DT_VOID) {
+      goto ERROR;
+    }
+    return right_data_type;
+  }
+ ERROR:
+  fprintf(stderr, "DataType error. Left: %d, right: %d\n",
+          left_data_type->dtype, right_data_type->dtype);
+  exit(1);
+  return NULL;
+}
+
+int get_data_step_from_data_type(DataType *data_type) {
+  if (data_type->dtype != DT_PNT) {
+    return 1;
+  }
+  if (data_type->pointer_type->dtype == DT_CHAR) {
+    return 1;
+  }
+  // Suppport other data steps, like short.
+  return 8;
+}
+
+int get_data_step_from_node(Node *node) {
+  DataType *dt = get_node_data_type(node);
+  return get_data_step_from_data_type(dt);
+}
+
 Node *term();
 Node *argument();
 
@@ -271,7 +367,19 @@ Node *expression(int priority) {
   if (operation_priority(token_type) == priority) {
     pos++;
     int node_type = get_node_type_from_token(token_type);
-    return new_node(node_type, lhs, expression(priority));
+    Node *rhs = expression(priority);
+    if (node_type == '+' || node_type == '-') {
+      DataType *ldt = get_node_data_type(lhs);
+      DataType *rdt = get_node_data_type(rhs);
+      if (ldt->dtype == DT_PNT && rdt->dtype != DT_PNT) {
+        int step = get_data_step_from_data_type(ldt);
+        rhs = new_node('*', new_node_num(step), rhs);
+      } else if (ldt->dtype != DT_PNT && rdt->dtype == DT_PNT) {
+        int step = get_data_step_from_data_type(rdt);
+        lhs = new_node('*', new_node_num(step), lhs);
+      }
+    }
+    return new_node(node_type, lhs, rhs);
   }
   return lhs;
 }
@@ -339,7 +447,7 @@ Node *term() {
       }
       int step = data_size(data_type->pointer_type);
       Node *offset = new_node('*', index, new_node_num(step));
-      node = new_node('*', new_node('+', id, offset), NULL);
+      node = new_node(ND_DEREF, new_node('+', id, offset), NULL);
     }
     return node;
   }
@@ -363,7 +471,7 @@ Node *term() {
     int type = GET_TOKEN(tokens, pos).ty;
     pos++;
     Node *lhs = term();
-    return new_node(get_node_type_from_token(type), lhs, NULL);
+    return new_node(get_node_type_from_token_single(type), lhs, NULL);
   }
   // Code should not reach here.
   error("Unexpected token (parse.c term): \"%s\"",
