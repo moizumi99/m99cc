@@ -187,6 +187,7 @@ try 14 "int main(){int i; i = 20; i -= 6; return i;}"
 
 # array & pointer
 try 4 "int main(){int a[4]; a[0] = 1; a[1] = 2; a[2] = 3; a[3] = 4; return *(a + 3);}"
+try 4 "int main(){char a[4]; a[0] = 1; a[1] = 2; a[2] = 3; a[3] = 4; return *(a + 3);}"
 
 # program with pointer
 run 'Hello, world' program/hello_literal.c
