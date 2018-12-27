@@ -60,7 +60,7 @@ void dump_symbols(Map *symbol_table) {
   for (int cnt = 0; cnt < symbol_number; cnt++) {
     Symbol *sym = (Symbol *)symbol_table->vals->data[cnt];
     char *name = (char *)symbol_table->keys->data[cnt];
-    fprintf(stderr, "name: %s, type: %d, address: %d", name,
+    fprintf(stderr, "name: %s, type: %d, address: %d, ", name,
             sym->type, (int)sym->address);
     fprintf(stderr, "data_type: ");
     print_data_type(sym->data_type);

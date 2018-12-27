@@ -1,14 +1,18 @@
+#include "m99cc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "m99cc.h"
 
 extern Map *global_symbols;
 extern Vector *local_symbols;
+extern Vector *string_literals;
+
 static Map *current_local_symbols;
 static int label_counter = 0;
 static Node *func_ident;
-extern Vector *string_literals;
+
+// from parse_test.c
+char *get_type(int ty);
 
 // Following are helper function to search for symbol attributes.
 int get_symbol_size(Map *symbols, char *name) {
@@ -29,7 +33,8 @@ void *get_symbol_address(Map *symbols, char *name) {
 
 int get_data_step_from_node(Node *node);
 
-Symbol *get_symbol(Map *global_symbol_table, Map *local_symbol_table, Node *node);
+Symbol *get_symbol(Map *global_symbol_table, Map *local_symbol_table,
+                   Node *node);
 
 int get_node_reference_type(Node *node) {
   if (node == NULL) {
@@ -66,16 +71,14 @@ int get_node_reference_type(Node *node) {
     return right_rtype;
   }
   fprintf(stderr,
-          "Reference data type of left hand value (%s) and right hand value (%s) don't match.",
+          "Reference data type of left hand value (%s) and right hand value "
+          "(%s) don't match.",
           node->lhs->name, node->rhs->name);
   return DT_INVALID;
 }
 
-
 // Code generation from nodes and helper functions.
-Node *get_node_p(Vector *code, int i) {
-  return (Node *)code->data[i];
-}
+Node *get_node_p(Vector *code, int i) { return (Node *)code->data[i]; }
 
 void gen_block(Vector *block_code) {
   for (int i = 0; get_node_p(block_code, i); i++) {
@@ -86,6 +89,7 @@ void gen_block(Vector *block_code) {
 
 void gen_lval(Node *node) {
   if (node->ty == ND_IDENT) {
+    printf("# L-value of ND_IDENT\n");
     if (get_symbol_address(global_symbols, node->name) != NULL) {
       // global address.
       printf("  lea rax, %s[rip]\n", node->name);
@@ -99,7 +103,7 @@ void gen_lval(Node *node) {
       exit(1);
     }
     printf("  mov rax, rbp\n");
-    printf("  sub rax, %d\n", (int) address);
+    printf("  sub rax, %d\n", (int)address);
     printf("  push rax\n");
     return;
   } else if (node->ty == ND_DEREF) {
@@ -122,6 +126,7 @@ int is_systemcall(Node *nd) {
 }
 
 void gen_syscall(Node *nd) {
+  printf("# System Call\n");
   if (strcmp(nd->name, "putchar") == 0) {
     printf("  mov edi, eax\n");
     printf("  call putchar@PLT\n");
@@ -133,6 +138,7 @@ void gen_syscall(Node *nd) {
 
 void gen_node(Node *node) {
   if (node->ty == ND_NUM) {
+    printf("# ND_NUM\n");
     printf("  push %d\n", node->val);
     return;
   }
@@ -143,6 +149,7 @@ void gen_node(Node *node) {
   }
 
   if (node->ty == ND_IDENT) {
+    printf("# ND_IDENT\n");
     Symbol *s = map_get(current_local_symbols, node->name);
     if (s != NULL) {
       // Local variable.
@@ -194,11 +201,13 @@ void gen_node(Node *node) {
   }
 
   if (node->ty == ND_STR) {
+    printf("# ND_STR\n");
     gen_lval(node);
     return;
   }
 
   if (node->ty == ND_FUNCCALL) {
+    printf("# ND_FUNCCALL\n");
     // TODO: align rsp to 16 byte boundary.
     if (node->lhs->ty != ND_IDENT) {
       error("%s\n", "Function node doesn't have identifer.");
@@ -220,6 +229,7 @@ void gen_node(Node *node) {
   }
 
   if (node->ty == '=' || node->ty == ND_PE || node->ty == ND_ME) {
+    printf("# Substitute\n");
     gen_lval(node->lhs);
     gen_node(node->rhs);
     printf("  pop rdi\n");
@@ -242,6 +252,7 @@ void gen_node(Node *node) {
   }
 
   if (node->ty == ND_IF) {
+    printf("# ND_IF\n");
     gen_node(node->lhs);
     printf("  pop rax;\n");
     printf("  cmp rax, 0\n");
@@ -266,8 +277,10 @@ void gen_node(Node *node) {
   }
 
   if (node->ty == ND_WHILE) {
+    printf("# ND_WHILE\n");
     int while_label = label_counter++;
-    int while_end = label_counter++;;
+    int while_end = label_counter++;
+    ;
     printf("_while_%d:\n", while_label);
     gen_node(node->lhs);
     printf("  pop rax;\n");
@@ -281,17 +294,20 @@ void gen_node(Node *node) {
   }
 
   if (node->ty == ND_RETURN) {
+    printf("# ND_RETURN\n");
     gen_node(node->lhs);
     printf("  jmp %s_end\n", func_ident->name);
     return;
   }
 
   if (node->ty == ND_DECLARE) {
+    printf("# ND_DECLARE\n");
     gen_node(node->rhs);
     return;
   }
 
   if (node->rhs == NULL) {
+    printf("# Single term operation(%s)\n", get_type(node->ty));
     // Single term operation
     switch (node->ty) {
     case ND_INC:
@@ -335,13 +351,15 @@ void gen_node(Node *node) {
       printf("  push rax\n");
       break;
     default:
-      fprintf(stderr, "Error. Unsupported single term operation %d.\n", node->ty);
+      fprintf(stderr, "Error. Unsupported single term operation %d.\n",
+              node->ty);
       exit(1);
     }
     return;
   }
 
   // two term operation
+  printf("# Two term operation (%s)\n", get_type(node->ty));
   gen_node(node->lhs);
   gen_node(node->rhs);
 
@@ -404,14 +422,14 @@ int accumulate_variable_size(Vector *symbols) {
   int num = 0;
   for (int i = 0; i < symbols->len; i++) {
     Symbol *s = (Symbol *)symbols->data[i];
-    int variable_size = (s->num==0) ? 1 : s->num;
+    int variable_size = (s->num == 0) ? 1 : s->num;
     num += variable_size * data_size(s->data_type);
   }
   return num;
 }
 
 Node *get_function_p(Vector *program_code, int i) {
-  return (Node *) program_code->data[i];
+  return (Node *)program_code->data[i];
 }
 
 void gen_program(Vector *program_code) {
@@ -422,7 +440,7 @@ void gen_program(Vector *program_code) {
     printf("  .text\n");
     for (int i = 0; i < global_symbols->keys->len; i++) {
       Symbol *s = global_symbols->vals->data[i];
-      char *name = (char *) global_symbols->keys->data[i];
+      char *name = (char *)global_symbols->keys->data[i];
       if (s->type == ID_VAR) {
         int num = (s->num > 0) ? s->num : 1;
         printf("  .comm  %s, %d, %d\n", name, num * 8, num * 8);
@@ -438,7 +456,7 @@ void gen_program(Vector *program_code) {
     printf("STRLTR_%d:\n", i);
     printf("  .string ");
     char *p = string_literals->data[i];
-    while(*p != '\0') {
+    while (*p != '\0') {
       putchar(*p);
       p++;
     }
@@ -454,7 +472,7 @@ void gen_program(Vector *program_code) {
 
   for (int j = 0; program_code->data[j]; j++) {
     current_local_symbols = (Map *)local_symbols->data[j];
-    //dump_symbols(current_local_symbols);
+    // dump_symbols(current_local_symbols);
     // functions
     Node *declaration = get_function_p(program_code, j);
     if (declaration->ty != ND_DECLARE) {
@@ -471,7 +489,8 @@ void gen_program(Vector *program_code) {
       continue;
     }
     if (identifier->ty != ND_FUNCDEF) {
-      fprintf(stderr, "The first line of the function isn't function definition\n");
+      fprintf(stderr,
+              "The first line of the function isn't function definition\n");
       exit(1);
     }
     func_ident = identifier->lhs;
@@ -481,17 +500,19 @@ void gen_program(Vector *program_code) {
     printf("  push rbp\n");
     printf("  mov rbp, rsp\n");
     // Secure room for variables
-    int local_variable_size = accumulate_variable_size(current_local_symbols->vals);
+    int local_variable_size =
+        accumulate_variable_size(current_local_symbols->vals);
     printf("  sub rsp, %d\n", local_variable_size);
     // store argument
     int symbol_number = current_local_symbols->vals->len;
-    for(int arg_cnt = 0; arg_cnt < symbol_number; arg_cnt++) {
-      Symbol *next_symbol = (Symbol *)current_local_symbols->vals->data[arg_cnt];
+    for (int arg_cnt = 0; arg_cnt < symbol_number; arg_cnt++) {
+      Symbol *next_symbol =
+          (Symbol *)current_local_symbols->vals->data[arg_cnt];
       if (next_symbol->type != ID_ARG) {
         continue;
       }
       if (arg_cnt == 0) {
-        printf("  mov [rbp - %d], rax\n", (int) next_symbol->address);
+        printf("  mov [rbp - %d], rax\n", (int)next_symbol->address);
       } else {
         // TODO: Support two or more argunents.
         fprintf(stderr, "Error: Currently, only one argument can be used.");
