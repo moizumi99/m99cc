@@ -105,7 +105,7 @@ void gen_lval(Node *node) {
     printf("  push rax\n");
     return;
   }
-  fprintf(stderr, "The node type %d can not be a L-value", node->ty);
+  fprintf(stderr, "The node type %d can not be a L-value\n", node->ty);
   exit(1);
 }
 

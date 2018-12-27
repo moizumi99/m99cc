@@ -465,14 +465,27 @@ Node *term() {
   }
   // Single term operators
   if (GET_TOKEN(tokens, pos).ty == '+' || GET_TOKEN(tokens, pos).ty == '-' ||
-      GET_TOKEN(tokens, pos).ty == '*' || GET_TOKEN(tokens, pos).ty == '&' ||
-      GET_TOKEN(tokens, pos).ty == TK_INC ||
-      GET_TOKEN(tokens, pos).ty == TK_DEC) {
+      GET_TOKEN(tokens, pos).ty == '*' || GET_TOKEN(tokens, pos).ty == '&') {
     int type = GET_TOKEN(tokens, pos).ty;
     pos++;
     Node *lhs = term();
     return new_node(get_node_type_from_token_single(type), lhs, NULL);
   }
+  if (GET_TOKEN(tokens, pos).ty == TK_INC || GET_TOKEN(tokens, pos).ty == TK_DEC) {
+    // convert ++x to (x += 1).
+    int type = GET_TOKEN(tokens, pos).ty;
+    int operation = (type == TK_INC) ? ND_PE : ND_ME;
+    pos++;
+    Node *lhs = term();
+    DataType *data_type = get_node_data_type(lhs);
+    int step = 1;
+    if (data_type->dtype == DT_PNT) {
+      step = get_data_step_from_data_type(data_type->pointer_type);
+    }
+    Node *rhs = new_node_num(step);
+    return new_node(operation, lhs, rhs);
+  }
+
   // Code should not reach here.
   error("Unexpected token (parse.c term): \"%s\"",
         GET_TOKEN(tokens, pos).input);
