@@ -7,12 +7,12 @@
 
 #define GET_TOKEN(T, I) (*((Token *)(T)->data[(I)]))
 
-static Vector *tokens;
-extern Vector *string_literals;
-
 extern Map *global_symbols;
 extern Vector *local_symbols;
+
+static Vector *tokens;
 static Map *current_local_symbols;
+static int pos;
 
 enum {
   SC_GLOBAL, // Global scope.
@@ -34,19 +34,15 @@ char *create_string_in_heap(char *str, int len) {
   return str_mem;
 }
 
-int pos;
-
-static int str_counter = 0;
 
 Node *new_node_str(char *name, int len) {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_STR;
   node->lhs = NULL;
   node->rhs = NULL;
-  node->val = str_counter;
-  node->name = NULL;
+  node->val = 0;
+  node->name = create_string_in_heap(name, len);
   node->block = NULL;
-  vec_push(string_literals, create_string_in_heap(name, len));
   return node;
 }
 
@@ -103,17 +99,6 @@ void add_global_symbol(char *name_perm, int type, int num,
   new_symbol->data_type = data_type;
   map_put(global_symbols, name_perm, (void *)new_symbol);
 }
-
-/* int get_symbol_type(char *name) { */
-/*   Symbol *tmp_symbol = map_get(current_local_symbols, name); */
-/*   if (tmp_symbol == NULL) { */
-/*     tmp_symbol = map_get(global_symbols, name); */
-/*   } */
-/*   if (tmp_symbol->data_type == NULL) { */
-/*     return DT_INVALID; */
-/*   } */
-/*   return tmp_symbol->data_type->dtype; */
-/* } */
 
 Symbol *get_symbol(Map *global_symbol_table, Map *local_symbol_table, Node *node) {
   Symbol *s = map_get(local_symbol_table, node->name);
@@ -339,7 +324,7 @@ int get_data_step_from_data_type(DataType *data_type) {
   if (data_type->pointer_type->dtype == DT_CHAR) {
     return 1;
   }
-  // Suppport other data steps, like short.
+  // TODO: Suppport other data steps, like short.
   return 8;
 }
 
@@ -365,6 +350,7 @@ Node *expression(int priority) {
     int node_type = get_node_type_from_token(token_type);
     Node *rhs = expression(priority);
     if (node_type == '+' || node_type == '-') {
+      // If adding number to pointer, adjust the size.
       DataType *ldt = get_node_data_type(lhs);
       DataType *rdt = get_node_data_type(rhs);
       if (ldt->dtype == DT_PNT && rdt->dtype != DT_PNT) {

@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 
   // open input
   if (srcfile == NULL) {
-    fprintf(stderr, "Cant open file %s\n", argv[1]);
+    fprintf(stderr, "Can't open file %s\n", argv[1]);
     exit(1);
   }
   fseek( srcfile , 0L , SEEK_END);
@@ -94,6 +94,8 @@ int main(int argc, char **argv) {
   }
   // Parse
   program_code = parse(tokens);
+
+  program_code = analysis(program_code);
 
   if (dump_symbols_enable) {
     fprintf(stderr, "Global Symbols: \n");

@@ -32,6 +32,7 @@ char *get_type(int ty) {
   case ND_DEFINITION: return "ND_DEFINITION";
   case ND_DATATYPE: return "ND_DATATYPE";
   case ND_DEREF: return "ND_DEREF";
+  case ND_STR: return "ND_STR";
   default:
     if (ty < 256) {
       num[0] = (char) ty;
