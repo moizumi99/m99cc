@@ -49,6 +49,15 @@ void list_string_in_node(Node *node) {
       node->lhs = new_node('*', new_node_num(step), node->lhs);
     }
   }
+  if ((node->ty == ND_PE || node->ty == ND_ME)) {
+    int step = 1;
+    DataType *lhs_type = get_node_data_type(global_symbols, current_local_symbol, node->lhs);
+    DataType *rhs_type = get_node_data_type(global_symbols, current_local_symbol, node->rhs);
+    if (lhs_type->dtype == DT_PNT && rhs_type->dtype != DT_PNT) {
+      step = get_data_step_from_data_type(lhs_type);
+    }
+    node->rhs = new_node('*', new_node_num(step), node->rhs);
+  }
   // recursive analysis
   list_string_in_node(node->lhs);
   list_string_in_node(node->rhs);

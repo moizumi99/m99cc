@@ -184,6 +184,10 @@ try 4 "int main(){int i, j; i = 3; j = ++i;}"
 # += and -=
 try 5 "int main(){int i; i = 3; i += 2; return i;}"
 try 14 "int main(){int i; i = 20; i -= 6; return i;}"
+try 3 "int main(){int a[4]; a[0]=1; a[1]=2; a[2]=3; a[3]=4; int *b; b = a; b += 2; *b;}"
+try 4 "int main(){char a[4]; a[0]=1; a[1]=2; a[2]=3; a[3]=4; char *b; b = a; b += 3; *b;}"
+try 3 "int main(){int a[4]; a[0]=1; a[1]=2; a[2]=3; a[3]=4; int *b; b = a + 4; b -= 2; *b;}"
+try 2 "int main(){char a[4]; a[0]=1; a[1]=2; a[2]=3; a[3]=4; char *b; b = a + 4; b -= 3; *b;}"
 
 # array & pointer
 try 4 "int main(){int a[4]; a[0] = 1; a[1] = 2; a[2] = 3; a[3] = 4; return *(a + 3);}"

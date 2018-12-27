@@ -459,11 +459,11 @@ Node *term() {
     int operation = (type == TK_INC) ? ND_PE : ND_ME;
     pos++;
     Node *lhs = term();
-    DataType *data_type = get_node_data_type(global_symbols, current_local_symbols, lhs);
     int step = 1;
-    if (data_type->dtype == DT_PNT) {
-      step = get_data_step_from_data_type(data_type->pointer_type);
-    }
+    /* DataType *data_type = get_node_data_type(global_symbols, current_local_symbols, lhs); */
+    /* if (data_type->dtype == DT_PNT) { */
+    /*   step = get_data_step_from_data_type(data_type->pointer_type); */
+    /* } */
     Node *rhs = new_node_num(step);
     return new_node(operation, lhs, rhs);
   }
