@@ -265,14 +265,14 @@ bool data_type_equal(DataType *dt1, DataType *dt2) {
   return true;
 }
 
-DataType *get_node_data_type(Node *node) {
+DataType *get_node_data_type(Map *global_table, Map *local_table, Node *node) {
   if (node == NULL) {
     return NULL;
   }
   if (node->ty == ND_IDENT) {
-    Symbol *s = get_symbol(global_symbols, current_local_symbols, node);
+    Symbol *s = get_symbol(global_table, local_table, node);
     if (s == NULL) {
-      fprintf(stderr, "Symbol %s not found\n", node->name);
+      fprintf(stderr, "Error: Symbol %s not found (parse, get_node_data_type())\n", node->name);
       exit(1);
     }
     return s->data_type;
@@ -284,8 +284,8 @@ DataType *get_node_data_type(Node *node) {
     return new_data_pointer(new_data_type(DT_CHAR));
   }
   if (node->rhs == NULL) {
-    DataType *dt = get_node_data_type(node->lhs);
-    if (node->ty == '*') {
+    DataType *dt = get_node_data_type(global_table, local_table, node->lhs);
+    if (node->ty == ND_DEREF) {
       return dt->pointer_type;
     }
     if (node->ty == '&') {
@@ -293,8 +293,8 @@ DataType *get_node_data_type(Node *node) {
     }
     return dt;
   }
-  DataType *left_data_type = get_node_data_type(node->lhs);
-  DataType *right_data_type = get_node_data_type(node->rhs);
+  DataType *left_data_type = get_node_data_type(global_table, local_table, node->lhs);
+  DataType *right_data_type = get_node_data_type(global_table, local_table, node->rhs);
   if (data_type_equal(left_data_type, right_data_type)) {
     return left_data_type;
   }
@@ -328,8 +328,8 @@ int get_data_step_from_data_type(DataType *data_type) {
   return 8;
 }
 
-int get_data_step_from_node(Node *node) {
-  DataType *dt = get_node_data_type(node);
+int get_data_step_from_node(Map *global_table, Map *local_table, Node *node) {
+  DataType *dt = get_node_data_type(global_table, local_table, node);
   return get_data_step_from_data_type(dt);
 }
 
@@ -349,18 +349,18 @@ Node *expression(int priority) {
     pos++;
     int node_type = get_node_type_from_token(token_type);
     Node *rhs = expression(priority);
-    if (node_type == '+' || node_type == '-') {
-      // If adding number to pointer, adjust the size.
-      DataType *ldt = get_node_data_type(lhs);
-      DataType *rdt = get_node_data_type(rhs);
-      if (ldt->dtype == DT_PNT && rdt->dtype != DT_PNT) {
-        int step = get_data_step_from_data_type(ldt);
-        rhs = new_node('*', new_node_num(step), rhs);
-      } else if (ldt->dtype != DT_PNT && rdt->dtype == DT_PNT) {
-        int step = get_data_step_from_data_type(rdt);
-        lhs = new_node('*', new_node_num(step), lhs);
-      }
-    }
+    /* if (node_type == '+' || node_type == '-') { */
+    /*   // If adding number to pointer, adjust the size. */
+    /*   DataType *ldt = get_node_data_type(lhs); */
+    /*   DataType *rdt = get_node_data_type(rhs); */
+    /*   if (ldt->dtype == DT_PNT && rdt->dtype != DT_PNT) { */
+    /*     int step = get_data_step_from_data_type(ldt); */
+    /*     rhs = new_node('*', new_node_num(step), rhs); */
+    /*   } else if (ldt->dtype != DT_PNT && rdt->dtype == DT_PNT) { */
+    /*     int step = get_data_step_from_data_type(rdt); */
+    /*     lhs = new_node('*', new_node_num(step), lhs); */
+    /*   } */
+    /* } */
     return new_node(node_type, lhs, rhs);
   }
   return lhs;
@@ -427,9 +427,9 @@ Node *term() {
                 id->name);
         exit(1);
       }
-      int step = data_size(data_type->pointer_type);
-      Node *offset = new_node('*', index, new_node_num(step));
-      node = new_node(ND_DEREF, new_node('+', id, offset), NULL);
+      /* int step = data_size(data_type->pointer_type); */
+      /* Node *offset = new_node('*', index, new_node_num(step)); */
+      node = new_node(ND_DEREF, new_node('+', id, index), NULL);
     }
     return node;
   }
@@ -459,7 +459,7 @@ Node *term() {
     int operation = (type == TK_INC) ? ND_PE : ND_ME;
     pos++;
     Node *lhs = term();
-    DataType *data_type = get_node_data_type(lhs);
+    DataType *data_type = get_node_data_type(global_symbols, current_local_symbols, lhs);
     int step = 1;
     if (data_type->dtype == DT_PNT) {
       step = get_data_step_from_data_type(data_type->pointer_type);
