@@ -256,6 +256,56 @@ void gen_while(Node *node) {
   printf("_while_end_%d:\n", while_end);
 }
 
+void gen_single_term_operation(Node *node) {
+  printf("# Single term operation(%s)\n", get_type(node->ty));
+  // Single term operation
+  switch (node->ty) {
+  case ND_INC:
+  case ND_DEC:
+    gen_lval(node->lhs);
+    printf("  pop rax\n");
+    printf("  mov rdi, [rax]\n");
+    int step = get_data_step_from_node(node->lhs);
+    if (node->ty == ND_INC) {
+      printf("  add rdi, %d\n", step);
+    } else {
+      printf("  sub rdi, %d\n", step);
+    }
+    printf("  mov [rax], rdi\n");
+    printf("  push rdi\n");
+    break;
+  case '+':
+    gen_node(node->lhs);
+    break;
+  case '-':
+    gen_node(node->lhs);
+    printf("  pop rax\n");
+    printf("  neg rax\n");
+    printf("  push rax\n");
+    break;
+  case '&':
+    // Reference.
+    gen_lval(node->lhs);
+    break;
+  case ND_DEREF:
+    // De-reference.
+    gen_node(node->lhs);
+    int dtype = get_node_reference_type(node->lhs);
+    printf("  pop rax\n");
+    if (dtype == DT_CHAR) {
+      printf("  mov al, BYTE PTR [rax]\n");
+      printf("  and rax, 0xff\n");
+    } else {
+      printf("  mov rax, QWORD PTR [rax]\n");
+    }
+    printf("  push rax\n");
+    break;
+  default:
+    fprintf(stderr, "Error. Unsupported single term operation %d.\n", node->ty);
+    exit(1);
+  }
+}
+
 void gen_node(Node *node) {
   if (node->ty == ND_NUM) {
     printf("# ND_NUM\n");
@@ -313,54 +363,7 @@ void gen_node(Node *node) {
   }
 
   if (node->rhs == NULL) {
-    printf("# Single term operation(%s)\n", get_type(node->ty));
-    // Single term operation
-    switch (node->ty) {
-    case ND_INC:
-    case ND_DEC:
-      gen_lval(node->lhs);
-      printf("  pop rax\n");
-      printf("  mov rdi, [rax]\n");
-      int step = get_data_step_from_node(node->lhs);
-      if (node->ty == ND_INC) {
-        printf("  add rdi, %d\n", step);
-      } else {
-        printf("  sub rdi, %d\n", step);
-      }
-      printf("  mov [rax], rdi\n");
-      printf("  push rdi\n");
-      break;
-    case '+':
-      gen_node(node->lhs);
-      break;
-    case '-':
-      gen_node(node->lhs);
-      printf("  pop rax\n");
-      printf("  neg rax\n");
-      printf("  push rax\n");
-      break;
-    case '&':
-      // Reference.
-      gen_lval(node->lhs);
-      break;
-    case ND_DEREF:
-      // De-reference.
-      gen_node(node->lhs);
-      int dtype = get_node_reference_type(node->lhs);
-      printf("  pop rax\n");
-      if (dtype == DT_CHAR) {
-        printf("  mov al, BYTE PTR [rax]\n");
-        printf("  and rax, 0xff\n");
-      } else {
-        printf("  mov rax, QWORD PTR [rax]\n");
-      }
-      printf("  push rax\n");
-      break;
-    default:
-      fprintf(stderr, "Error. Unsupported single term operation %d.\n",
-              node->ty);
-      exit(1);
-    }
+    gen_single_term_operation(node);
     return;
   }
 
