@@ -31,16 +31,18 @@ int get_node_reference_type(Node *node) {
   if (node->ty == ND_IDENT) {
     Symbol *s = get_symbol(global_symbols, current_local_symbols, node);
     if (s == NULL) {
-      fprintf(stderr, "Symbol %s not found\n", node->name);
+      fprintf(stderr, "Error. Symbol %s not found\n", node->name);
       exit(1);
     }
     int dtype = s->data_type->dtype;
     if (dtype != DT_PNT) {
-      // not a pointer. Can't de-reference.
+      // Not a pointer.
       return DT_INVALID;
     }
+    // Return the type of the pointer target.
     return s->data_type->pointer_type->dtype;
   }
+  // String literal.
   if (node->ty == ND_STR) {
     return DT_CHAR;
   }
@@ -62,16 +64,16 @@ int get_node_reference_type(Node *node) {
   return DT_INVALID;
 }
 
-// Code generation from nodes and helper functions.
-Node *get_node_p(Vector *code, int i) { return (Node *)code->data[i]; }
-
+// Code generation from a block (a set of nodes).
 void gen_block(Vector *block_code) {
-  for (int i = 0; get_node_p(block_code, i); i++) {
+  Node *next_node;
+  for (int i = 0; (next_node = block_code->data[i]); i++) {
     printf("  pop rax\n");
-    gen_node(get_node_p(block_code, i));
+    gen_node(next_node);
   }
 }
 
+// Create L-value (variable address and likes).
 void gen_lval(Node *node) {
   if (node->ty == ND_IDENT) {
     printf("# L-value of ND_IDENT\n");
@@ -81,26 +83,29 @@ void gen_lval(Node *node) {
       printf("  lea rax, %s[rip]\n", node->name);
       printf("  push rax\n");
       return;
+    } else {
+      s = map_get(current_local_symbols, node->name);
+      if (s == NULL) {
+        fprintf(stderr, "Error. Undefined variable used.");
+        exit(1);
+      }
+      // local address
+      printf("  mov rax, rbp\n");
+      printf("  sub rax, %d\n", (int)s->address);
+      printf("  push rax\n");
+      return;
     }
-    s = map_get(current_local_symbols, node->name);
-    // If new variable, create a room.
-    if (s == NULL) {
-      fprintf(stderr, "Undefined variable used.");
-      exit(1);
-    }
-    printf("  mov rax, rbp\n");
-    printf("  sub rax, %d\n", (int)s->address);
-    printf("  push rax\n");
-    return;
-  } else if (node->ty == ND_DEREF) {
+  }
+  if (node->ty == ND_DEREF) {
     gen_node(node->lhs);
     return;
-  } else if (node->ty == ND_STR) {
+  }
+  if (node->ty == ND_STR) {
     printf("  lea rax, STRLTR_%d[rip]\n", node->val);
     printf("  push rax\n");
     return;
   }
-  fprintf(stderr, "The node type %d can not be left size value", node->ty);
+  fprintf(stderr, "The node type %d can not be a L-value", node->ty);
   exit(1);
 }
 
@@ -108,6 +113,8 @@ int is_systemcall(Node *nd) {
   if (strcmp(nd->name, "putchar") == 0) {
     return 1;
   }
+  // todo: add more system calls.
+  // todo: add getchar system call.
   return 0;
 }
 
@@ -144,7 +151,7 @@ void gen_ident(Node *node) {
       }
       printf("  push rax\n");
     }
-    // Don't de-reference if array address.
+    // If array address, location of the array is what you need. Do nothing to l-value.
   } else {
     // Global variable or function call.
     s = map_get(global_symbols, node->name);
@@ -175,7 +182,6 @@ void gen_ident(Node *node) {
 
 void gen_funccall(Node *node) {
   printf("# ND_FUNCCALL\n");
-  // TODO: align rsp to 16 byte boundary.
   if (node->lhs->ty != ND_IDENT) {
     error("%s\n", "Function node doesn't have identifer.");
   }
@@ -183,13 +189,16 @@ void gen_funccall(Node *node) {
     gen_node(node->rhs);
     printf("  pop rax\n");
   }
+  // Keep the current rsp to rbx (callee save register).
   printf("  mov rbx, rsp\n");
+  // Align rsp to 16 byte boundary.
   printf("  and rsp, ~0x0f\n");
   if (is_systemcall(node->lhs)) {
     gen_syscall(node->lhs);
   } else {
     printf("  call %s\n", node->lhs->name);
   }
+  // Retrieve rsp from rbx (calle save register).
   printf("  mov rsp, rbx\n");
   printf("  push rax\n");
 }
@@ -214,6 +223,7 @@ void gen_substitute(Node *node) {
     printf("  mov [rax], rbx\n");
     printf("  push rbx\n");
   }
+  // TODO: Add *= and /=.
 }
 
 void gen_if(Node *node) {
@@ -234,7 +244,7 @@ void gen_if(Node *node) {
     } else if (node->rhs->ty == ND_BLOCK) {
       gen_block(node->rhs->block);
     } else {
-      error("Unexpected node %s after if-else \n", node->name);
+      error("Unexpected non ND_BLOCK node %s after if-else \n", node->name);
     }
   }
   printf("_if_end_%d:\n", end_label);
@@ -244,7 +254,6 @@ void gen_while(Node *node) {
   printf("# ND_WHILE\n");
   int while_label = label_counter++;
   int while_end = label_counter++;
-  ;
   printf("_while_%d:\n", while_label);
   gen_node(node->lhs);
   printf("  pop rax;\n");
@@ -265,6 +274,7 @@ void gen_single_term_operation(Node *node) {
     gen_lval(node->lhs);
     printf("  pop rax\n");
     printf("  mov rdi, [rax]\n");
+    // Move this tep out to parse stage. Then, remove get_data_step_from_node().
     int step = get_data_step_from_node(node->lhs);
     if (node->ty == ND_INC) {
       printf("  add rdi, %d\n", step);
@@ -501,34 +511,29 @@ void gen_declartion(Map *local_symbol_table, Node *declaration_node) {
   printf("  ret\n");
 }
 
-void gen_string_literals(Vector *string_literals_input) {
+void gen_string_literals(Vector *string_literals_table) {
   // String literals
-  if (string_literals_input->len > 0) {
-    printf(".Ltext0:\n");
-    printf("  .section .rodata\n");
-  }
-  for (int i = 0; i < string_literals_input->len; i++) {
+  printf(".Ltext0:\n");
+  printf("  .section .rodata\n");
+  for (int i = 0; i < string_literals_table->len; i++) {
     printf("STRLTR_%d:\n", i);
     printf("  .string ");
-    char *p = string_literals_input->data[i];
+    char *p = string_literals_table->data[i];
     while (*p != '\0') {
-      putchar(*p);
-      p++;
+      putchar(*(p++));
     }
     putchar('\n');
   }
 }
 
-void gen_global_symbols(Map *global_symbols_input) {
-  if (global_symbols_input->keys->len > 0) {
-    printf("  .text\n");
-    for (int i = 0; i < global_symbols_input->keys->len; i++) {
-      Symbol *s = global_symbols_input->vals->data[i];
-      char *name = (char *)global_symbols_input->keys->data[i];
-      if (s->type == ID_VAR) {
-        int num = (s->num > 0) ? s->num : 1;
-        printf("  .comm  %s, %d, %d\n", name, num * 8, num * 8);
-      }
+void gen_global_symbols(Map *global_symbols_table) {
+  printf("  .text\n");
+  for (int i = 0; i < global_symbols_table->keys->len; i++) {
+    Symbol *s = global_symbols_table->vals->data[i];
+    char *name = (char *)global_symbols_table->keys->data[i];
+    if (s->type == ID_VAR) {
+      int num = (s->num > 0) ? s->num : 1;
+      printf("  .comm  %s, %d, %d\n", name, num * 8, num * 8);
     }
   }
 }
@@ -537,8 +542,13 @@ void gen_program(Vector *program_code) {
   printf("  .intel_syntax noprefix\n");
 
   // Global variables.
-  gen_global_symbols(global_symbols);
-  gen_string_literals(string_literals);
+  if (global_symbols->keys->len > 0) {
+    gen_global_symbols(global_symbols);
+  }
+  // String literals.
+  if (string_literals->len > 0) {
+    gen_string_literals(string_literals);
+  }
   // Main function.
   printf("  .text\n");
   printf(".global main\n");
