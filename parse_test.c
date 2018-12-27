@@ -23,8 +23,6 @@ char *get_type(int ty) {
   case ND_FUNCDEF: return "ND_FUNCDEF";
   case ND_BLOCK: return "ND_BLOCK";
   case ND_ROOT: return "ND_ROOT";
-  case ND_INC: return "ND_INC";
-  case ND_DEC: return "ND_DEC";
   case ND_EQ: return "ND_EQ";
   case ND_NE: return "ND_NE";
   case ND_IF: return "ND_IF";

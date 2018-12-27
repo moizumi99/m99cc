@@ -224,10 +224,6 @@ int get_node_type_from_token(int token_type) {
     return ND_OR;
   case TK_STR:
     return ND_STR;
-  case TK_INC:
-    return ND_INC;
-  case TK_DEC:
-    return ND_DEC;
   case TK_PE:
     return ND_PE;
   case TK_ME:

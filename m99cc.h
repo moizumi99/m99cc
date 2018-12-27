@@ -81,25 +81,23 @@ enum {
   ND_FUNCDEF,   // 260 Function definition.
   ND_BLOCK,     // 261 Block code.
   ND_ROOT,      // 262 The root of the entire program
-  ND_INC,       // 263 Single term operator (++).
-  ND_DEC,       // 264 Single term operator (--).
-  ND_EQ,        // 265 Equal operation (==).
-  ND_NE,        // 266 Not-equal operation (!=).
-  ND_LE,        // 267 Less than or equal (<= / =<)
-  ND_GE,        // 268 Greater than or equal (>= / =>)
-  ND_PE,        // 269 Add and substitute (+=).
-  ND_ME,        // 270 Subtract and substitute (-=).
-  ND_AND,       // 271 Logical AND (&&).
-  ND_OR,        // 272 Logical OR (&&).
-  ND_IF,        // 273 IF node.
-  ND_WHILE,     // 274 While node.
-  ND_FOR,       // 275 While node.
-  ND_RETURN,    // 276 For node
-  ND_DECLARE,   // 277 Declaration of variable/function
-  ND_DEFINITION,// 278 Defintion of variable/function
-  ND_DATATYPE,  // 279 Data type
-  ND_STR,       // 280 String literal.
-  ND_DEREF,     // 291 De-reference (*) operator.
+  ND_EQ,        // 263 Equal operation (==).
+  ND_NE,        // 264 Not-equal operation (!=).
+  ND_LE,        // 265 Less than or equal (<= / =<)
+  ND_GE,        // 266 Greater than or equal (>= / =>)
+  ND_PE,        // 267 Add and substitute (+=).
+  ND_ME,        // 278 Subtract and substitute (-=).
+  ND_AND,       // 279 Logical AND (&&).
+  ND_OR,        // 270 Logical OR (&&).
+  ND_IF,        // 271 IF node.
+  ND_WHILE,     // 272 While node.
+  ND_FOR,       // 273 While node.
+  ND_RETURN,    // 274 For node
+  ND_DECLARE,   // 275 Declaration of variable/function
+  ND_DEFINITION,// 276 Defintion of variable/function
+  ND_DATATYPE,  // 277 Data type
+  ND_STR,       // 288 String literal.
+  ND_DEREF,     // 289 De-reference (*) operator.
 };
 
 // Data type.

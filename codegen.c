@@ -15,9 +15,6 @@ static Node *func_ident;
 char *get_type(int ty);
 
 // from parse.c
-int get_data_step_from_node(Node *node);
-
-// from parse.c
 Symbol *get_symbol(Map *global_symbol_table, Map *local_symbol_table,
                    Node *node);
 
@@ -269,21 +266,6 @@ void gen_single_term_operation(Node *node) {
   printf("# Single term operation(%s)\n", get_type(node->ty));
   // Single term operation
   switch (node->ty) {
-  case ND_INC:
-  case ND_DEC:
-    gen_lval(node->lhs);
-    printf("  pop rax\n");
-    printf("  mov rdi, [rax]\n");
-    // Move this tep out to parse stage. Then, remove get_data_step_from_node().
-    int step = get_data_step_from_node(node->lhs);
-    if (node->ty == ND_INC) {
-      printf("  add rdi, %d\n", step);
-    } else {
-      printf("  sub rdi, %d\n", step);
-    }
-    printf("  mov [rax], rdi\n");
-    printf("  push rdi\n");
-    break;
   case '+':
     gen_node(node->lhs);
     break;
