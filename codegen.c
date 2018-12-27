@@ -360,8 +360,11 @@ void gen_two_term_operation(Node *node) {
     printf("  or rax, rdi\n");
     break;
   case ND_IDENTSEQ:
-  default:
     // do nothing.
+    break;
+  default:
+    fprintf(stderr, "Operation %s is not supported.\n", get_type(node->ty));
+    exit(1);
     break;
   }
   printf("  push rax\n");
@@ -373,56 +376,46 @@ void gen_node(Node *node) {
     printf("  push %d\n", node->val);
     return;
   }
-
   if (node->ty == ND_FUNCDEF) {
     // code shouldn't reach here
     return;
   }
-
   if (node->ty == ND_IDENT) {
     gen_ident(node);
     return;
   }
-
   if (node->ty == ND_STR) {
     printf("# ND_STR\n");
     gen_lval(node);
     return;
   }
-
   if (node->ty == ND_FUNCCALL) {
     gen_funccall(node);
     return;
   }
-
   if (node->ty == '=' || node->ty == ND_PE || node->ty == ND_ME) {
     gen_substitute(node);
     return;
   }
-
   if (node->ty == ND_IF) {
     gen_if(node);
     return;
   }
-
   if (node->ty == ND_WHILE) {
     gen_while(node);
     return;
   }
-
   if (node->ty == ND_RETURN) {
     printf("# ND_RETURN\n");
     gen_node(node->lhs);
     printf("  jmp %s_end\n", func_ident->name);
     return;
   }
-
   if (node->ty == ND_DECLARE) {
     printf("# ND_DECLARE\n");
     gen_node(node->rhs);
     return;
   }
-
   if (node->rhs == NULL) {
     gen_single_term_operation(node);
     return;
@@ -430,6 +423,7 @@ void gen_node(Node *node) {
   gen_two_term_operation(node);
 }
 
+// Calculate the necessary stack size for local variable.
 int accumulate_variable_size(Vector *symbols) {
   int num = 0;
   for (int i = 0; i < symbols->len; i++) {
@@ -438,6 +432,73 @@ int accumulate_variable_size(Vector *symbols) {
     num += variable_size * data_size(s->data_type);
   }
   return num;
+}
+
+void gen_declartion(Map *local_symbol_table, Node *declaration_node) {
+  current_local_symbols = local_symbol_table;
+  // functions
+  Node *declaration = declaration_node;
+  if (declaration->ty != ND_DECLARE) {
+    fprintf(stderr, "Defintion of variable or function expected.\n");
+    exit(1);
+  }
+  Node *identifier = declaration->rhs;
+  if (identifier->ty == ND_IDENT) {
+    // TODO: add initialization.
+    return;
+  }
+  if (identifier->ty == ND_IDENTSEQ) {
+    // TODO: add initialization.
+    return;
+  }
+  if (identifier->ty != ND_FUNCDEF) {
+    fprintf(stderr,
+            "The first line of the function isn't function definition\n");
+    exit(1);
+  }
+  func_ident = identifier->lhs;
+  printf("%s:\n", func_ident->name);
+  // Prologue.
+  printf("  push rbx\n");
+  printf("  push rbp\n");
+  printf("  mov rbp, rsp\n");
+  // Secure room for variables
+  int local_variable_size =
+      accumulate_variable_size(current_local_symbols->vals);
+  printf("  sub rsp, %d\n", local_variable_size);
+  // store argument
+  int symbol_number = current_local_symbols->vals->len;
+  for (int arg_cnt = 0; arg_cnt < symbol_number; arg_cnt++) {
+    Symbol *next_symbol = (Symbol *)current_local_symbols->vals->data[arg_cnt];
+    if (next_symbol->type != ID_ARG) {
+      continue;
+    }
+    if (arg_cnt == 0) {
+      printf("  mov [rbp - %d], rax\n", (int)next_symbol->address);
+    } else {
+      // TODO: Support two or more argunents.
+      fprintf(stderr, "Error: Currently, only one argument can be used.");
+      exit(1);
+    }
+  }
+  // Generate codes from the top line to bottom
+  Vector *block = identifier->block;
+  // dummy push to be popped by gen_block. (Then optimized later);
+  printf("  push rax\n");
+
+  gen_block(block);
+
+  printf("%s_end:\n", func_ident->name);
+  // The evaluated value is at the top of stack.
+  // Need to pop this value so the stack is not overflown.
+  printf("  pop rax\n");
+  // Epilogue
+  // The value on the top of the stack is the final value.
+  // The last value is already in rax, which is return value.
+  printf("  mov rsp, rbp\n");
+  printf("  pop rbp\n");
+  printf("  pop rbx\n");
+  printf("  ret\n");
 }
 
 void gen_program(Vector *program_code) {
@@ -479,71 +540,6 @@ void gen_program(Vector *program_code) {
   /* printf("  ret\n"); */
 
   for (int j = 0; program_code->data[j]; j++) {
-    current_local_symbols = (Map *)local_symbols->data[j];
-    // dump_symbols(current_local_symbols);
-    // functions
-    Node *declaration = (Node *)program_code->data[j];
-    if (declaration->ty != ND_DECLARE) {
-      fprintf(stderr, "Defintion of variable or function expected.\n");
-      exit(1);
-    }
-    Node *identifier = declaration->rhs;
-    if (identifier->ty == ND_IDENT) {
-      // TODO: add initialization.
-      continue;
-    }
-    if (identifier->ty == ND_IDENTSEQ) {
-      // TODO: add initialization.
-      continue;
-    }
-    if (identifier->ty != ND_FUNCDEF) {
-      fprintf(stderr,
-              "The first line of the function isn't function definition\n");
-      exit(1);
-    }
-    func_ident = identifier->lhs;
-    printf("%s:\n", func_ident->name);
-    // Prologue.
-    printf("  push rbx\n");
-    printf("  push rbp\n");
-    printf("  mov rbp, rsp\n");
-    // Secure room for variables
-    int local_variable_size =
-        accumulate_variable_size(current_local_symbols->vals);
-    printf("  sub rsp, %d\n", local_variable_size);
-    // store argument
-    int symbol_number = current_local_symbols->vals->len;
-    for (int arg_cnt = 0; arg_cnt < symbol_number; arg_cnt++) {
-      Symbol *next_symbol =
-          (Symbol *)current_local_symbols->vals->data[arg_cnt];
-      if (next_symbol->type != ID_ARG) {
-        continue;
-      }
-      if (arg_cnt == 0) {
-        printf("  mov [rbp - %d], rax\n", (int)next_symbol->address);
-      } else {
-        // TODO: Support two or more argunents.
-        fprintf(stderr, "Error: Currently, only one argument can be used.");
-        exit(1);
-      }
-    }
-    // Generate codes from the top line to bottom
-    Vector *block = identifier->block;
-    // dummy push to be popped by gen_block. (Then optimized later);
-    printf("  push rax\n");
-
-    gen_block(block);
-
-    printf("%s_end:\n", func_ident->name);
-    // The evaluated value is at the top of stack.
-    // Need to pop this value so the stack is not overflown.
-    printf("  pop rax\n");
-    // Epilogue
-    // The value on the top of the stack is the final value.
-    // The last value is already in rax, which is return value.
-    printf("  mov rsp, rbp\n");
-    printf("  pop rbp\n");
-    printf("  pop rbx\n");
-    printf("  ret\n");
+    gen_declartion(local_symbols->data[j], program_code->data[j]);
   }
 }
