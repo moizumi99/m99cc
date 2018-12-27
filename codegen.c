@@ -122,6 +122,124 @@ void gen_syscall(Node *nd) {
   }
 }
 
+void gen_ident(Node *node) {
+  printf("# ND_IDENT\n");
+  Symbol *s = map_get(current_local_symbols, node->name);
+  if (s != NULL) {
+    // Local variable.
+    gen_lval(node);
+    if (s->num == 0) {
+      // regular variable. De-reference.
+      printf("  pop rax\n");
+      int dtype = s->data_type->dtype;
+      if (dtype == DT_INT) {
+        printf("  mov rax, [rax]\n");
+      } else if (dtype == DT_CHAR) {
+        printf("  mov al, [rax]\n");
+      } else if (dtype == DT_PNT) {
+        printf("  mov rax, [rax]\n");
+      } else {
+        fprintf(stderr, "Data type: %d\n", dtype);
+        error("\"%s\" type is not INT or CHAR. (local load)", node->name);
+      }
+      printf("  push rax\n");
+    }
+    // Don't de-reference if array address.
+  } else {
+    // Global variable or function call.
+    s = map_get(global_symbols, node->name);
+    if (s == NULL) {
+      fprintf(stderr, "The symbol %s was not found.", node->name);
+      exit(1);
+    }
+    // Function calll or global variable.
+    if (s->num == 0) {
+      // regular variable. De-reference.
+      int dtype = s->data_type->dtype;
+      if (dtype == DT_INT) {
+        printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
+      } else if (dtype == DT_CHAR) {
+        printf("  mov al, BYTE PTR %s[rip]\n", node->name);
+      } else if (dtype == DT_PNT) {
+        printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
+      } else {
+        error("\"%s\" type is not INT or CHAR. (global load)", node->name);
+      }
+    } else {
+      // Array address. Don't de-reference.
+      printf("  lea rax, %s[rip]\n", node->name);
+    }
+    printf("  push rax\n");
+  }
+}
+
+void gen_funccall(Node *node) {
+  printf("# ND_FUNCCALL\n");
+  // TODO: align rsp to 16 byte boundary.
+  if (node->lhs->ty != ND_IDENT) {
+    error("%s\n", "Function node doesn't have identifer.");
+  }
+  if (node->rhs != NULL) {
+    gen_node(node->rhs);
+    printf("  pop rax\n");
+  }
+  printf("  mov rbx, rsp\n");
+  printf("  and rsp, ~0x0f\n");
+  if (is_systemcall(node->lhs)) {
+    gen_syscall(node->lhs);
+  } else {
+    printf("  call %s\n", node->lhs->name);
+  }
+  printf("  mov rsp, rbx\n");
+  printf("  push rax\n");
+}
+
+void gen_substitute(Node *node) {
+  printf("# Substitute\n");
+  gen_lval(node->lhs);
+  gen_node(node->rhs);
+  printf("  pop rdi\n");
+  printf("  pop rax\n");
+  if (node->ty == '=') {
+    printf("  mov [rax], rdi\n");
+    printf("  push rdi\n");
+  } else if (node->ty == ND_PE) {
+    printf("  mov rbx, [rax]\n");
+    printf("  add rdi, rbx\n");
+    printf("  mov [rax], rdi\n");
+    printf("  push rdi\n");
+  } else if (node->ty == ND_ME) {
+    printf("  mov rbx, [rax]\n");
+    printf("  sub rbx, rdi\n");
+    printf("  mov [rax], rbx\n");
+    printf("  push rbx\n");
+  }
+}
+
+void gen_if(Node *node) {
+  printf("# ND_IF\n");
+  gen_node(node->lhs);
+  printf("  pop rax;\n");
+  printf("  cmp rax, 0\n");
+  printf("  push rax;\n");
+  int else_label = label_counter++;
+  printf("  je _else_%d\n", else_label);
+  gen_block(node->block);
+  int end_label = label_counter++;
+  printf("  jmp _if_end_%d\n", end_label);
+  printf("_else_%d:\n", else_label);
+  if (node->rhs != NULL) {
+    if (node->rhs->ty == ND_IF) {
+      gen_node(node->rhs);
+    } else if (node->rhs->ty == ND_BLOCK) {
+      gen_block(node->rhs->block);
+    } else {
+      error("Unexpected node %s after if-else \n", node->name);
+    }
+  }
+  printf("_if_end_%d:\n", end_label);
+}
+
 void gen_node(Node *node) {
   if (node->ty == ND_NUM) {
     printf("# ND_NUM\n");
@@ -135,54 +253,7 @@ void gen_node(Node *node) {
   }
 
   if (node->ty == ND_IDENT) {
-    printf("# ND_IDENT\n");
-    Symbol *s = map_get(current_local_symbols, node->name);
-    if (s != NULL) {
-      // Local variable.
-      gen_lval(node);
-      if (s->num == 0) {
-        // regular variable. De-reference.
-        printf("  pop rax\n");
-        int dtype = s->data_type->dtype;
-        if (dtype == DT_INT) {
-          printf("  mov rax, [rax]\n");
-        } else if (dtype == DT_CHAR) {
-          printf("  mov al, [rax]\n");
-        } else if (dtype == DT_PNT) {
-          printf("  mov rax, [rax]\n");
-        } else {
-          fprintf(stderr, "Data type: %d\n", dtype);
-          error("\"%s\" type is not INT or CHAR. (local load)", node->name);
-        }
-        printf("  push rax\n");
-      }
-      // Don't de-reference if array address.
-    } else {
-      // Global variable or function call.
-      s = map_get(global_symbols, node->name);
-      if (s == NULL) {
-        fprintf(stderr, "The symbol %s was not found.", node->name);
-        exit(1);
-      }
-      // Function calll or global variable.
-      if (s->num == 0) {
-        // regular variable. De-reference.
-        int dtype = s->data_type->dtype;
-        if (dtype == DT_INT) {
-          printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
-        } else if (dtype == DT_CHAR) {
-          printf("  mov al, BYTE PTR %s[rip]\n", node->name);
-        } else if (dtype == DT_PNT) {
-          printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
-        } else {
-          error("\"%s\" type is not INT or CHAR. (global load)", node->name);
-        }
-      } else {
-        // Array address. Don't de-reference.
-        printf("  lea rax, %s[rip]\n", node->name);
-      }
-      printf("  push rax\n");
-    }
+    gen_ident(node);
     return;
   }
 
@@ -193,76 +264,22 @@ void gen_node(Node *node) {
   }
 
   if (node->ty == ND_FUNCCALL) {
-    printf("# ND_FUNCCALL\n");
-    // TODO: align rsp to 16 byte boundary.
-    if (node->lhs->ty != ND_IDENT) {
-      error("%s\n", "Function node doesn't have identifer.");
-    }
-    if (node->rhs != NULL) {
-      gen_node(node->rhs);
-      printf("  pop rax\n");
-    }
-    printf("  mov rbx, rsp\n");
-    printf("  and rsp, ~0x0f\n");
-    if (is_systemcall(node->lhs)) {
-      gen_syscall(node->lhs);
-    } else {
-      printf("  call %s\n", node->lhs->name);
-    }
-    printf("  mov rsp, rbx\n");
-    printf("  push rax\n");
+    gen_funccall(node);
     return;
   }
 
   if (node->ty == '=' || node->ty == ND_PE || node->ty == ND_ME) {
-    printf("# Substitute\n");
-    gen_lval(node->lhs);
-    gen_node(node->rhs);
-    printf("  pop rdi\n");
-    printf("  pop rax\n");
-    if (node->ty == '=') {
-      printf("  mov [rax], rdi\n");
-      printf("  push rdi\n");
-    } else if (node->ty == ND_PE) {
-      printf("  mov rbx, [rax]\n");
-      printf("  add rdi, rbx\n");
-      printf("  mov [rax], rdi\n");
-      printf("  push rdi\n");
-    } else if (node->ty == ND_ME) {
-      printf("  mov rbx, [rax]\n");
-      printf("  sub rbx, rdi\n");
-      printf("  mov [rax], rbx\n");
-      printf("  push rbx\n");
-    }
+    gen_substitute(node);
     return;
   }
 
   if (node->ty == ND_IF) {
-    printf("# ND_IF\n");
-    gen_node(node->lhs);
-    printf("  pop rax;\n");
-    printf("  cmp rax, 0\n");
-    printf("  push rax;\n");
-    int else_label = label_counter++;
-    printf("  je _else_%d\n", else_label);
-    gen_block(node->block);
-    int end_label = label_counter++;
-    printf("  jmp _if_end_%d\n", end_label);
-    printf("_else_%d:\n", else_label);
-    if (node->rhs != NULL) {
-      if (node->rhs->ty == ND_IF) {
-        gen_node(node->rhs);
-      } else if (node->rhs->ty == ND_BLOCK) {
-        gen_block(node->rhs->block);
-      } else {
-        error("Unexpected node %s after if-else \n", node->name);
-      }
-    }
-    printf("_if_end_%d:\n", end_label);
+    gen_if(node);
     return;
   }
 
   if (node->ty == ND_WHILE) {
+    
     printf("# ND_WHILE\n");
     int while_label = label_counter++;
     int while_end = label_counter++;
@@ -414,10 +431,6 @@ int accumulate_variable_size(Vector *symbols) {
   return num;
 }
 
-Node *get_function_p(Vector *program_code, int i) {
-  return (Node *)program_code->data[i];
-}
-
 void gen_program(Vector *program_code) {
   printf("  .intel_syntax noprefix\n");
 
@@ -460,7 +473,7 @@ void gen_program(Vector *program_code) {
     current_local_symbols = (Map *)local_symbols->data[j];
     // dump_symbols(current_local_symbols);
     // functions
-    Node *declaration = get_function_p(program_code, j);
+    Node *declaration = (Node *)program_code->data[j];
     if (declaration->ty != ND_DECLARE) {
       fprintf(stderr, "Defintion of variable or function expected.\n");
       exit(1);
