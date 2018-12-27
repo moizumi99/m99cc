@@ -100,14 +100,6 @@ void add_global_symbol(char *name_perm, int type, int num,
   map_put(global_symbols, name_perm, (void *)new_symbol);
 }
 
-Symbol *get_symbol(Map *global_symbol_table, Map *local_symbol_table, Node *node) {
-  Symbol *s = map_get(local_symbol_table, node->name);
-  if (s == NULL) {
-    s = map_get(global_symbol_table, node->name);
-  }
-  return s;
-}
-
 int data_size_from_dtype(int dtype) {
   switch (dtype) {
   case DT_VOID:

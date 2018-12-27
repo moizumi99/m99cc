@@ -13,7 +13,14 @@ static int local_symbol_counter;
 // parse.c
 Node *new_node(int op, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
-Symbol *get_symbol(Map *global_symbol_table, Map *local_symbol_table, Node *node);
+
+Symbol *get_symbol(Map *global_symbol_table, Map *local_symbol_table, Node *node) {
+  Symbol *s = map_get(local_symbol_table, node->name);
+  if (s == NULL) {
+    s = map_get(global_symbol_table, node->name);
+  }
+  return s;
+}
 
 bool data_type_equal(DataType *dt1, DataType *dt2) {
   if (dt1 == NULL || dt2 == NULL) {
