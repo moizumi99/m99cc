@@ -306,6 +306,67 @@ void gen_single_term_operation(Node *node) {
   }
 }
 
+void gen_two_term_operation(Node *node) {
+  // two term operation
+  printf("# Two term operation (%s)\n", get_type(node->ty));
+  gen_node(node->lhs);
+  gen_node(node->rhs);
+
+  printf("  pop rdi\n");
+  printf("  pop rax\n");
+
+  switch (node->ty) {
+  case '+':
+    printf("  add rax, rdi\n");
+    break;
+  case '-':
+    printf("  sub rax, rdi\n");
+    break;
+  case '*':
+    printf("  mul rdi\n");
+    break;
+  case '/':
+    printf("  mov rdx, 0\n");
+    printf("  div rdi\n");
+    break;
+  case ND_EQ:
+  case ND_NE:
+  case '<':
+  case '>':
+  case ND_LE:
+  case ND_GE:
+    printf("  cmp rdi, rax\n");
+    if (node->ty == ND_EQ) {
+      printf("  sete al\n");
+    } else if (node->ty == ND_NE) {
+      printf("  setne al\n");
+    } else if (node->ty == '>') {
+      printf("  setl al\n");
+    } else if (node->ty == '<') {
+      printf("  setg al\n");
+    } else if (node->ty == ND_LE) {
+      printf("  setle al\n");
+    } else if (node->ty == ND_GE) {
+      printf("  setge al\n");
+    } else {
+      error("%s\n", "Code shouldn't reach here (codegen.c compare).");
+    }
+    printf("  movzb rax, al\n");
+    break;
+  case ND_AND:
+    printf("  and rax, rdi\n");
+    break;
+  case ND_OR:
+    printf("  or rax, rdi\n");
+    break;
+  case ND_IDENTSEQ:
+  default:
+    // do nothing.
+    break;
+  }
+  printf("  push rax\n");
+}
+
 void gen_node(Node *node) {
   if (node->ty == ND_NUM) {
     printf("# ND_NUM\n");
@@ -366,65 +427,7 @@ void gen_node(Node *node) {
     gen_single_term_operation(node);
     return;
   }
-
-  // two term operation
-  printf("# Two term operation (%s)\n", get_type(node->ty));
-  gen_node(node->lhs);
-  gen_node(node->rhs);
-
-  printf("  pop rdi\n");
-  printf("  pop rax\n");
-
-  switch (node->ty) {
-  case '+':
-    printf("  add rax, rdi\n");
-    break;
-  case '-':
-    printf("  sub rax, rdi\n");
-    break;
-  case '*':
-    printf("  mul rdi\n");
-    break;
-  case '/':
-    printf("  mov rdx, 0\n");
-    printf("  div rdi\n");
-    break;
-  case ND_EQ:
-  case ND_NE:
-  case '<':
-  case '>':
-  case ND_LE:
-  case ND_GE:
-    printf("  cmp rdi, rax\n");
-    if (node->ty == ND_EQ) {
-      printf("  sete al\n");
-    } else if (node->ty == ND_NE) {
-      printf("  setne al\n");
-    } else if (node->ty == '>') {
-      printf("  setl al\n");
-    } else if (node->ty == '<') {
-      printf("  setg al\n");
-    } else if (node->ty == ND_LE) {
-      printf("  setle al\n");
-    } else if (node->ty == ND_GE) {
-      printf("  setge al\n");
-    } else {
-      error("%s\n", "Code shouldn't reach here (codegen.c compare).");
-    }
-    printf("  movzb rax, al\n");
-    break;
-  case ND_AND:
-    printf("  and rax, rdi\n");
-    break;
-  case ND_OR:
-    printf("  or rax, rdi\n");
-    break;
-  case ND_IDENTSEQ:
-  default:
-    // do nothing.
-    break;
-  }
-  printf("  push rax\n");
+  gen_two_term_operation(node);
 }
 
 int accumulate_variable_size(Vector *symbols) {
