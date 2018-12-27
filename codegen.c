@@ -501,44 +501,48 @@ void gen_declartion(Map *local_symbol_table, Node *declaration_node) {
   printf("  ret\n");
 }
 
-void gen_program(Vector *program_code) {
-  printf("  .intel_syntax noprefix\n");
-
-  // Global variables.
-  if (global_symbols->keys->len > 0) {
-    printf("  .text\n");
-    for (int i = 0; i < global_symbols->keys->len; i++) {
-      Symbol *s = global_symbols->vals->data[i];
-      char *name = (char *)global_symbols->keys->data[i];
-      if (s->type == ID_VAR) {
-        int num = (s->num > 0) ? s->num : 1;
-        printf("  .comm  %s, %d, %d\n", name, num * 8, num * 8);
-      }
-    }
-  }
+void gen_string_literals(Vector *string_literals_input) {
   // String literals
-  if (string_literals->len > 0) {
+  if (string_literals_input->len > 0) {
     printf(".Ltext0:\n");
     printf("  .section .rodata\n");
   }
-  for (int i = 0; i < string_literals->len; i++) {
+  for (int i = 0; i < string_literals_input->len; i++) {
     printf("STRLTR_%d:\n", i);
     printf("  .string ");
-    char *p = string_literals->data[i];
+    char *p = string_literals_input->data[i];
     while (*p != '\0') {
       putchar(*p);
       p++;
     }
     putchar('\n');
   }
+}
+
+void gen_global_symbols(Map *global_symbols_input) {
+  if (global_symbols_input->keys->len > 0) {
+    printf("  .text\n");
+    for (int i = 0; i < global_symbols_input->keys->len; i++) {
+      Symbol *s = global_symbols_input->vals->data[i];
+      char *name = (char *)global_symbols_input->keys->data[i];
+      if (s->type == ID_VAR) {
+        int num = (s->num > 0) ? s->num : 1;
+        printf("  .comm  %s, %d, %d\n", name, num * 8, num * 8);
+      }
+    }
+  }
+}
+
+void gen_program(Vector *program_code) {
+  printf("  .intel_syntax noprefix\n");
+
+  // Global variables.
+  gen_global_symbols(global_symbols);
+  gen_string_literals(string_literals);
   // Main function.
   printf("  .text\n");
   printf(".global main\n");
   printf(".type main, @function\n");
-  /* printf("main:\n"); */
-  /* printf("  call func_main\n"); */
-  /* printf("  ret\n"); */
-
   for (int j = 0; program_code->data[j]; j++) {
     gen_declartion(local_symbols->data[j], program_code->data[j]);
   }
