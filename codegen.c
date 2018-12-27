@@ -14,25 +14,10 @@ static Node *func_ident;
 // from parse_test.c
 char *get_type(int ty);
 
-// Following are helper function to search for symbol attributes.
-int get_symbol_size(Map *symbols, char *name) {
-  Symbol *tmp_symbol = map_get(symbols, name);
-  if (tmp_symbol == NULL) {
-    return -1;
-  }
-  return tmp_symbol->num;
-}
-
-void *get_symbol_address(Map *symbols, char *name) {
-  Symbol *tmp_symbol = map_get(symbols, name);
-  if (tmp_symbol == NULL) {
-    return NULL;
-  }
-  return tmp_symbol->address;
-}
-
+// from parse.c
 int get_data_step_from_node(Node *node);
 
+// from parse.c
 Symbol *get_symbol(Map *global_symbol_table, Map *local_symbol_table,
                    Node *node);
 
@@ -90,20 +75,21 @@ void gen_block(Vector *block_code) {
 void gen_lval(Node *node) {
   if (node->ty == ND_IDENT) {
     printf("# L-value of ND_IDENT\n");
-    if (get_symbol_address(global_symbols, node->name) != NULL) {
+    Symbol *s = map_get(global_symbols, node->name);
+    if (s != NULL) {
       // global address.
       printf("  lea rax, %s[rip]\n", node->name);
       printf("  push rax\n");
       return;
     }
-    void *address = get_symbol_address(current_local_symbols, node->name);
+    s = map_get(current_local_symbols, node->name);
     // If new variable, create a room.
-    if (address == NULL) {
+    if (s == NULL) {
       fprintf(stderr, "Undefined variable used.");
       exit(1);
     }
     printf("  mov rax, rbp\n");
-    printf("  sub rax, %d\n", (int)address);
+    printf("  sub rax, %d\n", (int)s->address);
     printf("  push rax\n");
     return;
   } else if (node->ty == ND_DEREF) {
@@ -154,7 +140,7 @@ void gen_node(Node *node) {
     if (s != NULL) {
       // Local variable.
       gen_lval(node);
-      if (get_symbol_size(current_local_symbols, node->name) == 0) {
+      if (s->num == 0) {
         // regular variable. De-reference.
         printf("  pop rax\n");
         int dtype = s->data_type->dtype;
