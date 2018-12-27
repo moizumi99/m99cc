@@ -240,6 +240,22 @@ void gen_if(Node *node) {
   printf("_if_end_%d:\n", end_label);
 }
 
+void gen_while(Node *node) {
+  printf("# ND_WHILE\n");
+  int while_label = label_counter++;
+  int while_end = label_counter++;
+  ;
+  printf("_while_%d:\n", while_label);
+  gen_node(node->lhs);
+  printf("  pop rax;\n");
+  printf("  cmp rax, 0\n");
+  printf("  push rax;\n");
+  printf("  je _while_end_%d\n", while_end);
+  gen_block(node->block);
+  printf("  jmp _while_%d\n", while_label);
+  printf("_while_end_%d:\n", while_end);
+}
+
 void gen_node(Node *node) {
   if (node->ty == ND_NUM) {
     printf("# ND_NUM\n");
@@ -279,20 +295,7 @@ void gen_node(Node *node) {
   }
 
   if (node->ty == ND_WHILE) {
-    
-    printf("# ND_WHILE\n");
-    int while_label = label_counter++;
-    int while_end = label_counter++;
-    ;
-    printf("_while_%d:\n", while_label);
-    gen_node(node->lhs);
-    printf("  pop rax;\n");
-    printf("  cmp rax, 0\n");
-    printf("  push rax;\n");
-    printf("  je _while_end_%d\n", while_end);
-    gen_block(node->block);
-    printf("  jmp _while_%d\n", while_label);
-    printf("_while_end_%d:\n", while_end);
+    gen_while(node);
     return;
   }
 
