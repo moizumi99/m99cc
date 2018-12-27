@@ -252,87 +252,6 @@ int get_data_type(int p, DataType **data_type) {
   return p;
 }
 
-bool data_type_equal(DataType *dt1, DataType *dt2) {
-  if (dt1 == NULL || dt2 == NULL) {
-    return false;
-  }
-  if (dt1->dtype == DT_PNT && dt2->dtype == DT_PNT) {
-    return data_type_equal(dt1->pointer_type, dt2->pointer_type);
-  }
-  if (dt1->dtype != dt2->dtype) {
-    return false;
-  }
-  return true;
-}
-
-DataType *get_node_data_type(Map *global_table, Map *local_table, Node *node) {
-  if (node == NULL) {
-    return NULL;
-  }
-  if (node->ty == ND_IDENT) {
-    Symbol *s = get_symbol(global_table, local_table, node);
-    if (s == NULL) {
-      fprintf(stderr, "Error: Symbol %s not found (parse, get_node_data_type())\n", node->name);
-      exit(1);
-    }
-    return s->data_type;
-  }
-  if (node->ty == ND_NUM) {
-    return new_data_type(DT_INT);
-  }
-  if (node->ty == ND_STR) {
-    return new_data_pointer(new_data_type(DT_CHAR));
-  }
-  if (node->rhs == NULL) {
-    DataType *dt = get_node_data_type(global_table, local_table, node->lhs);
-    if (node->ty == ND_DEREF) {
-      return dt->pointer_type;
-    }
-    if (node->ty == '&') {
-      return new_data_pointer(dt);
-    }
-    return dt;
-  }
-  DataType *left_data_type = get_node_data_type(global_table, local_table, node->lhs);
-  DataType *right_data_type = get_node_data_type(global_table, local_table, node->rhs);
-  if (data_type_equal(left_data_type, right_data_type)) {
-    return left_data_type;
-  }
-  if (left_data_type->dtype == DT_PNT && right_data_type->dtype != DT_PNT) {
-    if (right_data_type->dtype == DT_INVALID || right_data_type->dtype == DT_VOID) {
-      goto ERROR;
-    }
-    return left_data_type;
-  }
-  if (left_data_type->dtype != DT_PNT && right_data_type->dtype == DT_PNT) {
-    if (left_data_type->dtype == DT_INVALID || left_data_type->dtype == DT_VOID) {
-      goto ERROR;
-    }
-    return right_data_type;
-  }
- ERROR:
-  fprintf(stderr, "DataType error. Left: %d, right: %d\n",
-          left_data_type->dtype, right_data_type->dtype);
-  exit(1);
-  return NULL;
-}
-
-int get_data_step_from_data_type(DataType *data_type) {
-  if (data_type->dtype != DT_PNT) {
-    return 1;
-  }
-  if (data_type->pointer_type->dtype == DT_CHAR) {
-    return 1;
-  }
-  // TODO: Suppport other data steps, like short.
-  return 8;
-}
-
-int get_data_step_from_node(Map *global_table, Map *local_table, Node *node) {
-  DataType *dt = get_node_data_type(global_table, local_table, node);
-  return get_data_step_from_data_type(dt);
-}
-
 Node *term();
 Node *argument();
 
@@ -349,18 +268,6 @@ Node *expression(int priority) {
     pos++;
     int node_type = get_node_type_from_token(token_type);
     Node *rhs = expression(priority);
-    /* if (node_type == '+' || node_type == '-') { */
-    /*   // If adding number to pointer, adjust the size. */
-    /*   DataType *ldt = get_node_data_type(lhs); */
-    /*   DataType *rdt = get_node_data_type(rhs); */
-    /*   if (ldt->dtype == DT_PNT && rdt->dtype != DT_PNT) { */
-    /*     int step = get_data_step_from_data_type(ldt); */
-    /*     rhs = new_node('*', new_node_num(step), rhs); */
-    /*   } else if (ldt->dtype != DT_PNT && rdt->dtype == DT_PNT) { */
-    /*     int step = get_data_step_from_data_type(rdt); */
-    /*     lhs = new_node('*', new_node_num(step), lhs); */
-    /*   } */
-    /* } */
     return new_node(node_type, lhs, rhs);
   }
   return lhs;
@@ -427,8 +334,6 @@ Node *term() {
                 id->name);
         exit(1);
       }
-      /* int step = data_size(data_type->pointer_type); */
-      /* Node *offset = new_node('*', index, new_node_num(step)); */
       node = new_node(ND_DEREF, new_node('+', id, index), NULL);
     }
     return node;
@@ -460,10 +365,6 @@ Node *term() {
     pos++;
     Node *lhs = term();
     int step = 1;
-    /* DataType *data_type = get_node_data_type(global_symbols, current_local_symbols, lhs); */
-    /* if (data_type->dtype == DT_PNT) { */
-    /*   step = get_data_step_from_data_type(data_type->pointer_type); */
-    /* } */
     Node *rhs = new_node_num(step);
     return new_node(operation, lhs, rhs);
   }
