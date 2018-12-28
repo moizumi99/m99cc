@@ -216,6 +216,27 @@ int get_data_type(int p, DataType **data_type) {
   return p;
 }
 
+Node *get_data_type_node(int p, int *new_p) {
+  int dtype = get_data_type_from_token(GET_TOKEN(tokens, p++).ty);
+  Node *node = new_node(ND_DATATYPE, NULL, NULL);
+  if (dtype == DT_VOID) {
+    node->lhs = new_node(ND_VOID, NULL, NULL);
+  } else if (dtype == DT_INT) {
+    node->lhs = new_node(ND_INT, NULL, NULL);
+  } else if (dtype == DT_CHAR) {
+    node->lhs = new_node(ND_CHAR, NULL, NULL);
+  } else {
+    error("Invalud data type token %s", GET_TOKEN(tokens, p - 1).input);
+    exit(1);
+  }
+  while (GET_TOKEN(tokens, p).ty == '*') {
+    p++;
+    node = new_node(ND_DATATYPE, new_node(ND_PNT, NULL, NULL), node);
+  }
+  *new_p = p;
+  return node;
+}
+
 Node *term();
 Node *argument();
 
@@ -345,13 +366,7 @@ Node *data_type_node(DataType *data_type) {
 
 Node *argument() {
   // TODO: make argument a list.
-  DataType *data_type;
-  pos = get_data_type(pos, &data_type);
-  if (data_type->dtype == DT_INVALID) {
-    error(
-        "Invalid (not data type) token in argument declaration position \"%s\"",
-        GET_TOKEN(tokens, pos - 1).input);
-  }
+  Node *node_dt = get_data_type_node(pos, &pos);
   if (GET_TOKEN(tokens, pos).ty != TK_IDENT) {
     error("Invalid (not IDENT) token in argument declaration position \"%s\"",
           GET_TOKEN(tokens, pos).input);
@@ -361,13 +376,13 @@ Node *argument() {
                                      GET_TOKEN(tokens, pos).len);
   int array_size = get_array_size();
   if (array_size > 0) {
-    data_type = new_data_pointer(data_type);
+    // Make the node_dt pointer node
+    node_dt = new_node(ND_DATATYPE, new_node(ND_PNT, NULL, NULL), node_dt);
   }
   Node *id =
       new_node_ident(GET_TOKEN(tokens, pos).input,
                      GET_TOKEN(tokens, pos).len);
   id->name = name;
-  Node *node_dt = data_type_node(data_type);
   Node *arg_node = new_node(ND_DECLARE, node_dt, id);
   pos++;
   return arg_node;
@@ -529,7 +544,7 @@ void code_block(Vector *code) {
   }
 }
 
-Node *identifier_node(DataType *data_type, int scope) {
+Node *identifier_node(Node *data_type_node, int scope) {
   if (GET_TOKEN(tokens, pos).ty != TK_IDENT) {
     error("Unexpected token (function): \"%s\"", GET_TOKEN(tokens, pos).input);
   }
@@ -542,7 +557,7 @@ Node *identifier_node(DataType *data_type, int scope) {
     int num = get_array_size();
     id->val = num;
     if (num > 0) {
-      data_type = new_data_pointer(data_type);
+      data_type_node = new_node(ND_DATATYPE, new_node(ND_PNT, NULL, NULL), data_type_node);
     }
     // TODO: add initialization.
     return id;
@@ -572,11 +587,11 @@ Node *identifier_node(DataType *data_type, int scope) {
   return f;
 }
 
-Node *identifier_sequence(DataType *data_type, int scope) {
-  Node *id = identifier_node(data_type, scope);
+Node *identifier_sequence(Node *data_type_node, int scope) {
+  Node *id = identifier_node(data_type_node, scope);
   if (GET_TOKEN(tokens, pos).ty == ',') {
     pos++;
-    Node *ids = identifier_sequence(data_type, scope);
+    Node *ids = identifier_sequence(data_type_node, scope);
     return new_node(ND_IDENTSEQ, id, ids);
   }
   if (GET_TOKEN(tokens, pos).ty == ';') {
@@ -588,15 +603,8 @@ Node *identifier_sequence(DataType *data_type, int scope) {
 }
 
 void declaration_node(Vector *code, int scope) {
-  DataType *data_type;
-  pos = get_data_type(pos, &data_type);
-  if (data_type->dtype == DT_INVALID) {
-    error(
-        "Data type needed before declaration of function or variable. (\"%s\")",
-        GET_TOKEN(tokens, pos - 1).input);
-  }
-  Node *node_dt = data_type_node(data_type);
-  Node *node_ids = identifier_sequence(data_type, scope);
+  Node *node_dt = get_data_type_node(pos, &pos);
+  Node *node_ids = identifier_sequence(node_dt, scope);
   Node *declaration = new_node(ND_DECLARE, node_dt, node_ids);
   vec_push(code, declaration);
   return;
