@@ -11,7 +11,7 @@ extern Map *global_symbols;
 extern Vector *local_symbols;
 
 static Vector *tokens;
-static Map *current_local_symbols;
+/* static Map *current_local_symbols; */
 static int pos;
 
 enum {
@@ -107,17 +107,17 @@ int data_size(DataType *data_type) {
   return data_size_from_dtype(data_type->dtype);
 }
 
-static int local_symbol_counter = 0;
-void add_local_symbol(char *name_perm, int type, int num, DataType *data_type) {
-  Symbol *new_symbol = malloc(sizeof(Symbol));
-  int dsize = data_size(data_type);
-  local_symbol_counter += (num == 0) ? dsize : num * dsize;
-  new_symbol->address = (void *)local_symbol_counter;
-  new_symbol->type = type;
-  new_symbol->num = num;
-  new_symbol->data_type = data_type;
-  map_put(current_local_symbols, name_perm, (void *)new_symbol);
-}
+/* static int local_symbol_counter = 0; */
+/* void add_local_symbol(char *name_perm, int type, int num, DataType *data_type) { */
+/*   Symbol *new_symbol = malloc(sizeof(Symbol)); */
+/*   int dsize = data_size(data_type); */
+/*   local_symbol_counter += (num == 0) ? dsize : num * dsize; */
+/*   new_symbol->address = (void *)local_symbol_counter; */
+/*   new_symbol->type = type; */
+/*   new_symbol->num = num; */
+/*   new_symbol->data_type = data_type; */
+/*   map_put(current_local_symbols, name_perm, (void *)new_symbol); */
+/* } */
 
 Node *new_node_ident(char *name, int len) {
   Node *node = malloc(sizeof(Node));
@@ -340,6 +340,23 @@ Node *term() {
   return NULL;
 }
 
+Node *data_type_node(DataType *data_type) {
+  Node *node = new_node(ND_DATATYPE, NULL, NULL);
+  if (data_type->dtype == DT_VOID) {
+    node->lhs = new_node(ND_VOID, NULL, NULL);
+  } else if (data_type->dtype == DT_INT) {
+    node->lhs = new_node(ND_INT, NULL, NULL);
+  } else if (data_type->dtype == DT_CHAR) {
+    node->lhs = new_node(ND_CHAR, NULL, NULL);
+  } else if (data_type->dtype == DT_PNT) {
+    node->lhs = new_node(ND_PNT, NULL, NULL);
+    node->rhs = data_type_node(data_type->pointer_type);
+  } else {
+    error("%s", "Invalid data type");
+  }
+  return node;
+}
+
 Node *argument() {
   // TODO: make argument a list.
   DataType *data_type;
@@ -356,19 +373,22 @@ Node *argument() {
   // argument name?
   char *name = create_string_in_heap(GET_TOKEN(tokens, pos).input,
                                      GET_TOKEN(tokens, pos).len);
-  if (map_get(current_local_symbols, name) != NULL) {
-    error("Argument name conflict: %s\n", name);
-  }
+  /* if (map_get(current_local_symbols, name) != NULL) { */
+  /*   error("Argument name conflict: %s\n", name); */
+  /* } */
   int array_size = get_array_size();
   if (array_size > 0) {
     data_type = new_data_pointer(data_type);
   }
-  add_local_symbol(name, ID_ARG, array_size, data_type);
+  /* add_local_symbol(name, ID_ARG, array_size, data_type); */
   Node *id =
       new_node_ident(GET_TOKEN(tokens, pos).input,
                      GET_TOKEN(tokens, pos).len);
+  id->name = name;
+  Node *node_dt = data_type_node(data_type);
+  Node *arg_node = new_node(ND_DECLARE, node_dt, id);
   pos++;
-  return id;
+  return arg_node;
 }
 
 Node *assign_dash() {
@@ -527,17 +547,17 @@ void code_block(Vector *code) {
   }
 }
 
-int check_conflict(char *name, int scope) {
-  if (map_get(global_symbols, name) != NULL) {
-    error("Global name conflict. \"%s\"", name);
-    return -1;
-  }
-  if (scope == SC_LOCAL && map_get(current_local_symbols, name) != NULL) {
-    error("Local name conflict. \"%s\"", name);
-    return -1;
-  }
-  return 0;
-}
+/* int check_conflict(char *name, int scope) { */
+  /* if (map_get(global_symbols, name) != NULL) { */
+  /*   error("Global name conflict. \"%s\"", name); */
+  /*   return -1; */
+  /* } */
+  /* if (scope == SC_LOCAL && map_get(current_local_symbols, name) != NULL) { */
+  /*   error("Local name conflict. \"%s\"", name); */
+  /*   return -1; */
+  /* } */
+/*   return 0; */
+/* } */
 
 Node *identifier_node(DataType *data_type, int scope) {
   if (GET_TOKEN(tokens, pos).ty != TK_IDENT) {
@@ -547,7 +567,7 @@ Node *identifier_node(DataType *data_type, int scope) {
       new_node_ident(GET_TOKEN(tokens, pos).input,
                      GET_TOKEN(tokens, pos).len);
   pos++;
-  check_conflict(id->name, scope);
+  /* check_conflict(id->name, scope); */
   // global or local variable.
   if (GET_TOKEN(tokens, pos).ty != '(') {
     int num = get_array_size();
@@ -555,9 +575,9 @@ Node *identifier_node(DataType *data_type, int scope) {
     if (num > 0) {
       data_type = new_data_pointer(data_type);
     }
-    if (scope == SC_LOCAL) {
-      add_local_symbol(id->name, ID_VAR, num, data_type);
-    }
+    /* if (scope == SC_LOCAL) { */
+    /*   add_local_symbol(id->name, ID_VAR, num, data_type); */
+    /* } */
     // TODO: add initialization.
     return id;
   }
@@ -602,23 +622,6 @@ Node *identifier_sequence(DataType *data_type, int scope) {
   return id;
 }
 
-Node *data_type_node(DataType *data_type) {
-  Node *node = new_node(ND_DATATYPE, NULL, NULL);
-  if (data_type->dtype == DT_VOID) {
-    node->lhs = new_node(ND_VOID, NULL, NULL);
-  } else if (data_type->dtype == DT_INT) {
-    node->lhs = new_node(ND_INT, NULL, NULL);
-  } else if (data_type->dtype == DT_CHAR) {
-    node->lhs = new_node(ND_CHAR, NULL, NULL);
-  } else if (data_type->dtype == DT_PNT) {
-    node->lhs = new_node(ND_PNT, NULL, NULL);
-    node->rhs = data_type_node(data_type->pointer_type);
-  } else {
-    error("%s", "Invalid data type");
-  }
-  return node;
-}
-
 void declaration_node(Vector *code, int scope) {
   DataType *data_type;
   pos = get_data_type(pos, &data_type);
@@ -638,9 +641,9 @@ Vector *parse(Vector *tokens_input) {
   tokens = tokens_input;
   Vector *code = new_vector();
   while (GET_TOKEN(tokens, pos).ty != TK_EOF) {
-    current_local_symbols = new_map();
-    local_symbol_counter = 0;
-    vec_push(local_symbols, current_local_symbols);
+    /* current_local_symbols = new_map(); */
+    /* local_symbol_counter = 0; */
+    /* vec_push(local_symbols, current_local_symbols); */
     declaration_node(code, SC_GLOBAL);
   }
   vec_push(code, NULL);

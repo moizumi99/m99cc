@@ -94,6 +94,10 @@ int main(int argc, char **argv) {
   }
   // Parse
   program_code = parse(tokens);
+  
+  if (dump_tree_enbale) {
+    dump_tree(program_code);
+  }
 
   program_code = analysis(program_code);
 
@@ -106,9 +110,6 @@ int main(int argc, char **argv) {
     }
   }
   
-  if (dump_tree_enbale) {
-    dump_tree(program_code);
-  }
   gen_program(program_code);
 
   return 0;

@@ -25,14 +25,25 @@ char *get_type(int ty) {
   case ND_ROOT: return "ND_ROOT";
   case ND_EQ: return "ND_EQ";
   case ND_NE: return "ND_NE";
+  case ND_LE: return "ND_LE";
+  case ND_GE: return "ND_GE";
+  case ND_PE: return "ND_PE";
+  case ND_ME: return "ND_ME";
+  case ND_AND: return "ND_AND";
+  case ND_OR: return "ND_OR";
   case ND_IF: return "ND_IF";
   case ND_WHILE: return "ND_WHILE";
   case ND_FOR: return "ND_FOR";
+  case ND_RETURN: return "ND_RETURN";
   case ND_DECLARE: return "ND_DECLARE";
   case ND_DEFINITION: return "ND_DEFINITION";
   case ND_DATATYPE: return "ND_DATATYPE";
-  case ND_DEREF: return "ND_DEREF";
   case ND_STR: return "ND_STR";
+  case ND_DEREF: return "ND_DEREF";
+  case ND_VOID: return "ND_VOID";
+  case ND_INT: return "ND_INT";
+  case ND_CHAR: return "ND_CHAR";
+  case ND_PNT: return "ND_PNT";
   default:
     if (ty < 256) {
       num[0] = (char) ty;

@@ -7,7 +7,7 @@ extern Map *global_symbols;
 extern Vector *local_symbols;
 extern Vector *string_literals;
 static int str_counter;
-static Map *current_local_symbol;
+static Map *current_local_symbols;
 static int local_symbol_counter;
 
 // parse.c
@@ -129,8 +129,8 @@ void list_string_in_node(Node *node) {
   }
   if ((node->ty == '+' || node->ty == '-') && node->rhs != NULL) {
     // If adding number to pointer, adjust the size.
-    DataType *ldt = get_node_data_type(global_symbols, current_local_symbol, node->lhs);
-    DataType *rdt = get_node_data_type(global_symbols, current_local_symbol, node->rhs);
+    DataType *ldt = get_node_data_type(global_symbols, current_local_symbols, node->lhs);
+    DataType *rdt = get_node_data_type(global_symbols, current_local_symbols, node->rhs);
     if (ldt->dtype == DT_PNT && rdt->dtype != DT_PNT) {
       int step = get_data_step_from_data_type(ldt);
       node->rhs = new_node('*', new_node_num(step), node->rhs);
@@ -141,8 +141,8 @@ void list_string_in_node(Node *node) {
   }
   if ((node->ty == ND_PE || node->ty == ND_ME)) {
     int step = 1;
-    DataType *lhs_type = get_node_data_type(global_symbols, current_local_symbol, node->lhs);
-    DataType *rhs_type = get_node_data_type(global_symbols, current_local_symbol, node->rhs);
+    DataType *lhs_type = get_node_data_type(global_symbols, current_local_symbols, node->lhs);
+    DataType *rhs_type = get_node_data_type(global_symbols, current_local_symbols, node->rhs);
     if (lhs_type->dtype == DT_PNT && rhs_type->dtype != DT_PNT) {
       step = get_data_step_from_data_type(lhs_type);
     }
@@ -167,29 +167,20 @@ void add_global_symbol(char *name_perm, int type, int num,
   map_put(global_symbols, name_perm, (void *)new_symbol);
 }
 
-void add_node_to_global_table(DataType *data_type, Node *node) {
-  if (node->ty == ND_IDENTSEQ) {
-    add_node_to_global_table(data_type, node->lhs);
-    add_node_to_global_table(data_type, node->rhs);
-    return;
-  }
-  if (node->ty == ND_IDENT) {
-    if (node->val > 0) {
-      data_type = new_data_pointer(data_type);
-    }
-    add_global_symbol(node->name, ID_VAR, node->val, data_type);
-    return;
-  }
-  if (node->ty == ND_FUNCDEF) {
-    add_global_symbol(node->lhs->name, ID_FUNC, node->lhs->val, data_type);
-    return;
-  }
-  error("%s", "Identifier not found.");
+void add_local_symbol(char *name_perm, int type, int num, struct DataType *data_type) {
+  Symbol *new_symbol = malloc(sizeof(Symbol));
+  int dsize = data_size(data_type);
+  local_symbol_counter += (num == 0) ? dsize : num * dsize;
+  new_symbol->address = (void *)local_symbol_counter;
+  new_symbol->type = type;
+  new_symbol->num = num;
+  new_symbol->data_type = data_type;
+  map_put(current_local_symbols, name_perm, (void *)new_symbol);
 }
 
 DataType *conv_data_type_node_to_data_type(Node *node) {
   if (node->ty != ND_DATATYPE) {
-    error("%s", "Not a data type node\n");
+    error("Not a data type node (%s)", __FILE__);
     exit(1);
   }
   DataType *data_type;
@@ -208,20 +199,99 @@ DataType *conv_data_type_node_to_data_type(Node *node) {
   return data_type;
 }
 
+void add_local_node_to_table(DataType *data_type, Node *node) {
+  if (node->ty == ND_IDENTSEQ) {
+    add_local_node_to_table(data_type, node->lhs);
+    add_local_node_to_table(data_type, node->rhs);
+    return;
+  }
+  if (node->ty == ND_IDENT) {
+    if (node->val > 0) {
+      data_type = new_data_pointer(data_type);
+    }
+    add_local_symbol(node->name, ID_VAR, node->val, data_type);
+    return;
+  }
+}
+
+void process_local_block(Vector *block_code);
+  
+void process_local_node(Node *node) {
+  if (node == NULL) {
+    return;
+  }
+  if (node->ty == ND_DECLARE) {
+    DataType *data_type = conv_data_type_node_to_data_type(node->lhs);
+    add_local_node_to_table(data_type, node->rhs);
+  }
+  process_local_node(node->rhs);
+  process_local_node(node->lhs);
+  process_local_block(node->block);
+}
+
+void process_local_block(Vector *block_code) {
+  if (block_code == NULL) {
+    return;
+  }
+  Node *node;
+  for (int i = 0; (node = block_code->data[i]); i++) {
+    process_local_node(node);
+  }
+}
+
+
+void process_top_level_node(DataType *data_type, Node *node) {
+  if (node->ty == ND_IDENTSEQ) {
+    process_top_level_node(data_type, node->lhs);
+    process_top_level_node(data_type, node->rhs);
+    return;
+  }
+  if (node->ty == ND_IDENT) {
+    if (node->val > 0) {
+      data_type = new_data_pointer(data_type);
+    }
+    add_global_symbol(node->name, ID_VAR, node->val, data_type);
+    return;
+  }
+  if (node->ty == ND_FUNCDEF) {
+    add_global_symbol(node->lhs->name, ID_FUNC, node->lhs->val, data_type);
+    Node *args = node->rhs;
+    if (args != NULL) {
+      // This function has an argument.
+      if (args->ty != ND_DECLARE) {
+        error("Argument not starting with declaration (%s)", __FILE__);
+      }
+      DataType *arg_data_type = conv_data_type_node_to_data_type(args->lhs);
+      add_local_symbol(args->rhs->name, ID_ARG, args->rhs->val, arg_data_type);
+    }
+    if (node->block != NULL) {
+      process_local_block(node->block);
+    }
+    return;
+  }
+  error("%s", "Identifier not found.");
+}
+
 Vector *analysis(Vector *program_code) {
   Node *node;
-  // Generate global table
+  local_symbols = new_vector();
+  // Generate global table and local tables
   for (int i = 0; (node = program_code->data[i]); i++) {
     if (node->ty == ND_DECLARE) {
+      current_local_symbols = new_map();
+      vec_push(local_symbols, current_local_symbols);
+      local_symbol_counter = 0;
       DataType *data_type = conv_data_type_node_to_data_type(node->lhs);
-      add_node_to_global_table(data_type, node->rhs);
+      process_top_level_node(data_type, node->rhs);
     }
   }
+  vec_push(local_symbols, NULL);
+
   // Extract string literals.
   str_counter = 0;
   local_symbol_counter = 0;
   for (int i = 0; (node = program_code->data[i]); i++) {
-    current_local_symbol = local_symbols->data[i];
+    current_local_symbols = local_symbols->data[i];
     list_string_in_node(node);
   }
   // TODO: add analysis of pointer addresses.
