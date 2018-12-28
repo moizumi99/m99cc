@@ -453,7 +453,7 @@ Node *return_node() {
   return return_nd;
 }
 
-void declaration_node(Vector *code, int scope);
+void declaration_node(Vector *code);
 
 void code_block(Vector *code) {
   if (GET_TOKEN(tokens, pos++).ty != '{') {
@@ -474,7 +474,7 @@ void code_block(Vector *code) {
       if (dtype != DT_INVALID) {
         // TODO: declaration_node inside function can not generate function.
         // Check.
-        declaration_node(code, SC_LOCAL);
+        declaration_node(code);
       } else {
         vec_push(code, assign());
       }
@@ -486,7 +486,7 @@ void code_block(Vector *code) {
   }
 }
 
-Node *identifier_node(Node *data_type_node, int scope) {
+Node *identifier_node(Node *data_type_node) {
   if (GET_TOKEN(tokens, pos).ty != TK_IDENT) {
     error("Unexpected token (function): \"%s\"", GET_TOKEN(tokens, pos).input);
   }
@@ -506,12 +506,6 @@ Node *identifier_node(Node *data_type_node, int scope) {
   }
   // TODO: implement function declaration.
   // function definition..
-  if (scope != SC_GLOBAL) {
-    error("Function declaration is allowed only"
-          " in global scope. \"%s\"\n",
-          id->name);
-    return NULL;
-  }
   Node *arg = NULL;
   pos++;
   if (GET_TOKEN(tokens, pos).ty != ')') {
@@ -529,11 +523,11 @@ Node *identifier_node(Node *data_type_node, int scope) {
   return f;
 }
 
-Node *identifier_sequence(Node *data_type_node, int scope) {
-  Node *id = identifier_node(data_type_node, scope);
+Node *identifier_sequence(Node *data_type_node) {
+  Node *id = identifier_node(data_type_node);
   if (GET_TOKEN(tokens, pos).ty == ',') {
     pos++;
-    Node *ids = identifier_sequence(data_type_node, scope);
+    Node *ids = identifier_sequence(data_type_node);
     return new_2term_node(ND_IDENTSEQ, id, ids);
   }
   if (GET_TOKEN(tokens, pos).ty == ';') {
@@ -544,9 +538,9 @@ Node *identifier_sequence(Node *data_type_node, int scope) {
   return id;
 }
 
-void declaration_node(Vector *code, int scope) {
+void declaration_node(Vector *code) {
   Node *node_dt = get_data_type_node(pos, &pos);
-  Node *node_ids = identifier_sequence(node_dt, scope);
+  Node *node_ids = identifier_sequence(node_dt);
   Node *declaration = new_2term_node(ND_DECLARE, node_dt, node_ids);
   vec_push(code, declaration);
   return;
@@ -556,7 +550,7 @@ Vector *parse(Vector *tokens_input) {
   tokens = tokens_input;
   Vector *code = new_vector();
   while (GET_TOKEN(tokens, pos).ty != TK_EOF) {
-    declaration_node(code, SC_GLOBAL);
+    declaration_node(code);
   }
   vec_push(code, NULL);
   return code;
