@@ -98,6 +98,10 @@ enum {
   ND_DATATYPE,  // 277 Data type
   ND_STR,       // 288 String literal.
   ND_DEREF,     // 289 De-reference (*) operator.
+  ND_VOID,      // 290 Data Type of VOID.
+  ND_INT,       // 291 Data Type of VOID.
+  ND_CHAR,      // 292 Data Type of VOID.
+  ND_PNT,       // 293 Data Type of De-reference.
 };
 
 // Data type.

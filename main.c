@@ -95,6 +95,8 @@ int main(int argc, char **argv) {
   // Parse
   program_code = parse(tokens);
 
+  program_code = analysis(program_code);
+
   if (dump_symbols_enable) {
     fprintf(stderr, "Global Symbols: \n");
     dump_symbols(global_symbols);
@@ -104,8 +106,6 @@ int main(int argc, char **argv) {
     }
   }
   
-  program_code = analysis(program_code);
-
   if (dump_tree_enbale) {
     dump_tree(program_code);
   }

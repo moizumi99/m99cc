@@ -87,19 +87,6 @@ int get_array_size() {
   return num;
 }
 
-void add_global_symbol(char *name_perm, int type, int num,
-                       struct DataType *data_type) {
-  static int global_symbol_counter = 0;
-  Symbol *new_symbol = malloc(sizeof(Symbol));
-  int dsize = data_size(data_type);
-  global_symbol_counter += (num == 0) ? dsize : num * dsize;
-  new_symbol->address = (void *)global_symbol_counter;
-  new_symbol->type = type;
-  new_symbol->num = num;
-  new_symbol->data_type = data_type;
-  map_put(global_symbols, name_perm, (void *)new_symbol);
-}
-
 int data_size_from_dtype(int dtype) {
   switch (dtype) {
   case DT_VOID:
@@ -132,12 +119,12 @@ void add_local_symbol(char *name_perm, int type, int num, DataType *data_type) {
   map_put(current_local_symbols, name_perm, (void *)new_symbol);
 }
 
-Node *new_node_ident(int val, char *name, int len) {
+Node *new_node_ident(char *name, int len) {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_IDENT;
   node->lhs = NULL;
   node->rhs = NULL;
-  node->val = val;
+  node->val = 0;
   node->name = create_string_in_heap(name, len);
   node->block = NULL;
   return node;
@@ -281,7 +268,7 @@ Node *term() {
 
   // Variable or Function
   if (GET_TOKEN(tokens, pos).ty == TK_IDENT) {
-    Node *id = new_node_ident(0, GET_TOKEN(tokens, pos).input,
+    Node *id = new_node_ident(GET_TOKEN(tokens, pos).input,
                               GET_TOKEN(tokens, pos).len);
     pos++;
     // if followed by (, it's a function call.
@@ -305,25 +292,11 @@ Node *term() {
     // is it array?
     Node *node = id;
     if (GET_TOKEN(tokens, pos).ty == '[') {
-      Symbol *s = map_get(current_local_symbols, id->name);
-      if (s == NULL) {
-        s = map_get(global_symbols, id->name);
-      }
-      if (s == NULL) {
-        error("A symbold (\"%s\" is used without declaration.", id->name);
-      }
-      DataType *data_type = s->data_type;
       pos++;
       Node *index = expression(ASSIGN_PRIORITY);
       if (GET_TOKEN(tokens, pos++).ty != ']') {
         fprintf(stderr, "Closing bracket ']' missing. \"%s\"\n",
                 GET_TOKEN(tokens, pos - 1).input);
-        exit(1);
-      }
-      if (data_type->dtype != DT_PNT) {
-        fprintf(stderr,
-                "Array type is declared as regular type not pointer. %s\n",
-                id->name);
         exit(1);
       }
       node = new_node(ND_DEREF, new_node('+', id, index), NULL);
@@ -392,7 +365,7 @@ Node *argument() {
   }
   add_local_symbol(name, ID_ARG, array_size, data_type);
   Node *id =
-      new_node_ident(GET_TOKEN(tokens, pos).val, GET_TOKEN(tokens, pos).input,
+      new_node_ident(GET_TOKEN(tokens, pos).input,
                      GET_TOKEN(tokens, pos).len);
   pos++;
   return id;
@@ -571,19 +544,18 @@ Node *identifier_node(DataType *data_type, int scope) {
     error("Unexpected token (function): \"%s\"", GET_TOKEN(tokens, pos).input);
   }
   Node *id =
-      new_node_ident(GET_TOKEN(tokens, pos).val, GET_TOKEN(tokens, pos).input,
+      new_node_ident(GET_TOKEN(tokens, pos).input,
                      GET_TOKEN(tokens, pos).len);
   pos++;
   check_conflict(id->name, scope);
   // global or local variable.
   if (GET_TOKEN(tokens, pos).ty != '(') {
     int num = get_array_size();
+    id->val = num;
     if (num > 0) {
       data_type = new_data_pointer(data_type);
     }
-    if (scope == SC_GLOBAL) {
-      add_global_symbol(id->name, ID_VAR, num, data_type);
-    } else {
+    if (scope == SC_LOCAL) {
       add_local_symbol(id->name, ID_VAR, num, data_type);
     }
     // TODO: add initialization.
@@ -597,7 +569,6 @@ Node *identifier_node(DataType *data_type, int scope) {
           id->name);
     return NULL;
   }
-  add_global_symbol(id->name, ID_FUNC, 0, data_type);
   Node *arg = NULL;
   pos++;
   if (GET_TOKEN(tokens, pos).ty != ')') {
@@ -631,14 +602,20 @@ Node *identifier_sequence(DataType *data_type, int scope) {
   return id;
 }
 
-Node *new_node_datatype() {
-  Node *node = malloc(sizeof(Node));
-  node->ty = ND_DATATYPE;
-  node->lhs = NULL;
-  node->rhs = NULL;
-  node->val = 0;
-  node->name = NULL;
-  node->block = NULL;
+Node *data_type_node(DataType *data_type) {
+  Node *node = new_node(ND_DATATYPE, NULL, NULL);
+  if (data_type->dtype == DT_VOID) {
+    node->lhs = new_node(ND_VOID, NULL, NULL);
+  } else if (data_type->dtype == DT_INT) {
+    node->lhs = new_node(ND_INT, NULL, NULL);
+  } else if (data_type->dtype == DT_CHAR) {
+    node->lhs = new_node(ND_CHAR, NULL, NULL);
+  } else if (data_type->dtype == DT_PNT) {
+    node->lhs = new_node(ND_PNT, NULL, NULL);
+    node->rhs = data_type_node(data_type->pointer_type);
+  } else {
+    error("%s", "Invalid data type");
+  }
   return node;
 }
 
@@ -650,7 +627,7 @@ void declaration_node(Vector *code, int scope) {
         "Data type needed before declaration of function or variable. (\"%s\")",
         GET_TOKEN(tokens, pos - 1).input);
   }
-  Node *node_dt = new_node_datatype();
+  Node *node_dt = data_type_node(data_type);
   Node *node_ids = identifier_sequence(data_type, scope);
   Node *declaration = new_node(ND_DECLARE, node_dt, node_ids);
   vec_push(code, declaration);
