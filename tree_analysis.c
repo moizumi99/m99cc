@@ -11,7 +11,7 @@ static Map *current_local_symbols;
 static int local_symbol_counter;
 
 // parse.c
-Node *new_node(int op, Node *lhs, Node *rhs);
+Node *new_2term_node(int op, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
 
 // helper function to calculate data size from dtype.
@@ -155,10 +155,10 @@ void list_string_in_node(Node *node) {
     DataType *rdt = get_node_data_type(global_symbols, current_local_symbols, node->rhs);
     if (ldt->dtype == DT_PNT && rdt->dtype != DT_PNT) {
       int step = get_data_step_from_data_type(ldt);
-      node->rhs = new_node('*', new_node_num(step), node->rhs);
+      node->rhs = new_2term_node('*', new_node_num(step), node->rhs);
     } else if (ldt->dtype != DT_PNT && rdt->dtype == DT_PNT) {
       int step = get_data_step_from_data_type(rdt);
-      node->lhs = new_node('*', new_node_num(step), node->lhs);
+      node->lhs = new_2term_node('*', new_node_num(step), node->lhs);
     }
   }
   if ((node->ty == ND_PE || node->ty == ND_ME)) {
@@ -168,7 +168,7 @@ void list_string_in_node(Node *node) {
     if (lhs_type->dtype == DT_PNT && rhs_type->dtype != DT_PNT) {
       step = get_data_step_from_data_type(lhs_type);
     }
-    node->rhs = new_node('*', new_node_num(step), node->rhs);
+    node->rhs = new_2term_node('*', new_node_num(step), node->rhs);
   }
   // recursive analysis
   list_string_in_node(node->lhs);

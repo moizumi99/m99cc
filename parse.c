@@ -30,37 +30,33 @@ char *create_string_in_heap(char *str, int len) {
   return str_mem;
 }
 
-
-Node *new_node_str(char *name, int len) {
+Node *new_node(int op) {
   Node *node = malloc(sizeof(Node));
-  node->ty = ND_STR;
+  node->ty = op;
   node->lhs = NULL;
   node->rhs = NULL;
   node->val = 0;
-  node->name = create_string_in_heap(name, len);
+  node->name = NULL;
   node->block = NULL;
   return node;
 }
 
-Node *new_node(int op, Node *lhs, Node *rhs) {
-  Node *node = malloc(sizeof(Node));
-  node->ty = op;
+Node *new_node_str(char *str, int len) {
+  Node *node = new_node(ND_STR);
+  node->name = create_string_in_heap(str, len);
+  return node;
+}
+
+Node *new_2term_node(int op, Node *lhs, Node *rhs) {
+  Node *node = new_node(op);
   node->lhs = lhs;
   node->rhs = rhs;
-  node->val = 0;
-  node->name = NULL;
-  node->block = NULL;
   return node;
 }
 
 Node *new_node_num(int val) {
-  Node *node = malloc(sizeof(Node));
-  node->ty = ND_NUM;
+  Node *node = new_node(ND_NUM);
   node->val = val;
-  node->lhs = NULL;
-  node->rhs = NULL;
-  node->name = NULL;
-  node->block = NULL;
   return node;
 }
 
@@ -184,20 +180,20 @@ int get_dtype_from_token(int token_type) {
 
 Node *get_data_type_node(int p, int *new_p) {
   int dtype = get_dtype_from_token(GET_TOKEN(tokens, p++).ty);
-  Node *node = new_node(ND_DATATYPE, NULL, NULL);
+  Node *node = new_node(ND_DATATYPE);
   if (dtype == DT_VOID) {
-    node->lhs = new_node(ND_VOID, NULL, NULL);
+    node->lhs = new_node(ND_VOID);
   } else if (dtype == DT_INT) {
-    node->lhs = new_node(ND_INT, NULL, NULL);
+    node->lhs = new_node(ND_INT);
   } else if (dtype == DT_CHAR) {
-    node->lhs = new_node(ND_CHAR, NULL, NULL);
+    node->lhs = new_node(ND_CHAR);
   } else {
     error("Invalud data type token %s", GET_TOKEN(tokens, p - 1).input);
     exit(1);
   }
   while (GET_TOKEN(tokens, p).ty == '*') {
     p++;
-    node = new_node(ND_DATATYPE, new_node(ND_PNT, NULL, NULL), node);
+    node = new_2term_node(ND_DATATYPE, new_node(ND_PNT), node);
   }
   *new_p = p;
   return node;
@@ -219,7 +215,7 @@ Node *expression(int priority) {
     pos++;
     int node_type = get_node_type_from_token(token_type);
     Node *rhs = expression(priority);
-    return new_node(node_type, lhs, rhs);
+    return new_2term_node(node_type, lhs, rhs);
   }
   return lhs;
 }
@@ -257,7 +253,7 @@ Node *term() {
               GET_TOKEN(tokens, pos).input);
       }
       pos++;
-      Node *node = new_node(ND_FUNCCALL, id, arg);
+      Node *node = new_2term_node(ND_FUNCCALL, id, arg);
       return node;
     }
     // If not followed by (, it's a variable.
@@ -271,7 +267,7 @@ Node *term() {
                 GET_TOKEN(tokens, pos - 1).input);
         exit(1);
       }
-      node = new_node(ND_DEREF, new_node('+', id, index), NULL);
+      node = new_2term_node(ND_DEREF, new_2term_node('+', id, index), NULL);
     }
     return node;
   }
@@ -293,7 +289,7 @@ Node *term() {
     int type = GET_TOKEN(tokens, pos).ty;
     pos++;
     Node *lhs = term();
-    return new_node(get_node_type_from_token_single(type), lhs, NULL);
+    return new_2term_node(get_node_type_from_token_single(type), lhs, NULL);
   }
 
   if (GET_TOKEN(tokens, pos).ty == TK_INC || GET_TOKEN(tokens, pos).ty == TK_DEC) {
@@ -304,7 +300,7 @@ Node *term() {
     Node *lhs = term();
     int step = 1;
     Node *rhs = new_node_num(step);
-    return new_node(operation, lhs, rhs);
+    return new_2term_node(operation, lhs, rhs);
   }
 
   // Code should not reach here.
@@ -326,13 +322,13 @@ Node *argument() {
   int array_size = get_array_size();
   if (array_size > 0) {
     // Make the node_dt pointer node
-    node_dt = new_node(ND_DATATYPE, new_node(ND_PNT, NULL, NULL), node_dt);
+    node_dt = new_2term_node(ND_DATATYPE, new_node(ND_PNT), node_dt);
   }
   Node *id =
       new_node_ident(GET_TOKEN(tokens, pos).input,
                      GET_TOKEN(tokens, pos).len);
   id->name = name;
-  Node *arg_node = new_node(ND_DECLARE, node_dt, id);
+  Node *arg_node = new_2term_node(ND_DECLARE, node_dt, id);
   pos++;
   return arg_node;
 }
@@ -342,7 +338,7 @@ Node *assign_dash() {
   int token_type = GET_TOKEN(tokens, pos).ty;
   if (token_type == '=' || token_type == TK_PE || token_type == TK_ME) {
     pos++;
-    return new_node(get_node_type_from_token(token_type), lhs, assign_dash());
+    return new_2term_node(get_node_type_from_token(token_type), lhs, assign_dash());
   }
   return lhs;
 }
@@ -380,7 +376,7 @@ Node *if_node() {
     error("Right paraenthesis ')' missing (if): \"%s\"\n",
           GET_TOKEN(tokens, pos - 1).input);
   }
-  Node *ifnd = new_node(ND_IF, cond, NULL);
+  Node *ifnd = new_2term_node(ND_IF, cond, NULL);
   ifnd->block = new_vector();
   code_block(ifnd->block);
   if (GET_TOKEN(tokens, pos).ty == TK_ELSE) {
@@ -388,7 +384,7 @@ Node *if_node() {
     if (GET_TOKEN(tokens, pos).ty == TK_IF) {
       ifnd->rhs = if_node();
     } else {
-      ifnd->rhs = new_node(ND_BLOCK, NULL, NULL);
+      ifnd->rhs = new_node(ND_BLOCK);
       ifnd->rhs->block = new_vector();
       code_block(ifnd->rhs->block);
       vec_push(ifnd->rhs->block, NULL);
@@ -410,7 +406,7 @@ Node *while_node() {
     error("Right paraenthesis ')' missing (while): \"%s\"\n",
           GET_TOKEN(tokens, pos - 1).input);
   }
-  Node *while_nd = new_node(ND_WHILE, cond, NULL);
+  Node *while_nd = new_2term_node(ND_WHILE, cond, NULL);
   while_nd->block = new_vector();
   code_block(while_nd->block);
   vec_push(while_nd->block, NULL);
@@ -440,7 +436,7 @@ void for_node(Vector *code) {
     error("Right paraenthesis '(' missing (for): \"%s\"\n",
           GET_TOKEN(tokens, pos - 1).input);
   }
-  Node *for_nd = new_node(ND_WHILE, cond, NULL);
+  Node *for_nd = new_2term_node(ND_WHILE, cond, NULL);
   vec_push(code, for_nd);
   // Add the increment code and {} block.
   for_nd->block = new_vector();
@@ -452,7 +448,7 @@ void for_node(Vector *code) {
 Node *return_node() {
   pos++;
   Node *nd = expression(ASSIGN_PRIORITY);
-  Node *return_nd = new_node(ND_RETURN, nd, NULL);
+  Node *return_nd = new_2term_node(ND_RETURN, nd, NULL);
   while (GET_TOKEN(tokens, pos).ty == ';') {
     pos++;
   }
@@ -505,7 +501,7 @@ Node *identifier_node(Node *data_type_node, int scope) {
     int num = get_array_size();
     id->val = num;
     if (num > 0) {
-      data_type_node = new_node(ND_DATATYPE, new_node(ND_PNT, NULL, NULL), data_type_node);
+      data_type_node = new_2term_node(ND_DATATYPE, new_node(ND_PNT), data_type_node);
     }
     // TODO: add initialization.
     return id;
@@ -528,7 +524,7 @@ Node *identifier_node(Node *data_type_node, int scope) {
     error("Right parenthesis ')' missing (function): \"%s\"",
           GET_TOKEN(tokens, pos - 1).input);
   }
-  Node *f = new_node(ND_FUNCDEF, id, arg);
+  Node *f = new_2term_node(ND_FUNCDEF, id, arg);
   f->block = new_vector();
   code_block(f->block);
   vec_push(f->block, NULL);
@@ -540,7 +536,7 @@ Node *identifier_sequence(Node *data_type_node, int scope) {
   if (GET_TOKEN(tokens, pos).ty == ',') {
     pos++;
     Node *ids = identifier_sequence(data_type_node, scope);
-    return new_node(ND_IDENTSEQ, id, ids);
+    return new_2term_node(ND_IDENTSEQ, id, ids);
   }
   if (GET_TOKEN(tokens, pos).ty == ';') {
     pos++;
@@ -553,7 +549,7 @@ Node *identifier_sequence(Node *data_type_node, int scope) {
 void declaration_node(Vector *code, int scope) {
   Node *node_dt = get_data_type_node(pos, &pos);
   Node *node_ids = identifier_sequence(node_dt, scope);
-  Node *declaration = new_node(ND_DECLARE, node_dt, node_ids);
+  Node *declaration = new_2term_node(ND_DECLARE, node_dt, node_ids);
   vec_push(code, declaration);
   return;
 }
