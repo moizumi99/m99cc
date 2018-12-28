@@ -62,10 +62,8 @@ Node *new_node_num(int val) {
 
 int get_array_size() {
   if (GET_TOKEN(tokens, pos).ty != '[') {
-    // This is not an array.
     return 0;
   }
-  // it's an array declaration.
   ++pos;
   int num = 0;
   if (GET_TOKEN(tokens, pos).ty == TK_NUM) {

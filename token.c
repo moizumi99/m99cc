@@ -206,7 +206,10 @@ Vector *tokenize(char *p) {
       } else if (strncmp(p, "return", 6) == 0) {
         tk = TK_RETURN;
         len = 6;
-      } else {
+      } else if (strncmp(p, "struct", 6) == 0) {
+        tk = TK_STRUCT;
+        len = 6;
+      }  else {
         len = 0;
         char *pn = p;
         while(('a' <= *pn && *pn <= 'z') || ('0' <= *pn && *pn <= '9') || ('_' == *pn)) {

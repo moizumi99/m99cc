@@ -18,8 +18,7 @@ Node *new_node_num(int val);
 int data_size_from_dtype(int dtype) {
   switch (dtype) {
   case DT_VOID:
-    // shouldn't this be zero?
-    return 8;
+    return 0;
   case DT_INT:
     return 8;
   case DT_CHAR:
@@ -124,8 +123,6 @@ int get_data_step_from_node(Map *global_table, Map *local_table, Node *node) {
   DataType *dt = get_node_data_type(global_table, local_table, node);
   return get_data_step_from_data_type(dt);
 }
-
-
 
 void list_string_in_node(Node *node);
 

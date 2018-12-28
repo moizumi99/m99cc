@@ -43,11 +43,12 @@ enum {
   TK_WHILE,     // 270 while keyword
   TK_FOR,       // 271 for keyword
   TK_RETURN,    // 272 return keyword
-  TK_VOID,      // 273 for void
-  TK_INT,       // 274 for integer
-  TK_CHAR,      // 275 for char
-  TK_STR,       // 276 char string literal
-  TK_EOF,       // 277 End of input
+  TK_STRUCT,    // 273 struct
+  TK_VOID,      // 274 for void
+  TK_INT,       // 275 for integer
+  TK_CHAR,      // 276 for char
+  TK_STR,       // 277 char string literal
+  TK_EOF,       // 278 End of input
 };
 
 enum {
@@ -117,6 +118,12 @@ typedef struct DataType{
   int dtype;
   struct DataType *pointer_type;
 } DataType;
+
+typedef struct StructMember {
+  char *name;
+  DataType *data_type;
+  int address;
+} StructMember;
 
 DataType *new_data_type(int dt);
 

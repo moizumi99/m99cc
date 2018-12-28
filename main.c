@@ -10,6 +10,7 @@
 Map *global_symbols;
 Vector *local_symbols;
 Vector *string_literals;
+Map *struct_table;
 
 // for debugging.
 void dump_symbols(Map *);
