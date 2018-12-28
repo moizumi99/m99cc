@@ -7,11 +7,7 @@
 
 #define GET_TOKEN(T, I) (*((Token *)(T)->data[(I)]))
 
-extern Map *global_symbols;
-extern Vector *local_symbols;
-
 static Vector *tokens;
-/* static Map *current_local_symbols; */
 static int pos;
 
 enum {
@@ -106,18 +102,6 @@ int data_size_from_dtype(int dtype) {
 int data_size(DataType *data_type) {
   return data_size_from_dtype(data_type->dtype);
 }
-
-/* static int local_symbol_counter = 0; */
-/* void add_local_symbol(char *name_perm, int type, int num, DataType *data_type) { */
-/*   Symbol *new_symbol = malloc(sizeof(Symbol)); */
-/*   int dsize = data_size(data_type); */
-/*   local_symbol_counter += (num == 0) ? dsize : num * dsize; */
-/*   new_symbol->address = (void *)local_symbol_counter; */
-/*   new_symbol->type = type; */
-/*   new_symbol->num = num; */
-/*   new_symbol->data_type = data_type; */
-/*   map_put(current_local_symbols, name_perm, (void *)new_symbol); */
-/* } */
 
 Node *new_node_ident(char *name, int len) {
   Node *node = malloc(sizeof(Node));
@@ -218,6 +202,7 @@ int get_data_type_from_token(int token_type) {
   }
 }
 
+// TODO: This is redundant. Just create data_type_node from tokens directly.
 int get_data_type(int p, DataType **data_type) {
   int dtype = get_data_type_from_token(GET_TOKEN(tokens, p++).ty);
   DataType *dt = new_data_type(dtype);
@@ -323,6 +308,7 @@ Node *term() {
     Node *lhs = term();
     return new_node(get_node_type_from_token_single(type), lhs, NULL);
   }
+
   if (GET_TOKEN(tokens, pos).ty == TK_INC || GET_TOKEN(tokens, pos).ty == TK_DEC) {
     // convert ++x to (x += 1).
     int type = GET_TOKEN(tokens, pos).ty;
@@ -373,14 +359,10 @@ Node *argument() {
   // argument name?
   char *name = create_string_in_heap(GET_TOKEN(tokens, pos).input,
                                      GET_TOKEN(tokens, pos).len);
-  /* if (map_get(current_local_symbols, name) != NULL) { */
-  /*   error("Argument name conflict: %s\n", name); */
-  /* } */
   int array_size = get_array_size();
   if (array_size > 0) {
     data_type = new_data_pointer(data_type);
   }
-  /* add_local_symbol(name, ID_ARG, array_size, data_type); */
   Node *id =
       new_node_ident(GET_TOKEN(tokens, pos).input,
                      GET_TOKEN(tokens, pos).len);
@@ -547,18 +529,6 @@ void code_block(Vector *code) {
   }
 }
 
-/* int check_conflict(char *name, int scope) { */
-  /* if (map_get(global_symbols, name) != NULL) { */
-  /*   error("Global name conflict. \"%s\"", name); */
-  /*   return -1; */
-  /* } */
-  /* if (scope == SC_LOCAL && map_get(current_local_symbols, name) != NULL) { */
-  /*   error("Local name conflict. \"%s\"", name); */
-  /*   return -1; */
-  /* } */
-/*   return 0; */
-/* } */
-
 Node *identifier_node(DataType *data_type, int scope) {
   if (GET_TOKEN(tokens, pos).ty != TK_IDENT) {
     error("Unexpected token (function): \"%s\"", GET_TOKEN(tokens, pos).input);
@@ -567,7 +537,6 @@ Node *identifier_node(DataType *data_type, int scope) {
       new_node_ident(GET_TOKEN(tokens, pos).input,
                      GET_TOKEN(tokens, pos).len);
   pos++;
-  /* check_conflict(id->name, scope); */
   // global or local variable.
   if (GET_TOKEN(tokens, pos).ty != '(') {
     int num = get_array_size();
@@ -575,9 +544,6 @@ Node *identifier_node(DataType *data_type, int scope) {
     if (num > 0) {
       data_type = new_data_pointer(data_type);
     }
-    /* if (scope == SC_LOCAL) { */
-    /*   add_local_symbol(id->name, ID_VAR, num, data_type); */
-    /* } */
     // TODO: add initialization.
     return id;
   }
@@ -617,7 +583,6 @@ Node *identifier_sequence(DataType *data_type, int scope) {
     pos++;
     return id;
   }
-  // error("Invalid token (parse.c, identifier_sequence())): \"%s\"",
   // GET_TOKEN(tokens, pos).input);
   return id;
 }
@@ -641,12 +606,8 @@ Vector *parse(Vector *tokens_input) {
   tokens = tokens_input;
   Vector *code = new_vector();
   while (GET_TOKEN(tokens, pos).ty != TK_EOF) {
-    /* current_local_symbols = new_map(); */
-    /* local_symbol_counter = 0; */
-    /* vec_push(local_symbols, current_local_symbols); */
     declaration_node(code, SC_GLOBAL);
   }
   vec_push(code, NULL);
-  vec_push(local_symbols, NULL);
   return code;
 }
