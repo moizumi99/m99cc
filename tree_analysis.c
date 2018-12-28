@@ -14,6 +14,28 @@ static int local_symbol_counter;
 Node *new_node(int op, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
 
+// helper function to calculate data size from dtype.
+int data_size_from_dtype(int dtype) {
+  switch (dtype) {
+  case DT_VOID:
+    // shouldn't this be zero?
+    return 8;
+  case DT_INT:
+    return 8;
+  case DT_CHAR:
+    return 1;
+  case DT_PNT:
+    return 8;
+  default:
+    return 8;
+  }
+}
+
+// helper function to calculate data size from DataType struct.
+int data_size(DataType *data_type) {
+  return data_size_from_dtype(data_type->dtype);
+}
+
 Symbol *get_symbol(Map *global_symbol_table, Map *local_symbol_table, Node *node) {
   Symbol *s = map_get(local_symbol_table, node->name);
   if (s == NULL) {

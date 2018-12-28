@@ -83,26 +83,6 @@ int get_array_size() {
   return num;
 }
 
-int data_size_from_dtype(int dtype) {
-  switch (dtype) {
-  case DT_VOID:
-    // shouldn't this be zero?
-    return 8;
-  case DT_INT:
-    return 8;
-  case DT_CHAR:
-    return 1;
-  case DT_PNT:
-    return 8;
-  default:
-    return 8;
-  }
-}
-
-int data_size(DataType *data_type) {
-  return data_size_from_dtype(data_type->dtype);
-}
-
 Node *new_node_ident(char *name, int len) {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_IDENT;
@@ -189,7 +169,7 @@ int get_node_type_from_token_single(int token_type) {
   return get_node_type_from_token(token_type);
 }
 
-int get_data_type_from_token(int token_type) {
+int get_dtype_from_token(int token_type) {
   switch (token_type) {
   case TK_VOID:
     return DT_VOID;
@@ -202,22 +182,8 @@ int get_data_type_from_token(int token_type) {
   }
 }
 
-// TODO: This is redundant. Just create data_type_node from tokens directly.
-int get_data_type(int p, DataType **data_type) {
-  int dtype = get_data_type_from_token(GET_TOKEN(tokens, p++).ty);
-  DataType *dt = new_data_type(dtype);
-  if (dtype != DT_INVALID) {
-    while (GET_TOKEN(tokens, p).ty == '*') {
-      p++;
-      dt = new_data_pointer(dt);
-    }
-  }
-  *data_type = dt;
-  return p;
-}
-
 Node *get_data_type_node(int p, int *new_p) {
-  int dtype = get_data_type_from_token(GET_TOKEN(tokens, p++).ty);
+  int dtype = get_dtype_from_token(GET_TOKEN(tokens, p++).ty);
   Node *node = new_node(ND_DATATYPE, NULL, NULL);
   if (dtype == DT_VOID) {
     node->lhs = new_node(ND_VOID, NULL, NULL);
@@ -345,23 +311,6 @@ Node *term() {
   error("Unexpected token (parse.c term): \"%s\"",
         GET_TOKEN(tokens, pos).input);
   return NULL;
-}
-
-Node *data_type_node(DataType *data_type) {
-  Node *node = new_node(ND_DATATYPE, NULL, NULL);
-  if (data_type->dtype == DT_VOID) {
-    node->lhs = new_node(ND_VOID, NULL, NULL);
-  } else if (data_type->dtype == DT_INT) {
-    node->lhs = new_node(ND_INT, NULL, NULL);
-  } else if (data_type->dtype == DT_CHAR) {
-    node->lhs = new_node(ND_CHAR, NULL, NULL);
-  } else if (data_type->dtype == DT_PNT) {
-    node->lhs = new_node(ND_PNT, NULL, NULL);
-    node->rhs = data_type_node(data_type->pointer_type);
-  } else {
-    error("%s", "Invalid data type");
-  }
-  return node;
 }
 
 Node *argument() {
@@ -527,9 +476,8 @@ void code_block(Vector *code) {
     } else if (GET_TOKEN(tokens, pos).ty == TK_RETURN) {
       vec_push(code, return_node());
     } else {
-      DataType *data_type;
-      get_data_type(pos, &data_type);
-      if (data_type->dtype != DT_INVALID) {
+      int dtype = get_dtype_from_token(GET_TOKEN(tokens, pos).ty);
+      if (dtype != DT_INVALID) {
         // TODO: declaration_node inside function can not generate function.
         // Check.
         declaration_node(code, SC_LOCAL);
