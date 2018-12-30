@@ -193,6 +193,9 @@ try 2 "int main(){char a[4]; a[0]=1; a[1]=2; a[2]=3; a[3]=4; char *b; b = a + 4;
 try 4 "int main(){int a[4]; a[0] = 1; a[1] = 2; a[2] = 3; a[3] = 4; return *(a + 3);}"
 try 4 "int main(){char a[4]; a[0] = 1; a[1] = 2; a[2] = 3; a[3] = 4; return *(a + 3);}"
 
+# struct declaration
+try 5 "struct V {int a; int b;}; int main() {return 5;}"
+
 # program with pointer
 run 'Hello, world' program/hello_literal.c
 
