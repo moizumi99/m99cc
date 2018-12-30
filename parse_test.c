@@ -95,21 +95,30 @@ void dump_tree(Vector *code) {
   }
 }
 
-void test_parse() {
-  char *p = "int main(){char a[2]; a[0]=1; a[1]=2; a[0]+a[1]; a++;}";
-  tokenize(p);
-  // dump_token();
+void test_parse_1() {
+  char *input = "int main(){int a; a = 0; retutrn a;}";
+  Vector *v;
+  v = tokenize(input);
+  Vector *p;
+  p = parse(v);
+  dump_tree(p);
+}
 
-  local_symbols = new_vector();
-  global_symbols = new_map();
-  string_literals = new_vector();
-  Vector *program_code = new_vector();
-  gen_program(program_code);
-  dump_tree(program_code);
+void test_parse_2() {
+  char *input = "struct V {int a;} int main(){int a; a = 0; retutrn a;}";
+  Vector *v;
+  v = tokenize(input);
+  Vector *p;
+  p = parse(v);
+  dump_tree(p);
+}
+
+void test_parse() {
+  test_parse_2();
 }
 
 void runtest_parse() {
   tokens = new_vector();
   test_parse();
-  printf("OK\n");
+  fprintf(stderr, "OK\n");
 }
