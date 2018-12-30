@@ -178,8 +178,9 @@ int get_dtype_from_token(int token_type) {
 }
 
 // TODO: Re-write this with global pos.
-Node *get_data_type_node(int p, int *new_p) {
-  int dtype = get_dtype_from_token(GET_TOKEN(tokens, p++)->ty);
+Node *get_data_type_node_at_pos() {
+  Token *tk = GET_TOKEN(tokens, pos++);
+  int dtype = get_dtype_from_token(tk->ty);
   Node *node = new_node(ND_DATATYPE);
   if (dtype == DT_VOID) {
     node->lhs = new_node(ND_VOID);
@@ -188,13 +189,12 @@ Node *get_data_type_node(int p, int *new_p) {
   } else if (dtype == DT_CHAR) {
     node->lhs = new_node(ND_CHAR);
   } else {
-    error("Invalid data type token %s (" __FILE__ ")", GET_TOKEN(tokens, p - 1)->input);
+    error("Invalid data type token %s (" __FILE__ ")", tk->input);
   }
-  while (GET_TOKEN(tokens, p)->ty == '*') {
-    p++;
+  while (GET_TOKEN(tokens, pos)->ty == '*') {
+    pos++;
     node = new_2term_node(ND_DATATYPE, new_node(ND_PNT), node);
   }
-  *new_p = p;
   return node;
 }
 
@@ -313,7 +313,7 @@ Node *term() {
 
 Node *argument() {
   // TODO: make argument a list.
-  Node *node_dt = get_data_type_node(pos, &pos);
+  Node *node_dt = get_data_type_node_at_pos();
   Token *tk = GET_TOKEN(tokens, pos);
   if (tk->ty != TK_IDENT) {
     error("Invalid (not IDENT) token in argument declaration position \"%s\"",
@@ -550,7 +550,7 @@ Node *identifier_sequence() {
 }
 
 Node *struct_identifier_node() {
-  Node *data_type_node = get_data_type_node(pos, &pos);
+  Node *data_type_node = get_data_type_node_at_pos();
   Node *id = identifier_node();
   return new_2term_node(ND_DECLARE, data_type_node, id);
 }
@@ -598,7 +598,7 @@ void declaration_node(Vector *code) {
     return;
   }
   // Regular declaration of variable and function.
-  Node *node_dt = get_data_type_node(pos, &pos);
+  Node *node_dt = get_data_type_node_at_pos();
   Node *node_ids = identifier_sequence();
   Node *declaration = new_2term_node(ND_DECLARE, node_dt, node_ids);
   vec_push(code, declaration);
