@@ -302,6 +302,8 @@ Vector *analysis(Vector *program_code) {
       local_symbol_counter = 0;
       DataType *data_type = conv_data_type_node_to_data_type(node->lhs);
       process_top_level_node(data_type, node->rhs);
+    } else {
+      vec_push(local_symbols, NULL);
     }
   }
   vec_push(local_symbols, NULL);

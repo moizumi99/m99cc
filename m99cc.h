@@ -97,13 +97,13 @@ enum {
   ND_DECLARE,   // 275 Declaration of variable/function
   ND_DEFINITION,// 276 Defintion of variable/function
   ND_DATATYPE,  // 277 Data type
-  ND_STR,       // 288 String literal.
-  ND_DEREF,     // 289 De-reference (*) operator.
-  ND_VOID,      // 290 Data Type of VOID.
-  ND_INT,       // 291 Data Type of VOID.
-  ND_CHAR,      // 292 Data Type of VOID.
-  ND_PNT,       // 293 Data Type of De-reference.
-  ND_STRUCT,    // 
+  ND_STR,       // 278 String literal.
+  ND_DEREF,     // 279 De-reference (*) operator.
+  ND_VOID,      // 280 Data Type of VOID.
+  ND_INT,       // 281 Data Type of VOID.
+  ND_CHAR,      // 282 Data Type of VOID.
+  ND_PNT,       // 283 Data Type of De-reference.
+  ND_STRUCT,    // 284 ND Struct
 };
 
 // Data type.

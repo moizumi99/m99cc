@@ -426,15 +426,18 @@ int accumulate_variable_size(Vector *symbols) {
   return num;
 }
 
-void gen_declartion(Map *local_symbol_table, Node *declaration_node) {
+void gen_declaration(Map *local_symbol_table, Node *declaration_node) {
   current_local_symbols = local_symbol_table;
   // functions
-  Node *declaration = declaration_node;
-  if (declaration->ty != ND_DECLARE) {
-    fprintf(stderr, "Defintion of variable or function expected.\n");
+  if (declaration_node->ty != ND_DECLARE && declaration_node->ty != ND_STRUCT) {
+    fprintf(stderr, "Defintion of variable, function or struct expected.\n");
     exit(1);
   }
-  Node *identifier = declaration->rhs;
+  if (declaration_node->ty == ND_STRUCT) {
+    // TODO: Check if there's any work needed
+    return;
+  }
+  Node *identifier = declaration_node->rhs;
   if (identifier->ty == ND_IDENT) {
     // TODO: add initialization.
     return;
@@ -536,6 +539,6 @@ void gen_program(Vector *program_code) {
   printf(".global main\n");
   printf(".type main, @function\n");
   for (int j = 0; program_code->data[j]; j++) {
-    gen_declartion(local_symbols->data[j], program_code->data[j]);
+    gen_declaration(local_symbols->data[j], program_code->data[j]);
   }
 }

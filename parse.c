@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdbool.h>
 
+//TODO: shouldn't this be GET_TOKEN(T, I) ((Token *)(T)->data[(I)]) ?
 #define GET_TOKEN(T, I) (*((Token *)(T)->data[(I)]))
 
 static Vector *tokens;
@@ -176,6 +177,7 @@ int get_dtype_from_token(int token_type) {
   }
 }
 
+// TODO: Re-write this with global pos.
 Node *get_data_type_node(int p, int *new_p) {
   int dtype = get_dtype_from_token(GET_TOKEN(tokens, p++).ty);
   Node *node = new_node(ND_DATATYPE);
@@ -186,7 +188,7 @@ Node *get_data_type_node(int p, int *new_p) {
   } else if (dtype == DT_CHAR) {
     node->lhs = new_node(ND_CHAR);
   } else {
-    error("Invalud data type token %s", GET_TOKEN(tokens, p - 1).input);
+    error("Invalid data type token %s (" __FILE__ ")", GET_TOKEN(tokens, p - 1).input);
     exit(1);
   }
   while (GET_TOKEN(tokens, p).ty == '*') {
@@ -486,7 +488,7 @@ void code_block(Vector *code) {
   }
 }
 
-Node *identifier_node(Node *data_type_node) {
+Node *identifier_node() {
   if (GET_TOKEN(tokens, pos).ty != TK_IDENT) {
     error("Unexpected token (function): \"%s\"", GET_TOKEN(tokens, pos).input);
   }
@@ -496,11 +498,7 @@ Node *identifier_node(Node *data_type_node) {
   pos++;
   // global or local variable.
   if (GET_TOKEN(tokens, pos).ty != '(') {
-    int num = get_array_size();
-    id->val = num;
-    if (num > 0) {
-      data_type_node = new_2term_node(ND_DATATYPE, new_node(ND_PNT), data_type_node);
-    }
+    id->val = get_array_size();
     // TODO: add initialization.
     return id;
   }
@@ -523,11 +521,11 @@ Node *identifier_node(Node *data_type_node) {
   return f;
 }
 
-Node *identifier_sequence(Node *data_type_node) {
-  Node *id = identifier_node(data_type_node);
+Node *identifier_sequence() {
+  Node *id = identifier_node();
   if (GET_TOKEN(tokens, pos).ty == ',') {
     pos++;
-    Node *ids = identifier_sequence(data_type_node);
+    Node *ids = identifier_sequence();
     return new_2term_node(ND_IDENTSEQ, id, ids);
   }
   if (GET_TOKEN(tokens, pos).ty == ';') {
@@ -538,9 +536,55 @@ Node *identifier_sequence(Node *data_type_node) {
   return id;
 }
 
+Node *struct_identifier_node() {
+  Node *data_type_node = get_data_type_node(pos, &pos);
+  Node *id = identifier_node();
+  return new_2term_node(ND_DECLARE, data_type_node, id);
+}
+
+Node *struct_identifier_sequence() {
+  Node *node = struct_identifier_node();
+  if (GET_TOKEN(tokens, pos++).ty != ';') {
+    error("Struct token not ending with ';' (initialization not supported yet) %s ("__FILE__ ")",
+          GET_TOKEN(tokens, pos - 1).input);
+    exit(1);
+  }
+  Node *next_node = NULL;
+  if (GET_TOKEN(tokens, pos).ty != '}') {
+    ++pos;
+    next_node = struct_identifier_sequence();
+  }
+  ++pos;
+  return new_2term_node(ND_IDENTSEQ, node, next_node);
+}
+
+Node *struct_declaration(Vector *code) {
+  Node *struct_node = new_node(ND_STRUCT);
+  ++pos;
+  struct_node->name = create_string_in_heap(GET_TOKEN(tokens, pos).input,
+                                            GET_TOKEN(tokens, pos).len);
+  pos++;
+  if (GET_TOKEN(tokens, pos++).ty != '{') {
+    error("Struct declaration does not have members. (%s)", GET_TOKEN(tokens, pos - 1).input);
+    exit(1);
+  }
+  struct_node->lhs = struct_identifier_sequence();
+  if (GET_TOKEN(tokens, pos++).ty != ';') {
+    error("Struct declaration missing ';'. (%s)", GET_TOKEN(tokens, pos - 1).input);
+    exit(1);
+  }
+  return struct_node;
+}
+
 void declaration_node(Vector *code) {
+  // Struct declaration.
+  if (GET_TOKEN(tokens, pos).ty == TK_STRUCT) {
+    vec_push(code, struct_declaration(code));
+    return;
+  }
+  // Regular declaration of variable and function.
   Node *node_dt = get_data_type_node(pos, &pos);
-  Node *node_ids = identifier_sequence(node_dt);
+  Node *node_ids = identifier_sequence();
   Node *declaration = new_2term_node(ND_DECLARE, node_dt, node_ids);
   vec_push(code, declaration);
   return;

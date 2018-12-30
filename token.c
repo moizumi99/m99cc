@@ -181,7 +181,7 @@ Vector *tokenize(char *p) {
       goto ADDTOKEN;
     }
 
-    if ('a' <= *p && *p <= 'z') {
+    if (('a' <= *p && *p <= 'z') || ('A' <= *p && *p <= 'Z')) {
       if (strncmp(p, "if", 2) == 0) {
         tk = TK_IF;
         len = 2;
@@ -212,7 +212,8 @@ Vector *tokenize(char *p) {
       }  else {
         len = 0;
         char *pn = p;
-        while(('a' <= *pn && *pn <= 'z') || ('0' <= *pn && *pn <= '9') || ('_' == *pn)) {
+        while(('a' <= *pn && *pn <= 'z') || ('A' <= *pn && *pn <= 'Z') ||
+              ('0' <= *pn && *pn <= '9') || ('_' == *pn)) {
           len++;
           pn++;
         }

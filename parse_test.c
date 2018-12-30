@@ -44,6 +44,7 @@ char *get_type(int ty) {
   case ND_INT: return "ND_INT";
   case ND_CHAR: return "ND_CHAR";
   case ND_PNT: return "ND_PNT";
+  case ND_STRUCT: return "ND_STRUCT";
   default:
     if (ty < 256) {
       num[0] = (char) ty;
