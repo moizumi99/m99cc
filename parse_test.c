@@ -59,16 +59,16 @@ void dump_node(Node *nd) {
   if (nd == NULL) {
     return;
   }
-  fprintf(stderr, "(");
+  printf( "(");
   if (nd->rhs != NULL) {
     dump_node(nd->lhs);
   }
-  fprintf(stderr, "%s", get_type(nd->ty));
+  printf( "%s", get_type(nd->ty));
   if (nd->ty >= 256) {
     if (nd->name) {
-      fprintf(stderr, ":\"%s\"", nd->name);
+      printf( ":\"%s\"", nd->name);
     } else {
-      fprintf(stderr, ":%d", nd->val);
+      printf( ":%d", nd->val);
     }
   }
   if (nd->rhs == NULL) {
@@ -76,11 +76,11 @@ void dump_node(Node *nd) {
   } else {
     dump_node(nd->rhs);
   }
-  fprintf(stderr, ")");
+  printf( ")");
   if (nd->block) {
-    fprintf(stderr, "{\n");
+    printf( "{\n");
     dump_tree(nd->block);
-    fprintf(stderr, "}\n");
+    printf( "}\n");
   }
 }
 
@@ -91,7 +91,7 @@ void dump_tree(Vector *code) {
   Node *nd;
   for (int j = 0; (nd = code->data[j]) != NULL; j++) {
     dump_node(nd);
-    fprintf(stderr, "\n");
+    printf( "\n");
   }
 }
 

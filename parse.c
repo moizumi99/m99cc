@@ -594,6 +594,7 @@ void declaration_node(Vector *code) {
 
 Vector *parse(Vector *tokens_input) {
   tokens = tokens_input;
+  pos = 0;
   Vector *code = new_vector();
   while (GET_TOKEN(tokens, pos).ty != TK_EOF) {
     declaration_node(code);
