@@ -96,7 +96,7 @@ void dump_tree(Vector *code) {
 }
 
 void test_parse_1() {
-  char *input = "int main(){int a; a = 0; retutrn a;}";
+  char *input = "int main(){int a; a = 0; return a;}";
   Vector *v;
   v = tokenize(input);
   Vector *p;
@@ -105,7 +105,7 @@ void test_parse_1() {
 }
 
 void test_parse_2() {
-  char *input = "struct V {int a;} int main(){int a; a = 0; retutrn a;}";
+  char *input = "struct A {int a;}; int main() {return 4;}";
   Vector *v;
   v = tokenize(input);
   Vector *p;
@@ -114,6 +114,7 @@ void test_parse_2() {
 }
 
 void test_parse() {
+  test_parse_1();
   test_parse_2();
 }
 

@@ -207,7 +207,7 @@ Node *expression(int priority) {
     return term();
   }
   Node *lhs = expression(priority + 1);
-  if (GET_TOKEN(tokens, pos).ty == TK_EOF) {
+  if (GET_TOKEN(tokens, pos).ty == ';') {
     return lhs;
   }
   int token_type = GET_TOKEN(tokens, pos).ty;
@@ -551,10 +551,8 @@ Node *struct_identifier_sequence() {
   }
   Node *next_node = NULL;
   if (GET_TOKEN(tokens, pos).ty != '}') {
-    ++pos;
     next_node = struct_identifier_sequence();
   }
-  ++pos;
   return new_2term_node(ND_IDENTSEQ, node, next_node);
 }
 
@@ -569,6 +567,10 @@ Node *struct_declaration(Vector *code) {
     exit(1);
   }
   struct_node->lhs = struct_identifier_sequence();
+  if (GET_TOKEN(tokens, pos++).ty != '}') {
+    error("Struct declaration missing '}'. (%s)", GET_TOKEN(tokens, pos - 1).input);
+    exit(1);
+  }
   if (GET_TOKEN(tokens, pos++).ty != ';') {
     error("Struct declaration missing ';'. (%s)", GET_TOKEN(tokens, pos - 1).input);
     exit(1);
