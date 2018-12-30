@@ -28,8 +28,7 @@ int get_node_reference_type(Node *node) {
   if (node->ty == ND_IDENT) {
     Symbol *s = get_symbol(global_symbols, current_local_symbols, node);
     if (s == NULL) {
-      fprintf(stderr, "Error. Symbol %s not found\n", node->name);
-      exit(1);
+      error("Error. Symbol %s not found\n", node->name, __FILE__, __LINE__);
     }
     int dtype = s->data_type->dtype;
     if (dtype != DT_PNT) {
@@ -83,8 +82,7 @@ void gen_lval(Node *node) {
     } else {
       s = map_get(current_local_symbols, node->name);
       if (s == NULL) {
-        fprintf(stderr, "Error. Undefined variable used.");
-        exit(1);
+        error("%s", "Error. Undefined variable used.", __FILE__, __LINE__);
       }
       // local address
       printf("  mov rax, rbp\n");
@@ -122,7 +120,7 @@ void gen_syscall(Node *nd) {
     printf("  call putchar@PLT\n");
     printf("  mov eax, 0\n");
   } else {
-    error("%s is not supported yet.\n", nd->name);
+    error("%s is not supported yet.\n", nd->name, __FILE__, __LINE__);
   }
 }
 
@@ -144,7 +142,7 @@ void gen_ident(Node *node) {
         printf("  mov rax, [rax]\n");
       } else {
         fprintf(stderr, "Data type: %d\n", dtype);
-        error("\"%s\" type is not INT or CHAR. (local load)", node->name);
+        error("\"%s\" type is not INT or CHAR. (local load)", node->name, __FILE__, __LINE__);
       }
       printf("  push rax\n");
     }
@@ -167,7 +165,7 @@ void gen_ident(Node *node) {
       } else if (dtype == DT_PNT) {
         printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
       } else {
-        error("\"%s\" type is not INT or CHAR. (global load)", node->name);
+        error("\"%s\" type is not INT or CHAR. (global load)", node->name, __FILE__, __LINE__);
       }
     } else {
       // Array address. Don't de-reference.
@@ -180,7 +178,7 @@ void gen_ident(Node *node) {
 void gen_funccall(Node *node) {
   printf("# ND_FUNCCALL\n");
   if (node->lhs->ty != ND_IDENT) {
-    error("%s\n", "Function node doesn't have identifer.");
+    error("%s", "Function node doesn't have identifer.", __FILE__, __LINE__);
   }
   if (node->rhs != NULL) {
     gen_node(node->rhs);
@@ -241,7 +239,7 @@ void gen_if(Node *node) {
     } else if (node->rhs->ty == ND_BLOCK) {
       gen_block(node->rhs->block);
     } else {
-      error("Unexpected non ND_BLOCK node %s after if-else \n", node->name);
+      error("Unexpected non ND_BLOCK node %s after if-else \n", node->name, __FILE__, __LINE__);
     }
   }
   printf("_if_end_%d:\n", end_label);
@@ -293,8 +291,7 @@ void gen_single_term_operation(Node *node) {
     printf("  push rax\n");
     break;
   default:
-    fprintf(stderr, "Error. Unsupported single term operation %d.\n", node->ty);
-    exit(1);
+    error("%s\n", "Error. Unsupported single term operation %d.", __FILE__, __LINE__);
   }
 }
 
@@ -341,7 +338,7 @@ void gen_two_term_operation(Node *node) {
     } else if (node->ty == ND_GE) {
       printf("  setge al\n");
     } else {
-      error("%s\n", "Code shouldn't reach here (codegen.c compare).");
+      error("%s\n", "Code shouldn't reach here (codegen.c compare).", __FILE__, __LINE__);
     }
     printf("  movzb rax, al\n");
     break;
@@ -355,8 +352,7 @@ void gen_two_term_operation(Node *node) {
     // do nothing.
     break;
   default:
-    fprintf(stderr, "Operation %s is not supported.\n", get_type(node->ty));
-    exit(1);
+    error("Operation %s is not supported.\n", get_type(node->ty), __FILE__, __LINE__);
     break;
   }
   printf("  push rax\n");
@@ -472,8 +468,7 @@ void gen_declaration(Map *local_symbol_table, Node *declaration_node) {
       printf("  mov [rbp - %d], rax\n", (int)next_symbol->address);
     } else {
       // TODO: Support two or more argunents.
-      fprintf(stderr, "Error: Currently, only one argument can be used.");
-      exit(1);
+      error("%s", "Error: Currently, only one argument can be used.", __FILE__, __LINE__);
     }
   }
   // Generate codes from the top line to bottom

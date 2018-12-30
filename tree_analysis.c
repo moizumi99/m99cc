@@ -63,8 +63,7 @@ DataType *get_node_data_type(Map *global_table, Map *local_table, Node *node) {
   if (node->ty == ND_IDENT) {
     Symbol *s = get_symbol(global_table, local_table, node);
     if (s == NULL) {
-      fprintf(stderr, "Error: Symbol %s not found (parse, get_node_data_type())\n", node->name);
-      exit(1);
+      error("Error: Symbol %s not found", node->name, __FILE__, __LINE__);
     }
     return s->data_type;
   }
@@ -104,7 +103,7 @@ DataType *get_node_data_type(Map *global_table, Map *local_table, Node *node) {
  ERROR:
   fprintf(stderr, "DataType error. Left: %d, right: %d\n",
           left_data_type->dtype, right_data_type->dtype);
-  exit(1);
+  error("%s", "", __FILE__, __LINE__);
   return NULL;
 }
 
@@ -199,8 +198,7 @@ void add_local_symbol(char *name_perm, int type, int num, struct DataType *data_
 
 DataType *conv_data_type_node_to_data_type(Node *node) {
   if (node->ty != ND_DATATYPE) {
-    error("Not a data type node (%s)", __FILE__);
-    exit(1);
+    error("%s", "Not a data type node", __FILE__, __LINE__);
   }
   DataType *data_type;
   if (node->lhs->ty == ND_VOID) {
@@ -213,7 +211,7 @@ DataType *conv_data_type_node_to_data_type(Node *node) {
     data_type = new_data_type(DT_PNT);
     data_type->pointer_type = conv_data_type_node_to_data_type(node->rhs);
   } else {
-    error("%s", "Invalid data type pointer");
+    error("%s", "Invalid data type pointer", __FILE__, __LINE__);
   }
   return data_type;
 }
@@ -278,7 +276,7 @@ void process_top_level_node(DataType *data_type, Node *node) {
     if (args != NULL) {
       // This function has an argument.
       if (args->ty != ND_DECLARE) {
-        error("Argument not starting with declaration (%s)", __FILE__);
+        error("%s", "Argument not starting with declaration", __FILE__, __LINE__);
       }
       DataType *arg_data_type = conv_data_type_node_to_data_type(args->lhs);
       add_local_symbol(args->rhs->name, ID_ARG, args->rhs->val, arg_data_type);
@@ -288,7 +286,7 @@ void process_top_level_node(DataType *data_type, Node *node) {
     }
     return;
   }
-  error("%s", "Identifier not found.");
+  error("%s", "Identifier not found.", __FILE__, __LINE__);
 }
 
 Vector *analysis(Vector *program_code) {

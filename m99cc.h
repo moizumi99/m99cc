@@ -143,7 +143,7 @@ Vector *analysis(Vector *program_code);
 // codegen.c
 void gen_program();
 
-void error(char *s, char *message);
+void error(char *s, char *message, char *file, int line);
 
 Vector *new_vector();
 

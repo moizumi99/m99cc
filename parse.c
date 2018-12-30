@@ -17,8 +17,9 @@ enum {
 };
 
 // Error reporting function.
-void error(char *s, char *message) {
+void error(char *s, char *message, char *file, int line) {
   fprintf(stderr, s, message);
+  fprintf(stderr, " in %s, at %d.", file, line);
   fprintf(stderr, "\n");
   exit(1);
 }
@@ -189,7 +190,7 @@ Node *get_data_type_node_at_pos() {
   } else if (dtype == DT_CHAR) {
     node->lhs = new_node(ND_CHAR);
   } else {
-    error("Invalid data type token %s (" __FILE__ ")", tk->input);
+    error("Invalid data type token %s", tk->input, __FILE__, __LINE__);
   }
   while (GET_TOKEN(tokens, pos)->ty == '*') {
     pos++;
@@ -250,7 +251,7 @@ Node *term() {
       if (GET_TOKEN(tokens, pos)->ty != ')') {
         error("No right parenthesis corresponding to left parenthesis"
               " (term, function): \"%s\"",
-              GET_TOKEN(tokens, pos)->input);
+              GET_TOKEN(tokens, pos)->input, __FILE__, __LINE__);
       }
       pos++;
       Node *node = new_2term_node(ND_FUNCCALL, id, arg);
@@ -278,7 +279,7 @@ Node *term() {
     if (GET_TOKEN(tokens, pos)->ty != ')') {
       error("No right parenthesis corresponding to left parenthesis "
             "(term, parenthesis): \"%s\"",
-            GET_TOKEN(tokens, pos)->input);
+            GET_TOKEN(tokens, pos)->input, __FILE__, __LINE__);
     }
     pos++;
     return node;
@@ -307,7 +308,7 @@ Node *term() {
 
   // Code should not reach here.
   error("Unexpected token (parse.c term): \"%s\"",
-        GET_TOKEN(tokens, pos)->input);
+        GET_TOKEN(tokens, pos)->input, __FILE__, __LINE__);
   return NULL;
 }
 
@@ -317,7 +318,7 @@ Node *argument() {
   Token *tk = GET_TOKEN(tokens, pos);
   if (tk->ty != TK_IDENT) {
     error("Invalid (not IDENT) token in argument declaration position \"%s\"",
-          tk->input);
+          tk->input, __FILE__, __LINE__);
   }
   // argument name?
   tk = GET_TOKEN(tokens, pos);
@@ -374,12 +375,12 @@ Node *if_node() {
   pos++;
   if (GET_TOKEN(tokens, pos++)->ty != '(') {
     error("Left paraenthesis '(' missing (if): \"%s\"\n",
-          GET_TOKEN(tokens, pos - 1)->input);
+          GET_TOKEN(tokens, pos - 1)->input, __FILE__, __LINE__);
   }
   Node *cond = expression(ASSIGN_PRIORITY);
   if (GET_TOKEN(tokens, pos++)->ty != ')') {
     error("Right paraenthesis ')' missing (if): \"%s\"\n",
-          GET_TOKEN(tokens, pos - 1)->input);
+          GET_TOKEN(tokens, pos - 1)->input, __FILE__, __LINE__);
   }
   Node *ifnd = new_2term_node(ND_IF, cond, NULL);
   ifnd->block = new_vector();
@@ -405,13 +406,13 @@ Node *while_node() {
   Token *tk = GET_TOKEN(tokens, pos++);
   if (tk->ty != '(') {
     error("Left paraenthesis '(' missing (while): \"%s\"\n",
-          tk->input);
+          tk->input, __FILE__, __LINE__);
   }
   Node *cond = expression(ASSIGN_PRIORITY);
   tk = GET_TOKEN(tokens, pos++);
   if (tk->ty != ')') {
     error("Right paraenthesis ')' missing (while): \"%s\"\n",
-          tk->input);
+          tk->input, __FILE__, __LINE__);
   }
   Node *while_nd = new_2term_node(ND_WHILE, cond, NULL);
   while_nd->block = new_vector();
@@ -426,26 +427,26 @@ void for_node(Vector *code) {
   Token *tk = GET_TOKEN(tokens, pos++);
   if (tk->ty != '(') {
     error("Left paraenthesis '(' missing (for): \"%s\"\n",
-          tk->input);
+          tk->input, __FILE__, __LINE__);
   }
   Node *init = expression(ASSIGN_PRIORITY);
   vec_push(code, init);
   tk = GET_TOKEN(tokens, pos++);
   if (tk->ty != ';') {
     error("1st Semicolon ';' missing (for): \"%s\"\n",
-          tk->input);
+          tk->input, __FILE__, __LINE__);
   }
   Node *cond = expression(ASSIGN_PRIORITY);
   tk = GET_TOKEN(tokens, pos++);
   if (tk->ty != ';') {
     error("2nd Semicolon ';' missing (for): \"%s\"\n",
-          tk->input);
+          tk->input, __FILE__, __LINE__);
   }
   Node *increment = expression(ASSIGN_PRIORITY);
   tk = GET_TOKEN(tokens, pos++);
   if (tk->ty != ')') {
     error("Right paraenthesis '(' missing (for): \"%s\"\n",
-          tk->input);
+          tk->input, __FILE__, __LINE__);
   }
   Node *for_nd = new_2term_node(ND_WHILE, cond, NULL);
   vec_push(code, for_nd);
@@ -472,7 +473,7 @@ void code_block(Vector *code) {
   Token *tk = GET_TOKEN(tokens, pos++);
   if (tk->ty != '{') {
     error("Left brace '{' missing (code_block): \"%s\"",
-          tk->input);
+          tk->input, __FILE__, __LINE__);
   }
   int ty;
   while ((ty = GET_TOKEN(tokens, pos)->ty) != '}') {
@@ -497,14 +498,14 @@ void code_block(Vector *code) {
   }
   if (GET_TOKEN(tokens, pos++)->ty != '}') {
     error("Right brace '}' missing (code_block): \"%s\"",
-          GET_TOKEN(tokens, pos - 1)->input);
+          GET_TOKEN(tokens, pos - 1)->input, __FILE__, __LINE__);
   }
 }
 
 Node *identifier_node() {
   Token *tk = GET_TOKEN(tokens, pos);
   if (tk->ty != TK_IDENT) {
-    error("Unexpected token (function): \"%s\"", tk->input);
+    error("Unexpected token (function): \"%s\"", tk->input, __FILE__, __LINE__);
   }
   Node *id =
       new_node_ident(tk->input,
@@ -526,7 +527,7 @@ Node *identifier_node() {
   if (GET_TOKEN(tokens, pos++)->ty != ')') {
     // TODO: add support of nmultiple arguments.
     error("Right parenthesis ')' missing (function): \"%s\"",
-          GET_TOKEN(tokens, pos - 1)->input);
+          GET_TOKEN(tokens, pos - 1)->input, __FILE__, __LINE__);
   }
   Node *f = new_2term_node(ND_FUNCDEF, id, arg);
   f->block = new_vector();
@@ -558,8 +559,8 @@ Node *struct_identifier_node() {
 Node *struct_identifier_sequence() {
   Node *node = struct_identifier_node();
   if (GET_TOKEN(tokens, pos++)->ty != ';') {
-    error("Struct token not ending with ';' (initialization not supported yet) %s ("__FILE__ ")",
-          GET_TOKEN(tokens, pos - 1)->input);
+    error("Struct token not ending with ';' (initialization not supported yet) %s",
+          GET_TOKEN(tokens, pos - 1)->input, __FILE__, __LINE__);
   }
   Node *next_node = NULL;
   if (GET_TOKEN(tokens, pos)->ty != '}') {
@@ -577,16 +578,16 @@ Node *struct_declaration(Vector *code) {
   pos++;
   tk = GET_TOKEN(tokens, pos++);
   if (tk->ty != '{') {
-    error("Struct declaration does not have members. (%s)", tk->input);
+    error("Struct declaration does not have members. (%s)", tk->input, __FILE__, __LINE__);
   }
   struct_node->lhs = struct_identifier_sequence();
   tk = GET_TOKEN(tokens, pos++);
   if (tk->ty != '}') {
-    error("Struct declaration missing '}'. (%s)", tk->input);
+    error("Struct declaration missing '}'. (%s)", tk->input, __FILE__, __LINE__);
   }
   tk = GET_TOKEN(tokens, pos++);
   if (tk->ty != ';') {
-    error("Struct declaration missing ';'. (%s)", tk->input);
+    error("Struct declaration missing ';'. (%s)", tk->input, __FILE__, __LINE__);
   }
   return struct_node;
 }
