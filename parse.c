@@ -189,7 +189,6 @@ Node *get_data_type_node(int p, int *new_p) {
     node->lhs = new_node(ND_CHAR);
   } else {
     error("Invalid data type token %s (" __FILE__ ")", GET_TOKEN(tokens, p - 1)->input);
-    exit(1);
   }
   while (GET_TOKEN(tokens, p)->ty == '*') {
     p++;
@@ -226,18 +225,19 @@ Node *term() {
   if (GET_TOKEN(tokens, pos)->ty == TK_NUM) {
     return new_node_num(GET_TOKEN(tokens, pos++)->val);
   }
-
-  if (GET_TOKEN(tokens, pos)->ty == TK_STR) {
-    char *str = GET_TOKEN(tokens, pos)->input;
-    int len = GET_TOKEN(tokens, pos)->len;
+  Token *tk = GET_TOKEN(tokens, pos);
+  if (tk->ty == TK_STR) {
+    char *str = tk->input;
+    int len = tk->len;
     pos++;
     return new_node_str(str, len);
   }
 
   // Variable or Function
-  if (GET_TOKEN(tokens, pos)->ty == TK_IDENT) {
-    Node *id = new_node_ident(GET_TOKEN(tokens, pos)->input,
-                              GET_TOKEN(tokens, pos)->len);
+  tk = GET_TOKEN(tokens, pos);
+  if (tk->ty == TK_IDENT) {
+    Node *id = new_node_ident(tk->input,
+                              tk->len);
     pos++;
     // if followed by (, it's a function call.
     if (GET_TOKEN(tokens, pos)->ty == '(') {
@@ -284,15 +284,17 @@ Node *term() {
     return node;
   }
   // Single term operators
-  if (GET_TOKEN(tokens, pos)->ty == '+' || GET_TOKEN(tokens, pos)->ty == '-' ||
-      GET_TOKEN(tokens, pos)->ty == '*' || GET_TOKEN(tokens, pos)->ty == '&') {
-    int type = GET_TOKEN(tokens, pos)->ty;
+  tk = GET_TOKEN(tokens, pos);
+  if (tk->ty == '+' || tk->ty == '-' ||
+      tk->ty == '*' || tk->ty == '&') {
+    int type = tk->ty;
     pos++;
     Node *lhs = term();
     return new_2term_node(get_node_type_from_token_single(type), lhs, NULL);
   }
 
-  if (GET_TOKEN(tokens, pos)->ty == TK_INC || GET_TOKEN(tokens, pos)->ty == TK_DEC) {
+  tk = GET_TOKEN(tokens, pos);
+  if (tk->ty == TK_INC || tk->ty == TK_DEC) {
     // convert ++x to (x += 1).
     int type = GET_TOKEN(tokens, pos)->ty;
     int operation = (type == TK_INC) ? ND_PE : ND_ME;
@@ -312,21 +314,24 @@ Node *term() {
 Node *argument() {
   // TODO: make argument a list.
   Node *node_dt = get_data_type_node(pos, &pos);
-  if (GET_TOKEN(tokens, pos)->ty != TK_IDENT) {
+  Token *tk = GET_TOKEN(tokens, pos);
+  if (tk->ty != TK_IDENT) {
     error("Invalid (not IDENT) token in argument declaration position \"%s\"",
-          GET_TOKEN(tokens, pos)->input);
+          tk->input);
   }
   // argument name?
-  char *name = create_string_in_heap(GET_TOKEN(tokens, pos)->input,
-                                     GET_TOKEN(tokens, pos)->len);
+  tk = GET_TOKEN(tokens, pos);
+  char *name = create_string_in_heap(tk->input,
+                                     tk->len);
   int array_size = get_array_size();
   if (array_size > 0) {
     // Make the node_dt pointer node
     node_dt = new_2term_node(ND_DATATYPE, new_node(ND_PNT), node_dt);
   }
+  tk = GET_TOKEN(tokens, pos);
   Node *id =
-      new_node_ident(GET_TOKEN(tokens, pos)->input,
-                     GET_TOKEN(tokens, pos)->len);
+      new_node_ident(tk->input,
+                     tk->len);
   id->name = name;
   Node *arg_node = new_2term_node(ND_DECLARE, node_dt, id);
   pos++;
@@ -397,14 +402,16 @@ Node *if_node() {
 
 Node *while_node() {
   pos++;
-  if (GET_TOKEN(tokens, pos++)->ty != '(') {
+  Token *tk = GET_TOKEN(tokens, pos++);
+  if (tk->ty != '(') {
     error("Left paraenthesis '(' missing (while): \"%s\"\n",
-          GET_TOKEN(tokens, pos - 1)->input);
+          tk->input);
   }
   Node *cond = expression(ASSIGN_PRIORITY);
-  if (GET_TOKEN(tokens, pos++)->ty != ')') {
+  tk = GET_TOKEN(tokens, pos++);
+  if (tk->ty != ')') {
     error("Right paraenthesis ')' missing (while): \"%s\"\n",
-          GET_TOKEN(tokens, pos - 1)->input);
+          tk->input);
   }
   Node *while_nd = new_2term_node(ND_WHILE, cond, NULL);
   while_nd->block = new_vector();
@@ -416,25 +423,29 @@ Node *while_node() {
 void for_node(Vector *code) {
   // TODO: allow multiple statement using ','.
   pos++;
-  if (GET_TOKEN(tokens, pos++)->ty != '(') {
+  Token *tk = GET_TOKEN(tokens, pos++);
+  if (tk->ty != '(') {
     error("Left paraenthesis '(' missing (for): \"%s\"\n",
-          GET_TOKEN(tokens, pos - 1)->input);
+          tk->input);
   }
   Node *init = expression(ASSIGN_PRIORITY);
   vec_push(code, init);
-  if (GET_TOKEN(tokens, pos++)->ty != ';') {
+  tk = GET_TOKEN(tokens, pos++);
+  if (tk->ty != ';') {
     error("1st Semicolon ';' missing (for): \"%s\"\n",
-          GET_TOKEN(tokens, pos - 1)->input);
+          tk->input);
   }
   Node *cond = expression(ASSIGN_PRIORITY);
-  if (GET_TOKEN(tokens, pos++)->ty != ';') {
+  tk = GET_TOKEN(tokens, pos++);
+  if (tk->ty != ';') {
     error("2nd Semicolon ';' missing (for): \"%s\"\n",
-          GET_TOKEN(tokens, pos - 1)->input);
+          tk->input);
   }
   Node *increment = expression(ASSIGN_PRIORITY);
-  if (GET_TOKEN(tokens, pos++)->ty != ')') {
+  tk = GET_TOKEN(tokens, pos++);
+  if (tk->ty != ')') {
     error("Right paraenthesis '(' missing (for): \"%s\"\n",
-          GET_TOKEN(tokens, pos - 1)->input);
+          tk->input);
   }
   Node *for_nd = new_2term_node(ND_WHILE, cond, NULL);
   vec_push(code, for_nd);
@@ -458,21 +469,23 @@ Node *return_node() {
 void declaration_node(Vector *code);
 
 void code_block(Vector *code) {
-  if (GET_TOKEN(tokens, pos++)->ty != '{') {
+  Token *tk = GET_TOKEN(tokens, pos++);
+  if (tk->ty != '{') {
     error("Left brace '{' missing (code_block): \"%s\"",
-          GET_TOKEN(tokens, pos - 1)->input);
+          tk->input);
   }
-  while (GET_TOKEN(tokens, pos)->ty != '}') {
-    if (GET_TOKEN(tokens, pos)->ty == TK_IF) {
+  int ty;
+  while ((ty = GET_TOKEN(tokens, pos)->ty) != '}') {
+    if (ty == TK_IF) {
       vec_push(code, if_node());
-    } else if (GET_TOKEN(tokens, pos)->ty == TK_WHILE) {
+    } else if (ty == TK_WHILE) {
       vec_push(code, while_node());
-    } else if (GET_TOKEN(tokens, pos)->ty == TK_FOR) {
+    } else if (ty == TK_FOR) {
       for_node(code);
-    } else if (GET_TOKEN(tokens, pos)->ty == TK_RETURN) {
+    } else if (ty == TK_RETURN) {
       vec_push(code, return_node());
     } else {
-      int dtype = get_dtype_from_token(GET_TOKEN(tokens, pos)->ty);
+      int dtype = get_dtype_from_token(ty);
       if (dtype != DT_INVALID) {
         // TODO: declaration_node inside function can not generate function.
         // Check.
@@ -489,12 +502,13 @@ void code_block(Vector *code) {
 }
 
 Node *identifier_node() {
-  if (GET_TOKEN(tokens, pos)->ty != TK_IDENT) {
-    error("Unexpected token (function): \"%s\"", GET_TOKEN(tokens, pos)->input);
+  Token *tk = GET_TOKEN(tokens, pos);
+  if (tk->ty != TK_IDENT) {
+    error("Unexpected token (function): \"%s\"", tk->input);
   }
   Node *id =
-      new_node_ident(GET_TOKEN(tokens, pos)->input,
-                     GET_TOKEN(tokens, pos)->len);
+      new_node_ident(tk->input,
+                     tk->len);
   pos++;
   // global or local variable.
   if (GET_TOKEN(tokens, pos)->ty != '(') {
@@ -532,7 +546,6 @@ Node *identifier_sequence() {
     pos++;
     return id;
   }
-  // GET_TOKEN(tokens, pos)->input);
   return id;
 }
 
@@ -547,7 +560,6 @@ Node *struct_identifier_sequence() {
   if (GET_TOKEN(tokens, pos++)->ty != ';') {
     error("Struct token not ending with ';' (initialization not supported yet) %s ("__FILE__ ")",
           GET_TOKEN(tokens, pos - 1)->input);
-    exit(1);
   }
   Node *next_node = NULL;
   if (GET_TOKEN(tokens, pos)->ty != '}') {
@@ -559,21 +571,22 @@ Node *struct_identifier_sequence() {
 Node *struct_declaration(Vector *code) {
   Node *struct_node = new_node(ND_STRUCT);
   ++pos;
-  struct_node->name = create_string_in_heap(GET_TOKEN(tokens, pos)->input,
-                                            GET_TOKEN(tokens, pos)->len);
+  Token *tk = GET_TOKEN(tokens, pos);
+  struct_node->name = create_string_in_heap(tk->input,
+                                            tk->len);
   pos++;
-  if (GET_TOKEN(tokens, pos++)->ty != '{') {
-    error("Struct declaration does not have members. (%s)", GET_TOKEN(tokens, pos - 1)->input);
-    exit(1);
+  tk = GET_TOKEN(tokens, pos++);
+  if (tk->ty != '{') {
+    error("Struct declaration does not have members. (%s)", tk->input);
   }
   struct_node->lhs = struct_identifier_sequence();
-  if (GET_TOKEN(tokens, pos++)->ty != '}') {
-    error("Struct declaration missing '}'. (%s)", GET_TOKEN(tokens, pos - 1)->input);
-    exit(1);
+  tk = GET_TOKEN(tokens, pos++);
+  if (tk->ty != '}') {
+    error("Struct declaration missing '}'. (%s)", tk->input);
   }
-  if (GET_TOKEN(tokens, pos++)->ty != ';') {
-    error("Struct declaration missing ';'. (%s)", GET_TOKEN(tokens, pos - 1)->input);
-    exit(1);
+  tk = GET_TOKEN(tokens, pos++);
+  if (tk->ty != ';') {
+    error("Struct declaration missing ';'. (%s)", tk->input);
   }
   return struct_node;
 }
