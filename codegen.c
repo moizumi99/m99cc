@@ -140,7 +140,11 @@ void gen_ident(Node *node) {
         printf("  mov al, [rax]\n");
       } else if (dtype == DT_PNT) {
         printf("  mov rax, [rax]\n");
-      } else {
+      } else if (dtype == DT_STRUCT) {
+        // evaluation of struct value is not supported yet.
+        // Just give the first variable for now to avoid error.
+        printf("  mov rax, [rax]\n");
+      }else {
         fprintf(stderr, "Data type: %d\n", dtype);
         error("\"%s\" type is not INT or CHAR. (local load)", node->name, __FILE__, __LINE__);
       }

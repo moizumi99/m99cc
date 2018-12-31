@@ -6,6 +6,7 @@
 extern Map *global_symbols;
 extern Vector *local_symbols;
 extern Vector *string_literals;
+extern Map *global_struct_table;
 static int str_counter;
 static Map *current_local_symbols;
 static int local_symbol_counter;
@@ -172,11 +173,26 @@ void list_string_in_node(Node *node) {
   list_string_in_code(node->block);
 }
 
+int struct_size(Map *struct_table, char *struct_name) {
+  Vector *struct_members = map_get(struct_table, struct_name);
+  int total_size = 0;
+  for (int j = 0; j < struct_members->len; j++) {
+    StructMember *st = (StructMember *)struct_members->data[j];
+    total_size += data_size(st->data_type);
+  }
+  return total_size;
+}
+
 void add_global_symbol(char *name_perm, int type, int num,
                        struct DataType *data_type) {
   static int global_symbol_counter = 0;
   Symbol *new_symbol = malloc(sizeof(Symbol));
-  int dsize = data_size(data_type);
+  int dsize;
+  if (data_type->dtype != DT_STRUCT) {
+    dsize = data_size(data_type);
+  } else {
+    dsize = struct_size(global_struct_table, data_type->struct_name);
+  }
   global_symbol_counter += (num == 0) ? dsize : num * dsize;
   new_symbol->address = (void *)global_symbol_counter;
   new_symbol->type = type;
@@ -187,7 +203,13 @@ void add_global_symbol(char *name_perm, int type, int num,
 
 void add_local_symbol(char *name_perm, int type, int num, struct DataType *data_type) {
   Symbol *new_symbol = malloc(sizeof(Symbol));
-  int dsize = data_size(data_type);
+  int dsize;
+  if (data_type->dtype != DT_STRUCT) {
+    dsize = data_size(data_type);
+  } else {
+    // TODO: add locally defined struct support.
+    dsize = struct_size(global_struct_table, data_type->struct_name);
+  }
   local_symbol_counter += (num == 0) ? dsize : num * dsize;
   new_symbol->address = (void *)local_symbol_counter;
   new_symbol->type = type;
@@ -207,6 +229,9 @@ DataType *conv_data_type_node_to_data_type(Node *node) {
     data_type = new_data_type(DT_INT);
   } else if (node->lhs->ty == ND_CHAR) {
     data_type = new_data_type(DT_CHAR);
+  } else if (node->lhs->ty == ND_STRUCT) {
+    data_type = new_data_type(DT_STRUCT);
+    data_type->struct_name = node->name;
   } else if (node->lhs->ty == ND_PNT) {
     data_type = new_data_type(DT_PNT);
     data_type->pointer_type = conv_data_type_node_to_data_type(node->rhs);
@@ -257,6 +282,35 @@ void process_local_block(Vector *block_code) {
 }
 
 
+StructMember *new_struct_member() {
+  StructMember *sm = malloc(sizeof(StructMember));
+  sm->address = 0;
+  sm->data_type = NULL;
+  sm->name = NULL;
+  return sm;
+}
+
+// parse.c.
+Node *get_data_type_from_struct_node(Node *struct_node);
+
+int add_struct_member(Vector *member_list, Node *node, int address) {
+  if (node->ty == ND_IDENTSEQ) {
+    address = add_struct_member(member_list, node->lhs, address);
+    return address;
+  }
+  if (node->ty == ND_DECLARE) {
+    StructMember *st = new_struct_member();
+    st->data_type = conv_data_type_node_to_data_type(node->lhs);
+    st->address = address;
+    st->name = node->rhs->name;
+    vec_push(member_list, st);
+    return address + data_size(st->data_type);
+  }
+  fprintf(stderr, "Node type %d is not expected. ", node->ty);
+  error("%s", "Error", __FILE__, __LINE__);
+  return -1;
+}
+
 void process_top_level_node(DataType *data_type, Node *node) {
   if (node->ty == ND_IDENTSEQ) {
     process_top_level_node(data_type, node->lhs);
@@ -300,6 +354,12 @@ Vector *analysis(Vector *program_code) {
       local_symbol_counter = 0;
       DataType *data_type = conv_data_type_node_to_data_type(node->lhs);
       process_top_level_node(data_type, node->rhs);
+    } else if (node->ty == ND_STRUCT) {
+      // Just to avoid error.
+      vec_push(local_symbols, NULL);
+      Vector *struct_member_list = new_vector();
+      map_put(global_struct_table, node->name, struct_member_list);
+      add_struct_member(struct_member_list, node->lhs, 0);
     } else {
       vec_push(local_symbols, NULL);
     }

@@ -569,12 +569,21 @@ Node *struct_identifier_sequence() {
   return new_2term_node(ND_IDENTSEQ, node, next_node);
 }
 
-Node *struct_variable_declaration(Node *struct_node) {
-  Node *ids = identifier_sequence();
-  Node *node = new_2term_node(ND_DECLARE, struct_node, ids);
+Node *get_data_type_from_struct_node(Node *struct_node) {
+  Node *node = new_2term_node(ND_DATATYPE, struct_node, NULL);
+  while (GET_TOKEN(tokens, pos)->ty == '*') {
+    pos++;
+    node = new_2term_node(ND_DATATYPE, new_node(ND_PNT), node);
+  }
   return node;
 }
 
+Node *struct_variable_declaration(Node *struct_node) {
+  Node *data_node = get_data_type_from_struct_node(struct_node);
+  Node *ids = identifier_sequence();
+  Node *node = new_2term_node(ND_DECLARE, data_node, ids);
+  return node;
+}
 
 Node *struct_declaration() {
   Node *struct_node = new_node(ND_STRUCT);
@@ -608,9 +617,9 @@ void declaration_node(Vector *code) {
     return;
   }
   // Regular declaration of variable and function.
-  Node *node_dt = get_data_type_node_at_pos();
+  Node *data_node = get_data_type_node_at_pos();
   Node *node_ids = identifier_sequence();
-  Node *declaration = new_2term_node(ND_DECLARE, node_dt, node_ids);
+  Node *declaration = new_2term_node(ND_DECLARE, data_node, node_ids);
   vec_push(code, declaration);
   return;
 }

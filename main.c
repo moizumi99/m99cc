@@ -10,7 +10,7 @@
 Map *global_symbols;
 Vector *local_symbols;
 Vector *string_literals;
-Map *struct_table;
+Map *global_struct_table;
 
 // for debugging.
 void dump_symbols(Map *);
@@ -68,6 +68,7 @@ int main(int argc, char **argv) {
   global_symbols = new_map();
   local_symbols = new_vector();
   string_literals = new_vector();
+  global_struct_table = new_map();
 
   // open input
   if (srcfile == NULL) {

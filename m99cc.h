@@ -119,6 +119,7 @@ enum {
 typedef struct DataType{
   int dtype;
   struct DataType *pointer_type;
+  char *struct_name;
 } DataType;
 
 typedef struct StructMember {
