@@ -173,6 +173,8 @@ int get_dtype_from_token(int token_type) {
     return DT_CHAR;
   case TK_INT:
     return DT_INT;
+  case TK_STRUCT:
+    return DT_STRUCT;
   default:
     return DT_INVALID;
   }
@@ -294,11 +296,9 @@ Node *term() {
     return new_2term_node(get_node_type_from_token_single(type), lhs, NULL);
   }
 
-  tk = GET_TOKEN(tokens, pos);
   if (tk->ty == TK_INC || tk->ty == TK_DEC) {
     // convert ++x to (x += 1).
-    int type = GET_TOKEN(tokens, pos)->ty;
-    int operation = (type == TK_INC) ? ND_PE : ND_ME;
+    int operation = (tk->ty == TK_INC) ? ND_PE : ND_ME;
     pos++;
     Node *lhs = term();
     int step = 1;
@@ -505,7 +505,7 @@ void code_block(Vector *code) {
 Node *identifier_node() {
   Token *tk = GET_TOKEN(tokens, pos);
   if (tk->ty != TK_IDENT) {
-    error("Unexpected token (function): \"%s\"", tk->input, __FILE__, __LINE__);
+    error("Unexpected token: \"%s\"", tk->input, __FILE__, __LINE__);
   }
   Node *id =
       new_node_ident(tk->input,
@@ -569,17 +569,26 @@ Node *struct_identifier_sequence() {
   return new_2term_node(ND_IDENTSEQ, node, next_node);
 }
 
-Node *struct_declaration(Vector *code) {
+Node *struct_variable_declaration(Node *struct_node) {
+  Node *ids = identifier_sequence();
+  Node *node = new_2term_node(ND_DECLARE, struct_node, ids);
+  return node;
+}
+
+
+Node *struct_declaration() {
   Node *struct_node = new_node(ND_STRUCT);
   ++pos;
   Token *tk = GET_TOKEN(tokens, pos);
   struct_node->name = create_string_in_heap(tk->input,
                                             tk->len);
   pos++;
-  tk = GET_TOKEN(tokens, pos++);
+  tk = GET_TOKEN(tokens, pos);
   if (tk->ty != '{') {
-    error("Struct declaration does not have members. (%s)", tk->input, __FILE__, __LINE__);
+    // if '{' doesn't follow, it's a variable;
+    return struct_variable_declaration(struct_node);
   }
+  pos++;
   struct_node->lhs = struct_identifier_sequence();
   tk = GET_TOKEN(tokens, pos++);
   if (tk->ty != '}') {
@@ -595,7 +604,7 @@ Node *struct_declaration(Vector *code) {
 void declaration_node(Vector *code) {
   // Struct declaration.
   if (GET_TOKEN(tokens, pos)->ty == TK_STRUCT) {
-    vec_push(code, struct_declaration(code));
+    vec_push(code, struct_declaration());
     return;
   }
   // Regular declaration of variable and function.

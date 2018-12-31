@@ -113,6 +113,7 @@ enum {
   DT_CHAR,      // 2 for char
   DT_PNT,       // 3 for pointer
   DT_INVALID,   // 4 for invalid
+  DT_STRUCT,    // 5 for struct
 };
 
 typedef struct DataType{
