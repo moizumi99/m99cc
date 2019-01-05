@@ -569,7 +569,7 @@ Node *struct_identifier_sequence() {
   return new_2term_node(ND_IDENTSEQ, node, next_node);
 }
 
-Node *get_data_type_from_struct_node(Node *struct_node) {
+Node *get_data_type_node_from_struct_node(Node *struct_node) {
   Node *node = new_2term_node(ND_DATATYPE, struct_node, NULL);
   while (GET_TOKEN(tokens, pos)->ty == '*') {
     pos++;
@@ -579,7 +579,7 @@ Node *get_data_type_from_struct_node(Node *struct_node) {
 }
 
 Node *struct_variable_declaration(Node *struct_node) {
-  Node *data_node = get_data_type_from_struct_node(struct_node);
+  Node *data_node = get_data_type_node_from_struct_node(struct_node);
   Node *ids = identifier_sequence();
   Node *node = new_2term_node(ND_DECLARE, data_node, ids);
   return node;

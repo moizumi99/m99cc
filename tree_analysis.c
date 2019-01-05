@@ -231,7 +231,7 @@ DataType *conv_data_type_node_to_data_type(Node *node) {
     data_type = new_data_type(DT_CHAR);
   } else if (node->lhs->ty == ND_STRUCT) {
     data_type = new_data_type(DT_STRUCT);
-    data_type->struct_name = node->name;
+    data_type->struct_name = node->lhs->name;
   } else if (node->lhs->ty == ND_PNT) {
     data_type = new_data_type(DT_PNT);
     data_type->pointer_type = conv_data_type_node_to_data_type(node->rhs);
@@ -257,7 +257,7 @@ void add_local_node_to_table(DataType *data_type, Node *node) {
 }
 
 void process_local_block(Vector *block_code);
-  
+
 void process_local_node(Node *node) {
   if (node == NULL) {
     return;
