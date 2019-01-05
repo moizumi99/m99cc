@@ -48,6 +48,7 @@ enum {
   TK_INT,       // 275 for integer
   TK_CHAR,      // 276 for char
   TK_STR,       // 277 char string literal
+  TK_ARROW,     // 278 Arrow (->) operation
   TK_EOF,       // 278 End of input
 };
 
