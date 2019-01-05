@@ -25,9 +25,9 @@ void error(char *s, char *message, char *file, int line) {
 }
 
 char *create_string_in_heap(char *str, int len) {
-  char *str_mem = malloc(sizeof(char) * IDENT_LEN);
-  int copy_len = (len < IDENT_LEN - 1) ? len : IDENT_LEN - 1;
-  strncpy(str_mem, str, copy_len);
+  len = (len < IDENT_LEN - 1) ? len : IDENT_LEN - 1;
+  char *str_mem = malloc(sizeof(char) * (len + 1));
+  strncpy(str_mem, str, len);
   str_mem[len] = '\0';
   return str_mem;
 }
