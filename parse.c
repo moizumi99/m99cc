@@ -90,18 +90,22 @@ Node *new_node_ident(char *name, int len) {
   return node;
 }
 
-#define HIGH_PRIORITY (8)
-#define MULTIPLE_PRIORITY (HIGH_PRIORITY - 1)
-#define ADD_PRIORITY (HIGH_PRIORITY - 2)
-#define COMPARE_PRIORITY (HIGH_PRIORITY - 3)
-#define EQUAL_PRIORITY (HIGH_PRIORITY - 4)
-#define AND_PRIORITY (HIGH_PRIORITY - 5)
-#define OR_PRIORITY (HIGH_PRIORITY - 6)
-#define ASSIGN_PRIORITY (HIGH_PRIORITY - 7)
+#define HIGH_PRIORITY (9)
+#define STRUCT_PRIOIRTY (HIGH_PRIORITY - 1)
+#define MULTIPLE_PRIORITY (HIGH_PRIORITY - 2)
+#define ADD_PRIORITY (HIGH_PRIORITY - 3)
+#define COMPARE_PRIORITY (HIGH_PRIORITY - 4)
+#define EQUAL_PRIORITY (HIGH_PRIORITY - 5)
+#define AND_PRIORITY (HIGH_PRIORITY - 6)
+#define OR_PRIORITY (HIGH_PRIORITY - 7)
+#define ASSIGN_PRIORITY (HIGH_PRIORITY - 8)
 #define LOW_PRIORITY (0)
 
 int operation_priority(int token_type) {
   switch (token_type) {
+  case '.':
+  case TK_ARROW:
+    return STRUCT_PRIOIRTY;
   case '*':
   case '/':
   case '%':

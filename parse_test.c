@@ -45,6 +45,7 @@ char *get_type(int ty) {
   case ND_CHAR: return "ND_CHAR";
   case ND_PNT: return "ND_PNT";
   case ND_STRUCT: return "ND_STRUCT";
+  case ND_ARROW: return "ND_ARROW";
   default:
     if (ty < 256) {
       num[0] = (char) ty;
@@ -113,9 +114,19 @@ void test_parse_2() {
   dump_tree(p);
 }
 
+void test_parse_3() {
+  char *input = "struct A {int a;}; int main() {struct A s; s.a = 4; return s.a;}";
+  Vector *v;
+  v = tokenize(input);
+  Vector *p;
+  p = parse(v);
+  dump_tree(p);
+}
+
 void test_parse() {
   test_parse_1();
   test_parse_2();
+  test_parse_3();
 }
 
 void runtest_parse() {

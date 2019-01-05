@@ -104,7 +104,8 @@ enum {
   ND_INT,       // 281 Data Type of VOID.
   ND_CHAR,      // 282 Data Type of VOID.
   ND_PNT,       // 283 Data Type of De-reference.
-  ND_STRUCT,    // 284 ND Struct
+  ND_STRUCT,    // 284 Struct
+  ND_ARROW,     // 285 ARROW operation
 };
 
 // Data type.
