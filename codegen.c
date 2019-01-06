@@ -6,6 +6,7 @@
 extern Map *global_symbols;
 extern Vector *local_symbols;
 extern Vector *string_literals;
+extern Map *global_struct_table;
 
 static Map *current_local_symbols;
 static int label_counter = 0;
@@ -69,6 +70,44 @@ void gen_block(Vector *block_code) {
   }
 }
 
+// From a vector of StructMember, find a member with member_name and return
+// address.
+int find_offset_of_a_member(Vector *struct_members, char *member_name) {
+  for (int i = 0; i < struct_members->len; i++) {
+    StructMember *sm = struct_members->data[i];
+    if (strcmp(sm->name, member_name) == 0) {
+      return sm->address;
+    }
+  }
+  error("Member name %s was not found.", member_name, __FILE__, __LINE__);
+  // Code shouldn't reach here.
+  return -1;
+}
+
+int find_offset_of_struct_name(Map *struct_table, char *struct_name,
+                               char *member_name) {
+  Vector *struct_members = map_get(global_struct_table, struct_name);
+  return find_offset_of_a_member(struct_members, member_name);
+}
+
+// Dot (.) operator for struct.
+void gen_dot_node(Node *node) {
+  // local variable.
+  Symbol *s = map_get(current_local_symbols, node->lhs->name);
+  if (s == NULL) {
+    s = map_get(global_symbols, node->lhs->name);
+  }
+  if (s->data_type->dtype != DT_STRUCT) {
+    error("Left side of dot operator is not a struct variable.",
+          node->lhs->name, __FILE__, __LINE__);
+  }
+  int offset = find_offset_of_struct_name(global_struct_table,
+                                          s->data_type->struct_name, node->rhs->name);
+  printf("  mov rax, %d\n", offset);
+  printf("  push rax\n");
+  return;
+}
+
 // Create L-value (variable address and likes).
 void gen_lval(Node *node) {
   if (node->ty == ND_IDENT) {
@@ -100,8 +139,12 @@ void gen_lval(Node *node) {
     printf("  push rax\n");
     return;
   }
+  if (node->ty == '.') {
+    gen_dot_node(node);
+    return;
+  }
   fprintf(stderr, "The node type %d can not be a L-value\n", node->ty);
-  exit(1);
+  error("%s", "Node type error", __FILE__, __LINE__);
 }
 
 int is_systemcall(Node *nd) {
@@ -144,19 +187,20 @@ void gen_ident(Node *node) {
         // evaluation of struct value is not supported yet.
         // Just give the first variable for now to avoid error.
         printf("  mov rax, [rax]\n");
-      }else {
+      } else {
         fprintf(stderr, "Data type: %d\n", dtype);
-        error("\"%s\" type is not INT or CHAR. (local load)", node->name, __FILE__, __LINE__);
+        error("\"%s\" type is not INT or CHAR. (local load)", node->name,
+              __FILE__, __LINE__);
       }
       printf("  push rax\n");
     }
-    // If array address, location of the array is what you need. Do nothing to l-value.
+    // If array address, location of the array is what you need. Do nothing to
+    // l-value.
   } else {
     // Global variable or function call.
     s = map_get(global_symbols, node->name);
     if (s == NULL) {
-      fprintf(stderr, "The symbol %s was not found.", node->name);
-      exit(1);
+      error("The symbol %s was not found.", node->name, __FILE__, __LINE__);
     }
     // Function calll or global variable.
     if (s->num == 0) {
@@ -169,7 +213,8 @@ void gen_ident(Node *node) {
       } else if (dtype == DT_PNT) {
         printf("  mov rax, QWORD PTR %s[rip]\n", node->name);
       } else {
-        error("\"%s\" type is not INT or CHAR. (global load)", node->name, __FILE__, __LINE__);
+        error("\"%s\" type is not INT or CHAR. (global load)", node->name,
+              __FILE__, __LINE__);
       }
     } else {
       // Array address. Don't de-reference.
@@ -243,7 +288,8 @@ void gen_if(Node *node) {
     } else if (node->rhs->ty == ND_BLOCK) {
       gen_block(node->rhs->block);
     } else {
-      error("Unexpected non ND_BLOCK node %s after if-else \n", node->name, __FILE__, __LINE__);
+      error("Unexpected non ND_BLOCK node %s after if-else \n", node->name,
+            __FILE__, __LINE__);
     }
   }
   printf("_if_end_%d:\n", end_label);
@@ -262,6 +308,17 @@ void gen_while(Node *node) {
   gen_block(node->block);
   printf("  jmp _while_%d\n", while_label);
   printf("_while_end_%d:\n", while_end);
+}
+
+void gen_dereference(int dtype) {
+    printf("  pop rax\n");
+    if (dtype == DT_CHAR) {
+      printf("  mov al, BYTE PTR [rax]\n");
+      printf("  and rax, 0xff\n");
+    } else {
+      printf("  mov rax, QWORD PTR [rax]\n");
+    }
+    printf("  push rax\n");
 }
 
 void gen_single_term_operation(Node *node) {
@@ -285,23 +342,23 @@ void gen_single_term_operation(Node *node) {
     // De-reference.
     gen_node(node->lhs);
     int dtype = get_node_reference_type(node->lhs);
-    printf("  pop rax\n");
-    if (dtype == DT_CHAR) {
-      printf("  mov al, BYTE PTR [rax]\n");
-      printf("  and rax, 0xff\n");
-    } else {
-      printf("  mov rax, QWORD PTR [rax]\n");
-    }
-    printf("  push rax\n");
+    gen_dereference(dtype);
     break;
   default:
-    error("%s\n", "Error. Unsupported single term operation %d.", __FILE__, __LINE__);
+    error("%s\n", "Error. Unsupported single term operation %d.", __FILE__,
+          __LINE__);
   }
 }
 
 void gen_two_term_operation(Node *node) {
-  // two term operation
   printf("# Two term operation (%s)\n", get_type(node->ty));
+  // Dot operation is treated as a special case.
+  /* if (node->ty == '.') { */
+  /*   gen_dot_node(node); */
+  /*   gen_ */
+  /*   return; */
+  /* } */
+  
   gen_node(node->lhs);
   gen_node(node->rhs);
 
@@ -342,7 +399,8 @@ void gen_two_term_operation(Node *node) {
     } else if (node->ty == ND_GE) {
       printf("  setge al\n");
     } else {
-      error("%s\n", "Code shouldn't reach here (codegen.c compare).", __FILE__, __LINE__);
+      error("%s\n", "Code shouldn't reach here (codegen.c compare).", __FILE__,
+            __LINE__);
     }
     printf("  movzb rax, al\n");
     break;
@@ -355,8 +413,12 @@ void gen_two_term_operation(Node *node) {
   case ND_IDENTSEQ:
     // do nothing.
     break;
+  case '.':
+    printf("  sub rax, rdi\n");
+    break;
   default:
-    error("Operation %s is not supported.\n", get_type(node->ty), __FILE__, __LINE__);
+    error("Operation %s is not supported.\n", get_type(node->ty), __FILE__,
+          __LINE__);
     break;
   }
   printf("  push rax\n");
@@ -472,7 +534,8 @@ void gen_declaration(Map *local_symbol_table, Node *declaration_node) {
       printf("  mov [rbp - %d], rax\n", (int)next_symbol->address);
     } else {
       // TODO: Support two or more argunents.
-      error("%s", "Error: Currently, only one argument can be used.", __FILE__, __LINE__);
+      error("%s", "Error: Currently, only one argument can be used.", __FILE__,
+            __LINE__);
     }
   }
   // Generate codes from the top line to bottom

@@ -25,8 +25,8 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  bool dump_tokens_enbale = false;
-  bool dump_tree_enbale = false;
+  bool dump_tokens_enable = false;
+  bool dump_tree_enable = false;
   bool dump_symbols_enable = false;
   FILE *srcfile;
   for (int i = 1; i < argc; i++) {
@@ -47,11 +47,11 @@ int main(int argc, char **argv) {
       return 0;
     }
     if (strcmp(argv[i], "-dump_tokens") == 0) {
-      dump_tokens_enbale = true;
+      dump_tokens_enable = true;
       continue;
     }
     if (strcmp(argv[i], "-dump_tree") == 0) {
-      dump_tree_enbale = true;
+      dump_tree_enable = true;
       continue;
     }
     if (strcmp(argv[i], "-dump_symbols") == 0) {
@@ -91,13 +91,13 @@ int main(int argc, char **argv) {
   Vector *tokens;
 
   tokens = tokenize(src);
-  if (dump_tokens_enbale) {
+  if (dump_tokens_enable) {
     dump_token();
   }
   // Parse
   program_code = parse(tokens);
-  
-  if (dump_tree_enbale) {
+
+  if (dump_tree_enable) {
     dump_tree(program_code);
   }
 
@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
       dump_symbols((Map *)(local_symbols->data[i]));
     }
   }
-  
+
   gen_program(program_code);
 
   return 0;
