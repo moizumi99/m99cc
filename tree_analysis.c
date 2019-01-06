@@ -15,6 +15,16 @@ static int local_symbol_counter;
 Node *new_2term_node(int op, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
 
+int struct_size(Map *struct_table, char *struct_name) {
+  Vector *struct_members = map_get(struct_table, struct_name);
+  int total_size = 0;
+  for (int j = 0; j < struct_members->len; j++) {
+    StructMember *st = (StructMember *)struct_members->data[j];
+    total_size += data_size(st->data_type);
+  }
+  return total_size;
+}
+
 // helper function to calculate data size from dtype.
 int data_size_from_dtype(int dtype) {
   switch (dtype) {
@@ -26,6 +36,9 @@ int data_size_from_dtype(int dtype) {
     return 1;
   case DT_PNT:
     return 8;
+  case DT_STRUCT:
+    error("%s", "DT_STRUCT size not defined", __FILE__, __LINE__);
+    return 8;
   default:
     return 8;
   }
@@ -33,6 +46,9 @@ int data_size_from_dtype(int dtype) {
 
 // helper function to calculate data size from DataType struct.
 int data_size(DataType *data_type) {
+  if (data_type->dtype == DT_STRUCT) {
+    return struct_size(global_struct_table, data_type->struct_name);
+  }
   return data_size_from_dtype(data_type->dtype);
 }
 
@@ -173,26 +189,12 @@ void list_string_in_node(Node *node) {
   list_string_in_code(node->block);
 }
 
-int struct_size(Map *struct_table, char *struct_name) {
-  Vector *struct_members = map_get(struct_table, struct_name);
-  int total_size = 0;
-  for (int j = 0; j < struct_members->len; j++) {
-    StructMember *st = (StructMember *)struct_members->data[j];
-    total_size += data_size(st->data_type);
-  }
-  return total_size;
-}
-
 void add_global_symbol(char *name_perm, int type, int num,
                        struct DataType *data_type) {
   static int global_symbol_counter = 0;
   Symbol *new_symbol = malloc(sizeof(Symbol));
   int dsize;
-  if (data_type->dtype != DT_STRUCT) {
-    dsize = data_size(data_type);
-  } else {
-    dsize = struct_size(global_struct_table, data_type->struct_name);
-  }
+  dsize = data_size(data_type);
   global_symbol_counter += (num == 0) ? dsize : num * dsize;
   new_symbol->address = (void *)global_symbol_counter;
   new_symbol->type = type;
@@ -204,12 +206,7 @@ void add_global_symbol(char *name_perm, int type, int num,
 void add_local_symbol(char *name_perm, int type, int num, struct DataType *data_type) {
   Symbol *new_symbol = malloc(sizeof(Symbol));
   int dsize;
-  if (data_type->dtype != DT_STRUCT) {
-    dsize = data_size(data_type);
-  } else {
-    // TODO: add locally defined struct support.
-    dsize = struct_size(global_struct_table, data_type->struct_name);
-  }
+  dsize = data_size(data_type);
   local_symbol_counter += (num == 0) ? dsize : num * dsize;
   new_symbol->address = (void *)local_symbol_counter;
   new_symbol->type = type;

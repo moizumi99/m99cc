@@ -490,7 +490,7 @@ int accumulate_variable_size(Vector *symbols) {
   return num;
 }
 
-void gen_declaration(Map *local_symbol_table, Node *declaration_node) {
+void gen_top_line(Map *local_symbol_table, Node *declaration_node) {
   current_local_symbols = local_symbol_table;
   // functions
   if (declaration_node->ty != ND_DECLARE && declaration_node->ty != ND_STRUCT) {
@@ -603,6 +603,6 @@ void gen_program(Vector *program_code) {
   printf(".global main\n");
   printf(".type main, @function\n");
   for (int j = 0; program_code->data[j]; j++) {
-    gen_declaration(local_symbols->data[j], program_code->data[j]);
+    gen_top_line(local_symbols->data[j], program_code->data[j]);
   }
 }

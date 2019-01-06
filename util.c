@@ -50,6 +50,9 @@ void print_data_type(DataType *data_type) {
     fprintf(stderr, "->");
     print_data_type(data_type->pointer_type);
   }
+  if (data_type->dtype == DT_STRUCT) {
+    fprintf(stderr, " (struct %s)", data_type->struct_name);
+  }
 }
 
 void dump_symbols(Map *symbol_table) {

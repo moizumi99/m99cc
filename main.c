@@ -106,13 +106,15 @@ int main(int argc, char **argv) {
   if (dump_symbols_enable) {
     fprintf(stderr, "Global Symbols: \n");
     dump_symbols(global_symbols);
-    for(int i = 0; local_symbols->data[i]; i++) {
-      fprintf(stderr, "Local Symbols [%d]: \n", i);
-      dump_symbols((Map *)(local_symbols->data[i]));
+    for(int i = 0; i < local_symbols->len; i++) {
+      if (local_symbols->data[i]) {
+        fprintf(stderr, "Local Symbols [%d]: \n", i);
+        dump_symbols((Map *)(local_symbols->data[i]));
+      }
     }
     dump_struct_table(global_struct_table);
   }
-  
+
   gen_program(program_code);
 
   return 0;
