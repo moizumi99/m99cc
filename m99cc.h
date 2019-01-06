@@ -167,5 +167,6 @@ void runtest_tokenize();
 void dump_token();
 void runtest_parse();
 int runtest_data_type();
+void dump_struct_table(Map *struct_table);
 
 #endif // M99CC-H

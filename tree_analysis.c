@@ -296,6 +296,9 @@ Node *get_data_type_from_struct_node(Node *struct_node);
 int add_struct_member(Vector *member_list, Node *node, int address) {
   if (node->ty == ND_IDENTSEQ) {
     address = add_struct_member(member_list, node->lhs, address);
+    if (node->rhs) {
+      address = add_struct_member(member_list, node->rhs, address);
+    }
     return address;
   }
   if (node->ty == ND_DECLARE) {

@@ -49,8 +49,6 @@ void print_data_type(DataType *data_type) {
   if (data_type->dtype == DT_PNT) {
     fprintf(stderr, "->");
     print_data_type(data_type->pointer_type);
-  } else {
-    fprintf(stderr, "\n");
   }
 }
 
@@ -64,5 +62,21 @@ void dump_symbols(Map *symbol_table) {
             sym->type, (int)sym->address);
     fprintf(stderr, "data_type: ");
     print_data_type(sym->data_type);
+    fprintf(stderr, "\n");
+  }
+}
+
+void dump_struct_table(Map *struct_table) {
+  int struct_number = struct_table->keys->len;
+  fprintf(stderr, "Total %d structs present.\n", struct_number);
+  for (int cnt = 0; cnt < struct_number; cnt++) {
+    fprintf(stderr, "Struct: %s\n", (char *)struct_table->keys->data[cnt]);
+    Vector *struct_members = struct_table->vals->data[cnt];
+    for (int m_cnt = 0; m_cnt < struct_members->len; m_cnt++) {
+      StructMember *sm = struct_members->data[m_cnt];
+      fprintf(stderr, "member name: %s, data_type: ", sm->name);
+      print_data_type(sm->data_type);
+      fprintf(stderr, ", Address: %d\n", sm->address);
+    }
   }
 }

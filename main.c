@@ -110,8 +110,9 @@ int main(int argc, char **argv) {
       fprintf(stderr, "Local Symbols [%d]: \n", i);
       dump_symbols((Map *)(local_symbols->data[i]));
     }
+    dump_struct_table(global_struct_table);
   }
-
+  
   gen_program(program_code);
 
   return 0;
