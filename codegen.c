@@ -84,14 +84,12 @@ int find_offset_of_a_member(Vector *struct_members, char *member_name) {
   return -1;
 }
 
-int find_offset_of_struct_name(Map *struct_table, char *struct_name,
-                               char *member_name) {
-  Vector *struct_members = map_get(global_struct_table, struct_name);
-  return find_offset_of_a_member(struct_members, member_name);
-}
+void gen_lval(Node *node);
 
 // Dot (.) operator for struct.
-void gen_dot_node(Node *node) {
+void gen_lval_dot_node(Node *node) {
+  printf("# L-value of dot operation (.) \n");
+  gen_lval(node->lhs);
   // local variable.
   Symbol *s = map_get(current_local_symbols, node->lhs->name);
   if (s == NULL) {
@@ -101,9 +99,11 @@ void gen_dot_node(Node *node) {
     error("Left side of dot operator is not a struct variable.",
           node->lhs->name, __FILE__, __LINE__);
   }
-  int offset = find_offset_of_struct_name(global_struct_table,
-                                          s->data_type->struct_name, node->rhs->name);
-  printf("  mov rax, %d\n", offset);
+  Vector *struct_members = map_get(global_struct_table, s->data_type->struct_name);
+  int offset = find_offset_of_a_member(struct_members, node->rhs->name);
+  printf("  pop rax\n");
+  printf("  mov rdi, %d\n", offset);
+  printf("  sub rax, rdi\n");
   printf("  push rax\n");
   return;
 }
@@ -140,7 +140,7 @@ void gen_lval(Node *node) {
     return;
   }
   if (node->ty == '.') {
-    gen_dot_node(node);
+    gen_lval_dot_node(node);
     return;
   }
   fprintf(stderr, "The node type %d can not be a L-value\n", node->ty);
@@ -353,12 +353,14 @@ void gen_single_term_operation(Node *node) {
 void gen_two_term_operation(Node *node) {
   printf("# Two term operation (%s)\n", get_type(node->ty));
   // Dot operation is treated as a special case.
-  /* if (node->ty == '.') { */
-  /*   gen_dot_node(node); */
-  /*   gen_ */
-  /*   return; */
-  /* } */
-  
+  if (node->ty == '.') {
+    gen_lval_dot_node(node);
+    // TODO: (Support non int type data);
+    int dtype = 0;
+    gen_dereference(dtype);
+    return;
+  }
+
   gen_node(node->lhs);
   gen_node(node->rhs);
 
